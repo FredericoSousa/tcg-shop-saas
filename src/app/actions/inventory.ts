@@ -42,7 +42,11 @@ export async function addInventoryItem(formData: FormData) {
         id: scryfallId, // Using Scryfall ID as our global template ID
         name: scryfallData.name,
         set: scryfallData.set.toUpperCase(),
-        imageUrl: imageUris?.normal || imageUris?.large || imageUris?.png || null,
+        imageUrl: imageUris?.normal
+          || imageUris?.large
+          || imageUris?.png
+          || (scryfallData as any).card_faces[0].image_uris.normal
+          || null,
         game: Game.MAGIC,
         metadata: scryfallData as unknown as Prisma.InputJsonObject
       }

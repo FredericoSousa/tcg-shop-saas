@@ -2,6 +2,8 @@
 
 import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { ArrowUpDown } from 'lucide-react'
 
 export type InventoryRow = {
   id: string
@@ -19,7 +21,18 @@ export type InventoryRow = {
 export const columns: ColumnDef<InventoryRow>[] = [
   {
     accessorKey: 'cardTemplate.name',
-    header: 'Card',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          className="-ml-4 hover:bg-transparent"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Card
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
     cell: ({ row }) => {
       const template = row.original.cardTemplate
       return (
@@ -37,7 +50,18 @@ export const columns: ColumnDef<InventoryRow>[] = [
   },
   {
     accessorKey: 'cardTemplate.set',
-    header: 'Edição',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          className="-ml-4 hover:bg-transparent"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Edição
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
     cell: ({ row }) => <Badge variant="outline">{row.original.cardTemplate.set}</Badge>
   },
   {
@@ -50,7 +74,18 @@ export const columns: ColumnDef<InventoryRow>[] = [
   },
   {
     accessorKey: 'price',
-    header: 'Preço (R$)',
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          className="-ml-4 hover:bg-transparent"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Preço (R$)
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    },
     cell: ({ row }) => {
       const price = parseFloat(row.getValue('price'))
       return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)
@@ -58,6 +93,17 @@ export const columns: ColumnDef<InventoryRow>[] = [
   },
   {
     accessorKey: 'quantity',
-    header: 'Estoque'
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          className="-ml-4 hover:bg-transparent"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Estoque
+          <ArrowUpDown className="ml-2 h-4 w-4" />
+        </Button>
+      )
+    }
   }
 ]

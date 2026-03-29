@@ -43,7 +43,7 @@ export const scryfall = {
         throw new Error(`Scryfall API error: ${response.status}`);
       }
 
-      const data = await response.json();
+      const data: { data?: Card[] } = await response.json();
       const results = data.data || [];
 
       cache.set(cacheKey, {

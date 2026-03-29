@@ -56,12 +56,12 @@ export function AddCardDialog() {
         <DialogHeader>
           <DialogTitle>Adicionar Card ao Estoque</DialogTitle>
         </DialogHeader>
-        
+
         <div className="flex flex-col gap-4 mt-4">
           <div className="flex gap-2">
-            <Input 
-              placeholder="Nome do card (ex: Black Lotus)" 
-              value={query} 
+            <Input
+              placeholder="Nome do card (ex: Black Lotus)"
+              value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
             />
@@ -78,15 +78,15 @@ export function AddCardDialog() {
                   {results.map((card) => {
                     const cardObj = card as Record<string, unknown>;
                     const imageUris = cardObj.image_uris as Record<string, string> | undefined;
-                    const imageUrl = imageUris?.small || imageUris?.normal || '';
+                    const imageUrl = imageUris?.small || imageUris?.normal || (cardObj as any).card_faces[0].image_uris.normal || '';
                     return (
-                      <label 
-                        key={card.id} 
+                      <label
+                        key={card.id}
                         className={`flex items-center gap-3 p-2 rounded cursor-pointer hover:bg-muted ${selectedCardId === card.id ? 'bg-muted border border-primary' : ''}`}
                       >
-                        <input 
-                          type="radio" 
-                          name="scryfallId" 
+                        <input
+                          type="radio"
+                          name="scryfallId"
                           value={card.id}
                           className="hidden"
                           checked={selectedCardId === card.id}
@@ -120,7 +120,7 @@ export function AddCardDialog() {
                   <label className="text-sm font-medium">Quantidade</label>
                   <Input type="number" name="quantity" required defaultValue="1" min="1" />
                 </div>
-                
+
                 <div className="flex flex-col gap-2">
                   <label className="text-sm font-medium">Condição</label>
                   <Select name="condition" defaultValue="NM" required>

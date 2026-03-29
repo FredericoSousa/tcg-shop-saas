@@ -1,11 +1,14 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { useCart } from '@/store/useCart'
 import { CartDrawer } from './CartDrawer'
+import { PackageOpen, AlertCircle, Check } from 'lucide-react'
 
 type ShopItem = {
   id: string;
@@ -30,6 +33,9 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
   const [selectedType, setSelectedType] = useState<string | null>(null)
   const [selectedSet, setSelectedSet] = useState<string | null>(null)
   
+  // Track recently added items for visual feedback
+  const [addedItems, setAddedItems] = useState<Record<string, boolean>>({})
+
   const { addItem } = useCart()
 
   const { data: inventory, isLoading, error } = useQuery({
@@ -84,78 +90,160 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
     })
   }, [inventory, selectedColor, selectedType, selectedSet])
 
-  if (isLoading) return <div className="text-center py-20 animate-pulse text-muted-foreground">Carregando catálogo da loja...</div>
-  if (error) return <div className="text-center py-20 text-red-500 font-medium">Erro ao carregar o estoque. Tente novamente mais tarde.</div>
+  const handleAddToCart = (item: ShopItem) => {
+    addItem({
+      inventoryId: item.id,
+      name: item.cardTemplate?.name || 'Card',
+      set: item.cardTemplate?.set || 'N/A',
+      imageUrl: item.cardTemplate?.imageUrl || null,
+      price: item.price,
+      quantity: 1,
+      maxStock: item.quantity
+    })
+    
+    // Show visual feedback
+    setAddedItems(prev => ({ ...prev, [item.id]: true }))
+    setTimeout(() => {
+      setAddedItems(prev => ({ ...prev, [item.id]: false }))
+    }, 1500)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col md:flex-row gap-8 items-start">
+        <aside className="w-full md:w-64 shrink-0 space-y-8 bg-white p-6 rounded-xl border shadow-sm h-[600px]">
+          <Skeleton className="h-8 w-1/2 mb-4" />
+          <div className="flex flex-wrap gap-2 mb-8"><Skeleton className="h-6 w-16" /><Skeleton className="h-6 w-12" /></div>
+          <Skeleton className="h-8 w-1/2 mb-4" />
+          <div className="flex flex-wrap gap-2 mb-8"><Skeleton className="h-6 w-20" /><Skeleton className="h-6 w-14" /></div>
+          <Skeleton className="h-8 w-1/2 mb-4" />
+          <div className="space-y-2"><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-4/5" /></div>
+        </aside>
+        <div className="flex-1 w-full">
+          <Skeleton className="h-6 w-32 mb-6" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col">
+                <Skeleton className="aspect-[2/3] w-full" />
+                <div className="p-4 space-y-3">
+                  <Skeleton className="h-4 w-3/4" />
+                  <div className="flex gap-2"><Skeleton className="h-4 w-8" /><Skeleton className="h-4 w-8" /></div>
+                  <Skeleton className="h-6 w-1/2 mt-auto" />
+                  <Skeleton className="h-8 w-full mt-2" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-red-500 bg-red-50 rounded-xl border border-red-100">
+        <AlertCircle className="w-12 h-12 mb-4 opacity-80" />
+        <h3 className="text-xl font-bold mb-2">Erro ao carregar o estoque</h3>
+        <p className="text-sm font-medium opacity-80">Por favor, tente novamente mais tarde.</p>
+        <Button onClick={() => window.location.reload()} variant="outline" className="mt-6 border-red-200 hover:bg-red-100 text-red-700">
+          Tentar Novamente
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="flex flex-col md:flex-row gap-8 items-start">
-      <aside className="w-full md:w-64 shrink-0 space-y-8 bg-white p-6 rounded-xl border shadow-sm sticky top-6">
-        <div>
-          <h3 className="text-lg font-bold mb-4">Filtrar por Cor</h3>
-          <div className="flex flex-wrap gap-2">
-            <Badge
-              variant={selectedColor === null ? 'default' : 'outline'}
-              className="cursor-pointer hover:opacity-80 pb-0.5"
-              onClick={() => setSelectedColor(null)}
-            >
-              Todas
-            </Badge>
-            {colors.map(c => (
-              <Badge
-                key={c}
-                variant={selectedColor === c ? 'default' : 'outline'}
-                className="cursor-pointer hover:opacity-80 pb-0.5"
-                onClick={() => setSelectedColor(c)}
-              >
-                {c}
-              </Badge>
-            ))}
-          </div>
-        </div>
+      <aside className="w-full md:w-64 shrink-0 bg-white p-4 rounded-xl border shadow-sm sticky top-6">
+        <Accordion type="multiple" defaultValue={["color", "type", "set"]} className="w-full">
+          <AccordionItem value="color" className="border-b-0 pb-2">
+            <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">Cores</AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Badge
+                  variant={selectedColor === null ? 'default' : 'outline'}
+                  className="cursor-pointer hover:opacity-80 pb-0.5"
+                  onClick={() => setSelectedColor(null)}
+                >
+                  Todas
+                </Badge>
+                {colors.map(c => (
+                  <Badge
+                    key={c}
+                    variant={selectedColor === c ? 'default' : 'outline'}
+                    className="cursor-pointer hover:opacity-80 pb-0.5"
+                    onClick={() => setSelectedColor(c)}
+                  >
+                    {c}
+                  </Badge>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-        <div>
-          <h3 className="text-lg font-bold mb-4">Filtrar por Tipo</h3>
-          <div className="flex flex-wrap gap-2">
-            <Badge
-              variant={selectedType === null ? 'default' : 'outline'}
-              className="cursor-pointer hover:opacity-80 pb-0.5"
-              onClick={() => setSelectedType(null)}
-            >
-              Todos
-            </Badge>
-            {types.map(t => (
-              <Badge
-                key={t}
-                variant={selectedType === t ? 'default' : 'outline'}
-                className="cursor-pointer hover:opacity-80 pb-0.5"
-                onClick={() => setSelectedType(t)}
-              >
-                {t}
-              </Badge>
-            ))}
-          </div>
-        </div>
+          <AccordionItem value="type" className="border-b-0 pb-2">
+            <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">Tipos</AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Badge
+                  variant={selectedType === null ? 'default' : 'outline'}
+                  className="cursor-pointer hover:opacity-80 pb-0.5"
+                  onClick={() => setSelectedType(null)}
+                >
+                  Todos
+                </Badge>
+                {types.map(t => (
+                  <Badge
+                    key={t}
+                    variant={selectedType === t ? 'default' : 'outline'}
+                    className="cursor-pointer hover:opacity-80 pb-0.5"
+                    onClick={() => setSelectedType(t)}
+                  >
+                    {t}
+                  </Badge>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-        <div>
-          <h3 className="text-lg font-bold mb-4">Filtrar por Edição</h3>
-          <div className="flex flex-col gap-1.5 border-l-2 pl-3">
-            <button
-              className={`text-left text-sm py-1 font-medium transition-colors ${selectedSet === null ? 'text-primary' : 'text-muted-foreground hover:text-primary/70'}`}
-              onClick={() => setSelectedSet(null)}
-            >
-              Todas as Edições
-            </button>
-            {sets.map(s => (
-              <button
-                key={s}
-                className={`text-left text-sm py-1 font-medium transition-colors ${selectedSet === s ? 'text-primary' : 'text-muted-foreground hover:text-primary/70'}`}
-                onClick={() => setSelectedSet(s)}
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        </div>
+          <AccordionItem value="set" className="border-b-0">
+            <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">Edições</AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-col gap-1.5 border-l-2 pl-3 mt-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                <button
+                  className={`text-left text-sm py-1 font-medium transition-colors ${selectedSet === null ? 'text-primary' : 'text-muted-foreground hover:text-primary/70'}`}
+                  onClick={() => setSelectedSet(null)}
+                >
+                  Todas as Edições
+                </button>
+                {sets.map(s => (
+                  <button
+                    key={s}
+                    className={`text-left text-sm py-1 font-medium transition-colors ${selectedSet === s ? 'text-primary' : 'text-muted-foreground hover:text-primary/70'}`}
+                    onClick={() => setSelectedSet(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+        
+        {(selectedColor || selectedType || selectedSet) && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="w-full mt-4 text-xs text-muted-foreground"
+            onClick={() => {
+              setSelectedColor(null)
+              setSelectedType(null)
+              setSelectedSet(null)
+            }}
+          >
+            Limpar Filtros
+          </Button>
+        )}
       </aside>
 
       <div className="flex-1">
@@ -166,73 +254,93 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
         </div>
 
         {filteredInventory.length === 0 ? (
-          <div className="text-center py-32 bg-white rounded-xl border border-dashed text-muted-foreground">
-            Nenhum card correspondente aos filtros foi encontrado.
+          <div className="flex flex-col items-center justify-center py-24 bg-white rounded-xl border border-dashed text-muted-foreground">
+            <PackageOpen className="w-16 h-16 mb-4 opacity-20" />
+            <p className="text-lg font-medium text-foreground">Nenhum card encontrado</p>
+            <p className="text-sm mb-6">Tente ajustar ou limpar os filtros para ver mais resultados.</p>
+            {(selectedColor || selectedType || selectedSet) && (
+              <Button onClick={() => {
+                setSelectedColor(null)
+                setSelectedType(null)
+                setSelectedSet(null)
+              }}>
+                Limpar Todos os Filtros
+              </Button>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {filteredInventory.map((item: ShopItem) => (
-              <div key={item.id} className="group relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border hover:shadow-lg transition-all hover:-translate-y-1 duration-300">
-                <div className="aspect-[2/3] w-full bg-gray-100 relative overflow-hidden">
-                  {item.cardTemplate?.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={item.cardTemplate.imageUrl}
-                      alt={item.cardTemplate.name}
-                      className="object-cover w-full h-full"
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-muted-foreground text-sm font-medium">Sem Imagem</div>
-                  )}
-                  {item.cardTemplate?.metadata?.foil && (
-                    <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-300 to-amber-500 text-black text-[10px] font-bold px-2 py-0.5 rounded shadow">
-                      FOIL
-                    </div>
-                  )}
-                </div>
-                <div className="p-4 flex flex-col gap-1.5 flex-1">
-                  <h3 className="font-bold text-sm leading-tight" title={item.cardTemplate?.name}>
-                    {item.cardTemplate?.name}
-                  </h3>
-                  <div className="flex items-center flex-wrap gap-1 mt-auto">
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200">
-                      {item.cardTemplate?.set}
-                    </span>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200">
-                      {item.condition}
-                    </span>
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200">
-                      {item.language}
-                    </span>
+            {filteredInventory.map((item: ShopItem) => {
+              const stockStatus = item.quantity > 3 ? 'text-green-600 bg-green-50' : 
+                                 item.quantity > 1 ? 'text-amber-600 bg-amber-50' : 
+                                 'text-red-600 bg-red-50';
+
+              return (
+                <div key={item.id} className="group relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border hover:shadow-lg transition-all hover:-translate-y-1 duration-300">
+                  <div className="aspect-[2/3] w-full bg-muted/30 relative overflow-hidden flex items-center justify-center group-hover:bg-muted/50 transition-colors">
+                    {item.cardTemplate?.imageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={item.cardTemplate.imageUrl}
+                        alt={item.cardTemplate.name}
+                        className="object-cover w-full h-full"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60 text-xs font-medium space-y-2">
+                        <div className="w-12 h-16 border-2 border-dashed border-muted-foreground/30 rounded flex items-center justify-center">
+                          ?
+                        </div>
+                        <span>Sem Imagem</span>
+                      </div>
+                    )}
+                    {item.cardTemplate?.metadata?.foil && (
+                      <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-300 to-amber-500 text-black text-[10px] font-bold px-2 py-0.5 rounded shadow z-10">
+                        FOIL
+                      </div>
+                    )}
                   </div>
-                  <div className="mt-2 pt-2 border-t flex flex-col gap-3">
-                    <div className="flex items-end justify-between">
-                      <span className="font-extrabold text-lg text-primary leading-none">
-                        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}
+                  <div className="p-4 flex flex-col gap-1.5 flex-1">
+                    <h3 className="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem]" title={item.cardTemplate?.name}>
+                      {item.cardTemplate?.name}
+                    </h3>
+                    <div className="flex items-center flex-wrap gap-1 mt-auto">
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200 truncate max-w-[80px]" title={item.cardTemplate?.set || ''}>
+                        {item.cardTemplate?.set}
                       </span>
-                      <span className="text-[10px] text-green-600 font-bold bg-green-50 px-1.5 py-0.5 rounded">
-                        {item.quantity} em estoque
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200" title="Condição">
+                        {item.condition === 'NM' ? '🌟 NM' : item.condition === 'SP' ? '⭐ SP' : item.condition}
+                      </span>
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200" title="Idioma">
+                        {item.language === 'PT' ? '🇧🇷 PT' : item.language === 'EN' ? '🇺🇸 EN' : item.language}
                       </span>
                     </div>
-                    <Button 
-                      size="sm" 
-                      className="w-full font-bold text-xs h-8" 
-                      onClick={() => addItem({
-                        inventoryId: item.id,
-                        name: item.cardTemplate?.name || 'Card',
-                        set: item.cardTemplate?.set || 'N/A',
-                        imageUrl: item.cardTemplate?.imageUrl || null,
-                        price: item.price,
-                        quantity: 1,
-                        maxStock: item.quantity
-                      })}
-                    >
-                      Comprar
-                    </Button>
+                    <div className="mt-2 pt-2 border-t flex flex-col gap-3">
+                      <div className="flex flex-col">
+                        <span className="font-extrabold text-lg text-primary leading-none mb-1">
+                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}
+                        </span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded w-fit ${stockStatus}`}>
+                          {item.quantity} em estoque
+                        </span>
+                      </div>
+                      <Button 
+                        size="sm" 
+                        variant={addedItems[item.id] ? "default" : "default"}
+                        className={`w-full font-bold text-xs h-8 transition-all ${addedItems[item.id] ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
+                        onClick={() => handleAddToCart(item)}
+                      >
+                        {addedItems[item.id] ? (
+                          <span className="flex items-center gap-1"><Check className="w-3 h-3" /> Adicionado</span>
+                        ) : (
+                          'Comprar'
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
