@@ -6,12 +6,15 @@ import {
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
+  getFilteredRowModel,
   SortingState,
+  ColumnFiltersState,
   useReactTable,
 } from '@tanstack/react-table'
 import * as React from 'react'
 
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Select,
   SelectContent,
@@ -39,6 +42,31 @@ export function DataTable<TData, TValue>({
   data,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+
+  const uniqueSets = React.useMemo(() => {
+    const sets = new Set<string>()
+    data.forEach((item: any) => {
+      if (item.cardTemplate?.set) sets.add(item.cardTemplate.set)
+    })
+    return Array.from(sets).sort()
+  }, [data])
+
+  const uniqueConditions = React.useMemo(() => {
+    const conditions = new Set<string>()
+    data.forEach((item: any) => {
+      if (item.condition) conditions.add(item.condition)
+    })
+    return Array.from(conditions).sort()
+  }, [data])
+
+  const uniqueLanguages = React.useMemo(() => {
+    const langs = new Set<string>()
+    data.forEach((item: any) => {
+      if (item.language) langs.add(item.language)
+    })
+    return Array.from(langs).sort()
+  }, [data])
 
   const table = useReactTable({
     data,
@@ -46,15 +74,80 @@ export function DataTable<TData, TValue>({
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     state: {
       sorting,
+      columnFilters,
     },
   })
 
   return (
-    <div className="rounded-md border bg-white shadow-sm">
-      <Table>
+    <div>
+      <div className="flex flex-wrap items-center gap-4 pb-4">
+        <Input
+          placeholder="Filtrar por nome..."
+          value={(table.getColumn("cardTemplate_name")?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn("cardTemplate_name")?.setFilterValue(event.target.value)
+          }
+          className="max-w-[200px]"
+        />
+
+        <Select
+          value={(table.getColumn("cardTemplate_set")?.getFilterValue() as string) ?? "all"}
+          onValueChange={(value) =>
+            table.getColumn("cardTemplate_set")?.setFilterValue(value === "all" ? "" : value)
+          }
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Qualquer Edição" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas Edições</SelectItem>
+            {uniqueSets.map(set => (
+              <SelectItem key={set} value={set}>{set}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={(table.getColumn("condition")?.getFilterValue() as string) ?? "all"}
+          onValueChange={(value) =>
+            table.getColumn("condition")?.setFilterValue(value === "all" ? "" : value)
+          }
+        >
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Qualquer Condição" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas Condições</SelectItem>
+            {uniqueConditions.map(cond => (
+              <SelectItem key={cond} value={cond}>{cond}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <Select
+          value={(table.getColumn("language")?.getFilterValue() as string) ?? "all"}
+          onValueChange={(value) =>
+            table.getColumn("language")?.setFilterValue(value === "all" ? "" : value)
+          }
+        >
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Qualquer Idioma" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos Idiomas</SelectItem>
+            {uniqueLanguages.map(lang => (
+              <SelectItem key={lang} value={lang}>{lang}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="rounded-md border bg-white shadow-sm">
+        <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
@@ -138,6 +231,7 @@ export function DataTable<TData, TValue>({
           >
             Próximo
           </Button>
+        </div>
         </div>
       </div>
     </div>
