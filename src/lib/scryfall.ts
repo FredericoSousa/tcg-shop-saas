@@ -33,7 +33,7 @@ export const scryfall = {
 
     try {
       // Usamos delay conforme docs da API Scryfall recomenda 100ms se fizéssemos muitas, mas para uma única fetch é ok.
-      const response = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&unique=prints`);
+      const response = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&unique=prints&include_multilingual=true`);
 
       if (!response.ok) {
         if (response.status === 404) {
