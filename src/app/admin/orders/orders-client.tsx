@@ -77,16 +77,13 @@ export function OrdersClient({ orders }: { orders: OrderType[] }) {
             <div>
               <div className="flex items-center gap-3 mb-1.5">
                 <h3 className="font-extrabold text-lg tracking-tight">{order.customerName}</h3>
-                <Badge className={`${StatusColors[order.status as OrderStatus]} border-0 font-bold uppercase transition-colors`}>
-                  {StatusT[order.status as OrderStatus]}
-                </Badge>
               </div>
               <div className="text-sm text-muted-foreground font-medium flex flex-wrap items-center gap-2">
                 <span>{order.customerEmail || 'Contado Desconhecido'}</span>
                 <span className="opacity-50">•</span>
                 <span>{new Date(order.createdAt).toLocaleString('pt-BR')}</span>
                 <span className="opacity-50">•</span>
-                <span className="font-mono text-xs bg-muted px-2 py-0.5 rounded">
+                <span className="font-mono text-xs bg-muted/50 text-muted-foreground font-bold px-2 py-0.5 rounded border">
                   #{order.id.slice(-8).toUpperCase()}
                 </span>
               </div>
@@ -106,14 +103,14 @@ export function OrdersClient({ orders }: { orders: OrderType[] }) {
                   disabled={isPending}
                   onValueChange={(val) => handleStatusChange(order.id, val as string)}
                 >
-                  <SelectTrigger className="bg-white font-bold h-10 border-gray-300">
+                  <SelectTrigger className={`font-bold h-9 border-0 text-white uppercase tracking-wider text-xs ${StatusColors[order.status as OrderStatus]}`}>
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PENDING" className="font-medium text-yellow-600">Pendente</SelectItem>
-                    <SelectItem value="PAID" className="font-medium text-green-600">Pago</SelectItem>
-                    <SelectItem value="SHIPPED" className="font-medium text-blue-600">Enviado</SelectItem>
-                    <SelectItem value="CANCELLED" className="font-medium text-red-600">Cancelado</SelectItem>
+                    <SelectItem value="PENDING" className="font-bold text-yellow-600">Pendente</SelectItem>
+                    <SelectItem value="PAID" className="font-bold text-green-600">Pago</SelectItem>
+                    <SelectItem value="SHIPPED" className="font-bold text-blue-600">Enviado</SelectItem>
+                    <SelectItem value="CANCELLED" className="font-bold text-red-600">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -121,8 +118,8 @@ export function OrdersClient({ orders }: { orders: OrderType[] }) {
           </div>
           
           <div className="p-5 bg-white">
-            <h4 className="text-xs uppercase tracking-widest font-black text-muted-foreground mb-4">
-              Resumo da Compra ({order.items.reduce((acc, item) => acc + item.quantity, 0)} itens)
+            <h4 className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
+              Itens da Compra ({order.items.reduce((acc, item) => acc + item.quantity, 0)})
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {order.items.map((item) => (

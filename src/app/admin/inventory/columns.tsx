@@ -39,11 +39,11 @@ export const columns: ColumnDef<InventoryRow>[] = [
         <div className="flex items-center gap-3">
           {template.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={template.imageUrl} alt={template.name} className="w-10 h-14 object-cover rounded" />
+            <img src={template.imageUrl} alt={template.name} className="w-10 h-14 object-cover rounded shrink-0" />
           ) : (
-            <div className="w-10 h-14 bg-gray-200 rounded" />
+            <div className="w-10 h-14 bg-gray-200 rounded shrink-0" />
           )}
-          <span className="font-semibold">{template.name}</span>
+          <span className="font-semibold truncate max-w-[200px]" title={template.name}>{template.name}</span>
         </div>
       )
     }
@@ -76,33 +76,49 @@ export const columns: ColumnDef<InventoryRow>[] = [
     accessorKey: 'price',
     header: ({ column }) => {
       return (
-        <Button
-          variant="ghost"
-          className="-ml-4 hover:bg-transparent"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Preço (R$)
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        <div className="text-right">
+          <Button
+            variant="ghost"
+            className="-mr-4 hover:bg-transparent"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Preço (R$)
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
       )
     },
     cell: ({ row }) => {
       const price = parseFloat(row.getValue('price'))
-      return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)
+      return (
+        <div className="text-right font-mono tabular-nums font-medium">
+          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)}
+        </div>
+      )
     }
   },
   {
     accessorKey: 'quantity',
     header: ({ column }) => {
       return (
-        <Button
-          variant="ghost"
-          className="-ml-4 hover:bg-transparent"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-        >
-          Estoque
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </Button>
+        <div className="text-right">
+          <Button
+            variant="ghost"
+            className="-mr-4 hover:bg-transparent"
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          >
+            Estoque
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      )
+    },
+    cell: ({ row }) => {
+      const quantity = parseInt(row.getValue('quantity'), 10)
+      return (
+        <div className="text-right font-mono tabular-nums font-medium">
+          {quantity}
+        </div>
       )
     }
   }

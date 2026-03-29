@@ -31,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { PackageOpen } from 'lucide-react'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -101,8 +102,8 @@ export function DataTable<TData, TValue>({
             table.getColumn("cardTemplate_set")?.setFilterValue(value === "all" ? "" : value)
           }
         >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Qualquer Edição" />
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Filtrar por Edição" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas Edições</SelectItem>
@@ -118,8 +119,8 @@ export function DataTable<TData, TValue>({
             table.getColumn("condition")?.setFilterValue(value === "all" ? "" : value)
           }
         >
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Qualquer Condição" />
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Filtrar Condição" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todas Condições</SelectItem>
@@ -135,8 +136,8 @@ export function DataTable<TData, TValue>({
             table.getColumn("language")?.setFilterValue(value === "all" ? "" : value)
           }
         >
-          <SelectTrigger className="w-[140px]">
-            <SelectValue placeholder="Qualquer Idioma" />
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="Filtrar Idioma" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos Idiomas</SelectItem>
@@ -182,8 +183,16 @@ export function DataTable<TData, TValue>({
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                Você ainda não possui nenhum card no estoque.
+              <TableCell colSpan={columns.length} className="h-48 text-center">
+                <div className="flex flex-col items-center justify-center text-muted-foreground space-y-3">
+                  <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center">
+                    <PackageOpen className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-lg font-semibold text-foreground">Nenhum card encontrado</p>
+                    <p className="text-sm">Seu estoque está vazio ou a busca não retornou resultados.</p>
+                  </div>
+                </div>
               </TableCell>
             </TableRow>
           )}
