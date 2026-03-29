@@ -174,7 +174,7 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
   return (
     <div className="flex flex-col md:flex-row gap-8 items-start">
       <aside className="w-full md:w-64 shrink-0 bg-white p-4 rounded-xl border shadow-sm sticky top-6">
-        <Accordion type="multiple" defaultValue={["color", "type", "set"]} className="w-full">
+        <Accordion multiple defaultValue={["color", "type", "set"]} className="w-full">
           <AccordionItem value="color" className="border-b-0 pb-2">
             <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">Cores</AccordionTrigger>
             <AccordionContent>
