@@ -3,7 +3,7 @@ import { ScryfallCard } from '@scryfall/api-types'
 type Card = ScryfallCard.Any
 
 interface CacheEntry {
-  data: any;
+  data: unknown;
   expiresAt: number;
 }
 
@@ -28,12 +28,12 @@ export const scryfall = {
     const cached = cache.get(cacheKey);
 
     if (cached && cached.expiresAt > Date.now()) {
-      return cached.data;
+      return cached.data as Card[];
     }
 
     try {
       // Usamos delay conforme docs da API Scryfall recomenda 100ms se fizéssemos muitas, mas para uma única fetch é ok.
-      const response = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&unique=prints`);
 
       if (!response.ok) {
         if (response.status === 404) {
@@ -66,7 +66,7 @@ export const scryfall = {
     const cached = cache.get(cacheKey);
 
     if (cached && cached.expiresAt > Date.now()) {
-      return cached.data;
+      return cached.data as Card;
     }
 
     try {
