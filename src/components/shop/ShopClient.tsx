@@ -3,6 +3,9 @@
 import { useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { useCart } from '@/store/useCart'
+import { CartDrawer } from './CartDrawer'
 
 type ShopItem = {
   id: string;
@@ -26,6 +29,8 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
   const [selectedColor, setSelectedColor] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState<string | null>(null)
   const [selectedSet, setSelectedSet] = useState<string | null>(null)
+  
+  const { addItem } = useCart()
 
   const { data: inventory, isLoading, error } = useQuery({
     queryKey: ['inventory'],
@@ -154,7 +159,7 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
       </aside>
 
       <div className="flex-1">
-        <div className="mb-6 flex justify-end items-center">
+        <div className="mb-6 flex justify-between items-center">
           <span className="text-sm font-medium bg-muted px-3 py-1 rounded-full text-muted-foreground">
             Encontrados: {filteredInventory.length} cards
           </span>
@@ -200,8 +205,7 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
                       {item.language}
                     </span>
                   </div>
-                  <div className="mt-2 pt-2 border-t flex flex-col">
-                    <span className="text-xs text-muted-foreground font-medium mb-1">Por apenas</span>
+                  <div className="mt-2 pt-2 border-t flex flex-col gap-3">
                     <div className="flex items-end justify-between">
                       <span className="font-extrabold text-lg text-primary leading-none">
                         {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}
@@ -210,12 +214,31 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
                         {item.quantity} em estoque
                       </span>
                     </div>
+                    <Button 
+                      size="sm" 
+                      className="w-full font-bold text-xs h-8" 
+                      onClick={() => addItem({
+                        inventoryId: item.id,
+                        name: item.cardTemplate?.name || 'Card',
+                        set: item.cardTemplate?.set || 'N/A',
+                        imageUrl: item.cardTemplate?.imageUrl || null,
+                        price: item.price,
+                        quantity: 1,
+                        maxStock: item.quantity
+                      })}
+                    >
+                      Comprar
+                    </Button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         )}
+      </div>
+
+      <div className="fixed bottom-6 right-6 z-50">
+        <CartDrawer />
       </div>
     </div>
   )

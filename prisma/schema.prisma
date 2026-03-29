@@ -65,10 +65,22 @@ model InventoryItem {
   @@index([tenantId])
 }
 
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  CANCELLED
+}
+
 model Order {
-  id        String   @id @default(cuid())
-  tenantId  String
-  createdAt DateTime @default(now())
+  id            String      @id @default(cuid())
+  tenantId      String
+  customerName  String
+  customerEmail String?
+  totalAmount   Decimal
+  status        OrderStatus @default(PENDING)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   tenant Tenant      @relation(fields: [tenantId], references: [id])
   items  OrderItem[]
