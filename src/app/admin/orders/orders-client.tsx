@@ -62,7 +62,7 @@ export function OrdersClient({ orders }: { orders: OrderType[] }) {
 
   if (orders.length === 0) {
     return (
-      <div className="text-center py-20 bg-white rounded-xl border border-dashed text-muted-foreground shadow-sm">
+      <div className="text-center py-20 bg-card rounded-xl border border-dashed text-muted-foreground shadow-sm">
         <h3 className="text-xl font-bold mb-2">Sem vendas consolidadas</h3>
         <p>A loja ainda não possui registros transacionais no banco de dados.</p>
       </div>
@@ -72,7 +72,7 @@ export function OrdersClient({ orders }: { orders: OrderType[] }) {
   return (
     <div className="space-y-6">
       {orders.map(order => (
-        <div key={order.id} className="bg-white border hover:border-muted transition-colors rounded-xl shadow-sm overflow-hidden">
+        <div key={order.id} className="bg-card border hover:border-muted transition-colors rounded-xl shadow-sm overflow-hidden">
           <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-muted/20 border-b">
             <div>
               <div className="flex items-center gap-3 mb-1.5">
@@ -117,14 +117,14 @@ export function OrdersClient({ orders }: { orders: OrderType[] }) {
             </div>
           </div>
           
-          <div className="p-5 bg-white">
+          <div className="p-5 bg-card">
             <h4 className="text-xs font-semibold text-muted-foreground mb-3 uppercase tracking-wider">
               Itens da Compra ({order.items.reduce((acc, item) => acc + item.quantity, 0)})
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {order.items.map((item) => (
-                <div key={item.id} className="flex items-center gap-3 p-2.5 border rounded-lg bg-gray-50/50 hover:bg-gray-50 transition-colors">
-                  <div className="h-12 w-9 shrink-0 bg-white rounded shadow-sm border overflow-hidden">
+                <div key={item.id} className="flex items-center gap-3 p-2.5 border rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors">
+                  <div className="h-12 w-9 shrink-0 bg-card rounded shadow-sm border overflow-hidden">
                     {item.inventoryItem.cardTemplate?.imageUrl && (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img 
@@ -138,7 +138,9 @@ export function OrdersClient({ orders }: { orders: OrderType[] }) {
                     <p className="text-sm font-bold truncate leading-tight mb-0.5">
                       {item.inventoryItem.cardTemplate?.name}
                     </p>
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-tight">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-tight inline-flex items-center gap-0.5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={`https://svgs.scryfall.io/sets/${item.inventoryItem.cardTemplate?.set?.toLowerCase()}.svg`} alt="" className="h-3 w-3 mr-0.5 dark:invert" />
                       {item.inventoryItem.cardTemplate?.set} <span className="text-gray-300 mx-0.5">•</span> {item.inventoryItem.condition} <span className="text-gray-300 mx-0.5">•</span> {item.inventoryItem.language}
                     </p>
                   </div>

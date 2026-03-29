@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -8,7 +8,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { useCart } from '@/store/useCart'
 import { CartDrawer } from './CartDrawer'
-import { PackageOpen, AlertCircle, Check } from 'lucide-react'
+import { PackageOpen, AlertCircle, Check, ChevronLeft, ChevronRight } from 'lucide-react'
+
+const ITEMS_PER_PAGE = 20
 
 type ShopItem = {
   id: string;
@@ -32,9 +34,10 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
   const [selectedColor, setSelectedColor] = useState<string | null>(null)
   const [selectedType, setSelectedType] = useState<string | null>(null)
   const [selectedSet, setSelectedSet] = useState<string | null>(null)
-  
+
   // Track recently added items for visual feedback
   const [addedItems, setAddedItems] = useState<Record<string, boolean>>({})
+  const [currentPage, setCurrentPage] = useState(1)
 
   const { addItem } = useCart()
 
@@ -90,6 +93,22 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
     })
   }, [inventory, selectedColor, selectedType, selectedSet])
 
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [selectedColor, selectedType, selectedSet])
+
+  const totalPages = Math.max(1, Math.ceil(filteredInventory.length / ITEMS_PER_PAGE))
+  const paginatedItems = filteredInventory.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
+
+  const handlePageChange = useCallback((page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [])
+
   const handleAddToCart = (item: ShopItem) => {
     addItem({
       inventoryId: item.id,
@@ -100,7 +119,7 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
       quantity: 1,
       maxStock: item.quantity
     })
-    
+
     // Show visual feedback
     setAddedItems(prev => ({ ...prev, [item.id]: true }))
     setTimeout(() => {
@@ -229,11 +248,11 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
-        
+
         {(selectedColor || selectedType || selectedSet) && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className="w-full mt-4 text-xs text-muted-foreground"
             onClick={() => {
               setSelectedColor(null)
@@ -249,7 +268,8 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
       <div className="flex-1">
         <div className="mb-6 flex justify-between items-center">
           <span className="text-sm font-medium bg-muted px-3 py-1 rounded-full text-muted-foreground">
-            Encontrados: {filteredInventory.length} cards
+            {filteredInventory.length} {filteredInventory.length === 1 ? 'card' : 'cards'}
+            {totalPages > 1 && <> · Página {currentPage} de {totalPages}</>}
           </span>
         </div>
 
@@ -269,79 +289,136 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {filteredInventory.map((item: ShopItem) => {
-              const stockStatus = item.quantity > 3 ? 'text-green-600 bg-green-50' : 
-                                 item.quantity > 1 ? 'text-amber-600 bg-amber-50' : 
-                                 'text-red-600 bg-red-50';
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+              {paginatedItems.map((item: ShopItem) => {
+                const stockStatus = item.quantity > 3 ? 'text-green-600 bg-green-50' :
+                  item.quantity > 1 ? 'text-amber-600 bg-amber-50' :
+                    'text-red-600 bg-red-50';
 
-              return (
-                <div key={item.id} className="group relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border hover:shadow-lg transition-all hover:-translate-y-1 duration-300">
-                  <div className="aspect-[2/3] w-full bg-muted/30 relative overflow-hidden flex items-center justify-center group-hover:bg-muted/50 transition-colors">
-                    {item.cardTemplate?.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={item.cardTemplate.imageUrl}
-                        alt={item.cardTemplate.name}
-                        className="object-cover w-full h-full"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60 text-xs font-medium space-y-2">
-                        <div className="w-12 h-16 border-2 border-dashed border-muted-foreground/30 rounded flex items-center justify-center">
-                          ?
+                return (
+                  <div key={item.id} className="group relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border hover:shadow-lg transition-all hover:-translate-y-1 duration-300">
+                    <div className="aspect-[2/3] w-full bg-muted/30 relative overflow-hidden flex items-center justify-center group-hover:bg-muted/50 transition-colors">
+                      {item.cardTemplate?.imageUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={item.cardTemplate.imageUrl}
+                          alt={item.cardTemplate.name}
+                          className="object-cover w-full h-full"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60 text-xs font-medium space-y-2">
+                          <div className="w-12 h-16 border-2 border-dashed border-muted-foreground/30 rounded flex items-center justify-center">
+                            ?
+                          </div>
+                          <span>Sem Imagem</span>
                         </div>
-                        <span>Sem Imagem</span>
-                      </div>
-                    )}
-                    {item.cardTemplate?.metadata?.foil && (
-                      <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-300 to-amber-500 text-black text-[10px] font-bold px-2 py-0.5 rounded shadow z-10">
-                        FOIL
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-4 flex flex-col gap-1.5 flex-1">
-                    <h3 className="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem]" title={item.cardTemplate?.name}>
-                      {item.cardTemplate?.name}
-                    </h3>
-                    <div className="flex items-center flex-wrap gap-1 mt-auto">
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200 truncate max-w-[80px]" title={item.cardTemplate?.set || ''}>
-                        {item.cardTemplate?.set}
-                      </span>
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200" title="Condição">
-                        {item.condition === 'NM' ? '🌟 NM' : item.condition === 'SP' ? '⭐ SP' : item.condition}
-                      </span>
-                      <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200" title="Idioma">
-                        {item.language === 'PT' ? '🇧🇷 PT' : item.language === 'EN' ? '🇺🇸 EN' : item.language}
-                      </span>
+                      )}
+                      {item.cardTemplate?.metadata?.foil && (
+                        <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-300 to-amber-500 text-black text-[10px] font-bold px-2 py-0.5 rounded shadow z-10">
+                          FOIL
+                        </div>
+                      )}
                     </div>
-                    <div className="mt-2 pt-2 border-t flex flex-col gap-3">
-                      <div className="flex flex-col">
-                        <span className="font-extrabold text-lg text-primary leading-none mb-1">
-                          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}
+                    <div className="p-4 flex flex-col gap-1.5 flex-1">
+                      <h3 className="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem]" title={item.cardTemplate?.name}>
+                        {item.cardTemplate?.name}
+                      </h3>
+                      <div className="flex items-center flex-wrap gap-1 mt-auto">
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200 truncate max-w-[100px] inline-flex items-center gap-1 cursor-default" title={(item.cardTemplate?.metadata as any)?.set_name || item.cardTemplate?.set || ''}>
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={`https://svgs.scryfall.io/sets/${item.cardTemplate?.set?.toLowerCase()}.svg`} alt="" className="h-3 w-3" />
+                          {item.cardTemplate?.set}
                         </span>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded w-fit ${stockStatus}`}>
-                          {item.quantity} em estoque
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200" title="Condição">
+                          {item.condition === 'NM' ? '🌟 NM' : item.condition === 'SP' ? '⭐ SP' : item.condition}
+                        </span>
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200" title="Idioma">
+                          {item.language === 'PT' ? '🇧🇷 PT' : item.language === 'EN' ? '🇺🇸 EN' : item.language}
                         </span>
                       </div>
-                      <Button 
-                        size="sm" 
-                        variant={addedItems[item.id] ? "default" : "default"}
-                        className={`w-full font-bold text-xs h-8 transition-all ${addedItems[item.id] ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
-                        onClick={() => handleAddToCart(item)}
+                      <div className="mt-2 pt-2 border-t flex flex-col gap-3">
+                        <div className="flex flex-col">
+                          <span className="font-extrabold text-lg text-primary leading-none mb-1">
+                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}
+                          </span>
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded w-fit ${stockStatus}`}>
+                            {item.quantity} em estoque
+                          </span>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant={addedItems[item.id] ? "default" : "default"}
+                          className={`w-full font-bold text-xs h-8 transition-all ${addedItems[item.id] ? 'bg-green-600 hover:bg-green-700 text-white' : ''}`}
+                          onClick={() => handleAddToCart(item)}
+                        >
+                          {addedItems[item.id] ? (
+                            <span className="flex items-center gap-1"><Check className="w-3 h-3" /> Adicionado</span>
+                          ) : (
+                            'Comprar'
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-10">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    // Show first, last, current, and neighbors
+                    if (page === 1 || page === totalPages) return true
+                    if (Math.abs(page - currentPage) <= 1) return true
+                    return false
+                  })
+                  .reduce<(number | 'ellipsis')[]>((acc, page, idx, arr) => {
+                    if (idx > 0 && page - (arr[idx - 1] as number) > 1) acc.push('ellipsis')
+                    acc.push(page)
+                    return acc
+                  }, [])
+                  .map((item, idx) =>
+                    item === 'ellipsis' ? (
+                      <span key={`e-${idx}`} className="px-1 text-muted-foreground text-sm">…</span>
+                    ) : (
+                      <Button
+                        key={item}
+                        variant={currentPage === item ? 'default' : 'outline'}
+                        size="icon"
+                        className="h-9 w-9 text-sm font-bold"
+                        onClick={() => handlePageChange(item as number)}
                       >
-                        {addedItems[item.id] ? (
-                          <span className="flex items-center gap-1"><Check className="w-3 h-3" /> Adicionado</span>
-                        ) : (
-                          'Comprar'
-                        )}
+                        {item}
                       </Button>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+                    )
+                  )}
+
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </>
         )}
       </div>
 

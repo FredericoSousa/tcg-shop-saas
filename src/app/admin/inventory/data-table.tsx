@@ -9,6 +9,7 @@ import {
   getFilteredRowModel,
   SortingState,
   ColumnFiltersState,
+  RowSelectionState,
   useReactTable,
 } from '@tanstack/react-table'
 import * as React from 'react'
@@ -31,7 +32,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { PackageOpen } from 'lucide-react'
+import { PackageOpen, Trash2, X, Loader2 } from 'lucide-react'
+import { deleteInventoryItems } from '@/app/actions/inventory'
+import { toast } from 'sonner'
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
@@ -44,6 +47,8 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({})
+  const [isDeleting, setIsDeleting] = React.useState(false)
 
   const uniqueSets = React.useMemo(() => {
     const sets = new Set<string>()
@@ -78,11 +83,38 @@ export function DataTable<TData, TValue>({
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
+    onRowSelectionChange: setRowSelection,
     state: {
       sorting,
       columnFilters,
+      rowSelection,
     },
   })
+
+  const selectedCount = table.getFilteredSelectedRowModel().rows.length
+  const hasActiveFilters = columnFilters.length > 0 || (table.getColumn('cardTemplate_name')?.getFilterValue() as string)
+
+  const handleBulkDelete = async () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows
+    const ids = selectedRows.map((row) => (row.original as any).id)
+
+    if (!confirm(`Tem certeza de que deseja excluir ${ids.length} item(ns) do estoque?`)) return
+
+    setIsDeleting(true)
+    try {
+      await deleteInventoryItems(ids)
+      toast.success(`${ids.length} item(ns) removido(s) com sucesso.`)
+      setRowSelection({})
+    } catch {
+      toast.error('Erro ao excluir itens selecionados.')
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleClearFilters = () => {
+    table.resetColumnFilters()
+  }
 
   return (
     <div>
@@ -146,8 +178,34 @@ export function DataTable<TData, TValue>({
             ))}
           </SelectContent>
         </Select>
+
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={handleClearFilters} className="h-10 text-muted-foreground hover:text-foreground">
+            <X className="h-4 w-4 mr-1" />
+            Limpar Filtros
+          </Button>
+        )}
       </div>
-      <div className="rounded-md border bg-white shadow-sm">
+
+      {selectedCount > 0 && (
+        <div className="flex items-center gap-3 bg-primary/5 border border-primary/20 rounded-lg px-4 py-2.5 mb-2">
+          <span className="text-sm font-medium text-primary">
+            {selectedCount} {selectedCount === 1 ? 'item selecionado' : 'itens selecionados'}
+          </span>
+          <Button
+            variant="destructive"
+            size="sm"
+            onClick={handleBulkDelete}
+            disabled={isDeleting}
+            className="ml-auto"
+          >
+            {isDeleting ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Trash2 className="h-4 w-4 mr-1" />}
+            {isDeleting ? 'Excluindo...' : 'Excluir Selecionados'}
+          </Button>
+        </div>
+      )}
+
+      <div className="rounded-md border bg-card shadow-sm">
         <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (

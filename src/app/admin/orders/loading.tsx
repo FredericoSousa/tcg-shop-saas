@@ -3,7 +3,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 export default function OrdersLoading() {
   return (
     <div className="flex flex-col gap-6 max-w-7xl w-full mx-auto">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card p-6 rounded-xl border shadow-sm">
         <div className="flex items-center gap-4">
           <Skeleton className="w-14 h-14 rounded-lg" />
           <div>
@@ -13,7 +13,7 @@ export default function OrdersLoading() {
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border p-4 md:p-6 space-y-6">
+      <div className="bg-card rounded-xl shadow-sm border p-4 md:p-6 space-y-6">
         {[1, 2, 3].map((i) => (
           <div key={i} className="border rounded-xl shadow-sm overflow-hidden">
             <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-muted/20 border-b">

@@ -1,6 +1,7 @@
 'use client'
 
-import { Menu, Package2, Search, User } from "lucide-react"
+import { Menu, Package2, Search, User, Sun, Moon } from "lucide-react"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger, SheetTitle, SheetHeader } from "@/components/ui/sheet"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu"
@@ -17,6 +18,7 @@ const sidebarItems = [
 
 export function Navbar() {
   const pathname = usePathname()
+  const { setTheme, theme } = useTheme()
 
   // Find current page name for breadcrumb title
   const currentItem = sidebarItems.find(item =>
@@ -73,6 +75,12 @@ export function Navbar() {
           {currentItem?.name || 'Painel de Controle'}
         </h1>
       </div>
+
+      <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+        <Sun className="h-5 w-5 dark:hidden" />
+        <Moon className="hidden h-5 w-5 dark:block" />
+        <span className="sr-only">Mudar Tema</span>
+      </Button>
 
       <DropdownMenu>
         <DropdownMenuTrigger render={<Button variant="secondary" size="icon" className="rounded-full border shadow-sm" />}>

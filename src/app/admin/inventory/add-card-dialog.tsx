@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Loader2 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { searchScryfallServer } from '@/app/actions/scryfall'
 import { addInventoryItem } from '@/app/actions/inventory'
@@ -64,9 +65,10 @@ export function AddCardDialog() {
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleSearch()}
+              autoFocus
             />
-            <Button onClick={handleSearch} disabled={isSearching}>
-              {isSearching ? 'Buscando...' : 'Buscar'}
+            <Button onClick={handleSearch} disabled={isSearching} className="w-24">
+              {isSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Buscar'}
             </Button>
           </div>
 
@@ -93,7 +95,7 @@ export function AddCardDialog() {
                           onChange={() => setSelectedCardId(card.id)}
                           required
                         />
-                        <div className="w-12 h-16 relative bg-gray-200 rounded shrink-0">
+                        <div className="w-12 h-16 relative bg-muted rounded shrink-0">
                           {imageUrl && (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img src={imageUrl} alt={card.name} className="object-cover rounded w-full h-full" />

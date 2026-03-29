@@ -15,10 +15,34 @@ export type InventoryRow = {
     name: string
     set: string
     imageUrl: string | null
+    metadata?: Record<string, unknown> | null
   }
 }
 
 export const columns: ColumnDef<InventoryRow>[] = [
+  {
+    id: 'select',
+    header: ({ table }) => (
+      <input
+        type="checkbox"
+        className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+        checked={table.getIsAllPageRowsSelected()}
+        onChange={(e) => table.toggleAllPageRowsSelected(!!e.target.checked)}
+        aria-label="Selecionar todos"
+      />
+    ),
+    cell: ({ row }) => (
+      <input
+        type="checkbox"
+        className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+        checked={row.getIsSelected()}
+        onChange={(e) => row.toggleSelected(!!e.target.checked)}
+        aria-label="Selecionar linha"
+      />
+    ),
+    enableSorting: false,
+    enableHiding: false,
+  },
   {
     accessorKey: 'cardTemplate.name',
     header: ({ column }) => {
@@ -41,7 +65,7 @@ export const columns: ColumnDef<InventoryRow>[] = [
             // eslint-disable-next-line @next/next/no-img-element
             <img src={template.imageUrl} alt={template.name} className="w-10 h-14 object-cover rounded shrink-0" />
           ) : (
-            <div className="w-10 h-14 bg-gray-200 rounded shrink-0" />
+            <div className="w-10 h-14 bg-muted rounded shrink-0" />
           )}
           <span className="font-semibold truncate max-w-[200px]" title={template.name}>{template.name}</span>
         </div>
@@ -62,7 +86,17 @@ export const columns: ColumnDef<InventoryRow>[] = [
         </Button>
       )
     },
-    cell: ({ row }) => <Badge variant="outline">{row.original.cardTemplate.set}</Badge>
+    cell: ({ row }) => {
+      const meta = row.original.cardTemplate.metadata as Record<string, unknown> | undefined
+      const setName = (meta?.set_name as string) || row.original.cardTemplate.set
+      return (
+        <Badge variant="outline" className="gap-1.5 cursor-default" title={setName}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`https://svgs.scryfall.io/sets/${row.original.cardTemplate.set.toLowerCase()}.svg`} alt="" className="h-3.5 w-3.5 dark:invert" />
+          {row.original.cardTemplate.set}
+        </Badge>
+      )
+    }
   },
   {
     accessorKey: 'condition',

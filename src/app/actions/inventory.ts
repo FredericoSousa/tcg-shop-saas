@@ -66,3 +66,25 @@ export async function addInventoryItem(formData: FormData) {
 
   revalidatePath('/admin/inventory')
 }
+
+export async function deleteInventoryItems(ids: string[]) {
+  const headersList = await headers()
+  const tenantId = headersList.get('x-tenant-id')
+
+  if (!tenantId) {
+    throw new Error('Unauthorized: Tenant ID missing')
+  }
+
+  if (!ids.length) {
+    throw new Error('No items selected')
+  }
+
+  await prisma.inventoryItem.deleteMany({
+    where: {
+      id: { in: ids },
+      tenantId, // Ensure tenant isolation
+    },
+  })
+
+  revalidatePath('/admin/inventory')
+}

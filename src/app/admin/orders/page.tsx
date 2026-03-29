@@ -9,7 +9,7 @@ export default async function OrdersPage() {
 
   if (!tenantId) {
     return (
-      <div className="flex flex-col items-center justify-center p-12 bg-white rounded-xl border border-dashed text-center">
+      <div className="flex flex-col items-center justify-center p-12 bg-card rounded-xl border border-dashed text-center">
         <h1 className="text-2xl font-bold text-destructive mb-2">Falha de Autorização</h1>
         <p className="text-muted-foreground">Esta página requer identificação de Lojista vinculada ao subdomínio ou sessão ativa.</p>
       </div>
@@ -48,7 +48,7 @@ export default async function OrdersPage() {
 
   return (
     <div className="flex flex-col gap-6 max-w-7xl w-full mx-auto">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-xl border shadow-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card p-6 rounded-xl border shadow-sm">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-primary/10 rounded-lg shrink-0">
             <ShoppingCart className="w-8 h-8 text-primary" />
@@ -62,7 +62,7 @@ export default async function OrdersPage() {
         </div>
       </div>
       
-      <div className="bg-white rounded-xl shadow-sm border p-4 md:p-6">
+      <div className="bg-card rounded-xl shadow-sm border p-4 md:p-6">
         <OrdersClient orders={formattedOrders} />
       </div>
     </div>
