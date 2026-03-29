@@ -14,18 +14,45 @@ export async function updateOrderStatus(orderId: string, status: OrderStatus) {
   }
 
   try {
-    const updated = await prisma.order.update({
-      where: {
-        id: orderId,
-        tenantId, // Garantia de segurança (O tenant só mexe na própria ordem)
-      },
-      data: {
-        status,
+    // If cancelling, restore inventory quantities in a transaction
+    if (status === 'CANCELLED') {
+      const order = await prisma.order.findUnique({
+        where: { id: orderId, tenantId },
+        include: { items: true },
+      })
+
+      if (!order) {
+        return { success: false, error: 'Pedido não encontrado.' }
       }
-    })
-    
+
+      if (order.status === 'CANCELLED') {
+        return { success: false, error: 'Pedido já está cancelado.' }
+      }
+
+      await prisma.$transaction([
+        // Restore each item's quantity to inventory
+        ...order.items.map((item) =>
+          prisma.inventoryItem.update({
+            where: { id: item.inventoryItemId },
+            data: { quantity: { increment: item.quantity } },
+          })
+        ),
+        // Update order status
+        prisma.order.update({
+          where: { id: orderId, tenantId },
+          data: { status },
+        }),
+      ])
+    } else {
+      await prisma.order.update({
+        where: { id: orderId, tenantId },
+        data: { status },
+      })
+    }
+
     revalidatePath('/admin/orders')
-    return { success: true, order: updated }
+    revalidatePath('/admin/inventory')
+    return { success: true }
   } catch (err: unknown) {
     const error = err as Error
     console.error('[Orders API]', error.message)
