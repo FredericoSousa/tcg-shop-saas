@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Game {
+  MAGIC
+  POKEMON
+  YUGIOH
+}
+
+enum Condition {
+  NM
+  SP
+  MP
+  HP
+  D
+}
+
+enum Language {
+  EN
+  PT
+  JP
+}
+
+model Tenant {
+  id     String  @id @default(cuid())
+  slug   String  @unique
+  name   String
+  active Boolean @default(true)
+
+  inventory InventoryItem[]
+  orders    Order[]
+}
+
+model CardTemplate {
+  id       String  @id @default(cuid())
+  name     String
+  set      String
+  imageUrl String?
+  game     Game
+  metadata Json?
+
+  inventory InventoryItem[]
+
+  @@index([name])
+}
+
+model InventoryItem {
+  id             String    @id @default(cuid())
+  tenantId       String
+  cardTemplateId String
+  price          Decimal
+  quantity       Int       @default(0)
+  condition      Condition
+  language       Language
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id])
+  cardTemplate CardTemplate @relation(fields: [cardTemplateId], references: [id])
+  orderItems   OrderItem[]
+
+  @@index([tenantId])
+}
+
+model Order {
+  id        String   @id @default(cuid())
+  tenantId  String
+  createdAt DateTime @default(now())
+
+  tenant Tenant      @relation(fields: [tenantId], references: [id])
+  items  OrderItem[]
+
+  @@index([tenantId])
+}
+
+model OrderItem {
+  id              String  @id @default(cuid())
+  orderId         String
+  inventoryItemId String
+  quantity        Int
+  priceAtPurchase Decimal
+
+  order         Order         @relation(fields: [orderId], references: [id])
+  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+}
