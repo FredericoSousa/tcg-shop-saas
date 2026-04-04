@@ -46,6 +46,11 @@ export default async function ShopPage(props: {
   return (
     <main className="flex-1">
       <div className="container mx-auto px-4 py-8 md:py-12">
+        <header className="mb-8 md:mb-10">
+          <h1 className="text-3xl font-black tracking-tight lg:text-4xl text-foreground">Singles</h1>
+          <p className="text-muted-foreground mt-2 text-lg">Encontre o card perfeito para o seu deck</p>
+        </header>
+
         <ShopClient 
           tenantId={tenantId} 
           initialInventory={inventory} 

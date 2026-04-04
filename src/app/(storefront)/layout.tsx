@@ -18,8 +18,8 @@ export default async function StorefrontLayout({
     });
   }
 
-  const customStyles = tenant?.brandColor 
-    ? ({ "--primary": tenant.brandColor } as React.CSSProperties) 
+  const customStyles = tenant?.brandColor
+    ? ({ "--primary": tenant.brandColor } as React.CSSProperties)
     : {};
 
   return (
@@ -28,6 +28,11 @@ export default async function StorefrontLayout({
       <div className="flex-1 flex flex-col">
         {children}
       </div>
+      {/* Footer */}
+      <footer className="bg-zinc-950 text-zinc-400 text-center py-8 text-sm font-medium">
+        <p>© {new Date().getFullYear()} {tenant?.name}. Todos os direitos reservados.</p>
+        <p className="mt-1 text-zinc-600">Powered by TCG Shop SaaS</p>
+      </footer>
     </div>
   );
 }

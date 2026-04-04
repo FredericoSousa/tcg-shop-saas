@@ -199,12 +199,6 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="bg-zinc-950 text-zinc-400 text-center py-8 text-sm font-medium">
-        <p>© {new Date().getFullYear()} {shopName}. Todos os direitos reservados.</p>
-        <p className="mt-1 text-zinc-600">Powered by TCG Shop SaaS</p>
-      </footer>
     </main>
   )
 }
