@@ -102,7 +102,7 @@ export function AddCardDialog() {
                           )}
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-semibold">{card.name}</span>
+                          <span className="font-semibold">{(card as any).printed_name ?? card.name}</span>
                           <span className="text-xs text-muted-foreground">{card.set_name} ({card.set.toUpperCase()})</span>
                         </div>
                       </label>

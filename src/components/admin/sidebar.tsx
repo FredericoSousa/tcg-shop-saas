@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Package, ShoppingCart, Settings } from "lucide-react"
+import { LayoutDashboard, Package, ShoppingCart, Settings, Upload } from "lucide-react"
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -27,7 +27,7 @@ export function Sidebar() {
           <nav className="grid items-start px-2 text-sm font-medium lg:px-4 space-y-1">
             {sidebarItems.map((item) => {
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
-              
+
               // Evitar que /admin matche sub-páginas se estiver no Dashboard raiz (mas não temos dashboard ainda)
               const isStrictActive = item.href === '/admin' ? pathname === '/admin' : isActive
 
@@ -35,11 +35,10 @@ export function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${
-                    isStrictActive
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 transition-all hover:text-primary ${isStrictActive
                       ? "bg-muted text-primary font-semibold"
                       : "text-muted-foreground"
-                  }`}
+                    }`}
                 >
                   <item.icon className="h-4 w-4" />
                   {item.name}

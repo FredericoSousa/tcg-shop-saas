@@ -3,6 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { DataTable } from './data-table'
 import { columns } from './columns'
 import { AddCardDialog } from './add-card-dialog'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Upload } from 'lucide-react'
 
 export default async function InventoryPage() {
   const headersList = await headers()
@@ -52,7 +55,15 @@ export default async function InventoryPage() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">Gestão de Estoque</h1>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">Gerencie o inventário da loja <span className="font-semibold text-foreground">{tenant?.name || 'sua loja'}</span>.</p>
         </div>
-        <AddCardDialog />
+        <div className="flex items-center gap-2">
+          <Link href="/admin/inventory/bulk-import">
+            <Button variant="outline" className="gap-2">
+              <Upload className="h-4 w-4" />
+              Importar em Massa
+            </Button>
+          </Link>
+          <AddCardDialog />
+        </div>
       </div>
       
       <div className="bg-card rounded-xl shadow-sm border p-4 md:p-6 overflow-hidden">

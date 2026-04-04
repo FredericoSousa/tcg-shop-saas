@@ -2,6 +2,7 @@ import { headers } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { ShoppingBag, Sparkles, Shield, Truck } from 'lucide-react'
+import { SetBadge } from '@/components/ui/set-badge'
 
 export default async function HomePage() {
   const headersList = await headers()
@@ -136,10 +137,13 @@ export default async function HomePage() {
                 <div className="p-3">
                   <h3 className="font-bold text-sm leading-tight line-clamp-1">{item.cardTemplate?.name}</h3>
                   <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border inline-flex items-center gap-1">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`https://svgs.scryfall.io/sets/${item.cardTemplate?.set?.toLowerCase()}.svg`} alt="" className="h-3 w-3" />
-                      {item.cardTemplate?.set}
+                    <span className="text-[10px] font-semibold px-1 py-0.5 bg-muted rounded border inline-flex items-center justify-center">
+                      <SetBadge 
+                        setCode={item.cardTemplate?.set || ''} 
+                        className="gap-1"
+                        iconClassName="h-3 w-3" 
+                        textClassName="text-[10px] font-semibold text-foreground tracking-normal m-0 p-0"
+                      />
                     </span>
                     <span className="font-extrabold text-sm text-primary">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(item.price))}

@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion'
 import { useCart } from '@/store/useCart'
 import { CartDrawer } from './CartDrawer'
+import { SetBadge } from '@/components/ui/set-badge'
 import { PackageOpen, AlertCircle, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 
 const ITEMS_PER_PAGE = 20
@@ -326,10 +327,13 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
                         {item.cardTemplate?.name}
                       </h3>
                       <div className="flex items-center flex-wrap gap-1 mt-auto">
-                        <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200 truncate max-w-[100px] inline-flex items-center gap-1 cursor-default" title={(item.cardTemplate?.metadata as any)?.set_name || item.cardTemplate?.set || ''}>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={`https://svgs.scryfall.io/sets/${item.cardTemplate?.set?.toLowerCase()}.svg`} alt="" className="h-3 w-3" />
-                          {item.cardTemplate?.set}
+                        <span className="text-[10px] font-semibold px-1 py-0.5 bg-muted rounded border border-gray-200 truncate max-w-[100px] flex items-center justify-center cursor-default" title={(item.cardTemplate?.metadata as any)?.set_name || item.cardTemplate?.set || ''}>
+                          <SetBadge 
+                            setCode={item.cardTemplate?.set || ''} 
+                            className="gap-1" 
+                            iconClassName="h-3 w-3"
+                            textClassName="text-[10px] font-semibold text-foreground tracking-normal m-0 p-0"
+                          />
                         </span>
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200" title="Condição">
                           {item.condition === 'NM' ? '🌟 NM' : item.condition === 'SP' ? '⭐ SP' : item.condition}

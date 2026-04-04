@@ -4,6 +4,7 @@ import { ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ArrowUpDown } from 'lucide-react'
+import { SetBadge } from '@/components/ui/set-badge'
 
 export type InventoryRow = {
   id: string
@@ -90,10 +91,8 @@ export const columns: ColumnDef<InventoryRow>[] = [
       const meta = row.original.cardTemplate.metadata as Record<string, unknown> | undefined
       const setName = (meta?.set_name as string) || row.original.cardTemplate.set
       return (
-        <Badge variant="outline" className="gap-1.5 cursor-default" title={setName}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={`https://svgs.scryfall.io/sets/${row.original.cardTemplate.set.toLowerCase()}.svg`} alt="" className="h-3.5 w-3.5 dark:invert" />
-          {row.original.cardTemplate.set}
+        <Badge variant="outline" className="gap-0 cursor-default p-0 px-2" title={setName}>
+          <SetBadge setCode={row.original.cardTemplate.set} />
         </Badge>
       )
     }

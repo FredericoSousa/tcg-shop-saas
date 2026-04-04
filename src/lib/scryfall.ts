@@ -44,7 +44,13 @@ export const scryfall = {
       }
 
       const data: { data?: Card[] } = await response.json();
-      const results = data.data || [];
+      const results = data.data?.reduce((cards: Card[], card: Card) => {
+        const alreadyExists = cards.find(c => c.set_id === card.set_id && c.name === card.name)
+        if (!alreadyExists) {
+          return [...cards, card]
+        }
+        return cards
+      }, []) ?? [];
 
       cache.set(cacheKey, {
         data: results,

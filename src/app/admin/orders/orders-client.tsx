@@ -4,6 +4,7 @@ import { useTransition } from 'react'
 import { updateOrderStatus } from '@/app/actions/orders'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { SetBadge } from '@/components/ui/set-badge'
 import { toast } from 'sonner'
 import { OrderStatus } from '@prisma/client'
 
@@ -138,11 +139,16 @@ export function OrdersClient({ orders }: { orders: OrderType[] }) {
                     <p className="text-sm font-bold truncate leading-tight mb-0.5">
                       {item.inventoryItem.cardTemplate?.name}
                     </p>
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-tight inline-flex items-center gap-0.5">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={`https://svgs.scryfall.io/sets/${item.inventoryItem.cardTemplate?.set?.toLowerCase()}.svg`} alt="" className="h-3 w-3 mr-0.5 dark:invert" />
-                      {item.inventoryItem.cardTemplate?.set} <span className="text-gray-300 mx-0.5">•</span> {item.inventoryItem.condition} <span className="text-gray-300 mx-0.5">•</span> {item.inventoryItem.language}
-                    </p>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <SetBadge
+                        setCode={item.inventoryItem.cardTemplate?.set || ''}
+                        iconClassName="h-3 w-3 dark:invert"
+                        textClassName="text-[10px] m-0 leading-none text-foreground"
+                      />
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-tight inline-flex items-center gap-0.5">
+                        <span className="text-gray-300 mx-0.5">•</span> {item.inventoryItem.condition} <span className="text-gray-300 mx-0.5">•</span> {item.inventoryItem.language}
+                      </span>
+                    </div>
                   </div>
                   <div className="text-right shrink-0 min-w-16">
                     <p className="text-sm font-black">{item.quantity}x</p>
