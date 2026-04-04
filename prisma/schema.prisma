@@ -27,10 +27,11 @@ enum Language {
 }
 
 model Tenant {
-  id     String  @id @default(cuid())
-  slug   String  @unique
-  name   String
-  active Boolean @default(true)
+  id         String  @id @default(cuid())
+  slug       String  @unique
+  name       String
+  active     Boolean @default(true)
+  brandColor String?
 
   inventory InventoryItem[]
   orders    Order[]

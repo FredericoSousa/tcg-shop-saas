@@ -43,7 +43,7 @@ type ShopItem = {
   } | null;
 };
 
-export function ShopClient({ tenantId }: { tenantId: string }) {
+export function ShopClient({ tenantId, initialInventory }: { tenantId: string, initialInventory: any[] }) {
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedSet, setSelectedSet] = useState<string | null>(null);
@@ -69,6 +69,8 @@ export function ShopClient({ tenantId }: { tenantId: string }) {
       if (!res.ok) throw new Error("Failed to fetch");
       return res.json();
     },
+    initialData: initialInventory,
+    staleTime: 60000,
   });
 
   const { colors, types, sets } = useMemo(() => {

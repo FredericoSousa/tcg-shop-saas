@@ -6,8 +6,16 @@ import { AddCardDialog } from "./add-card-dialog";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Upload } from "lucide-react";
+import { getInventoryPaginated } from "@/lib/services/inventory.service";
 
-export default async function InventoryPage() {
+export default async function InventoryPage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const searchParams = await props.searchParams;
+  const page = Number(searchParams?.page) || 1;
+  const limit = Number(searchParams?.limit) || 10;
+  const search = typeof searchParams?.search === "string" ? searchParams.search : undefined;
+
   const headersList = await headers();
   const tenantId = headersList.get("x-tenant-id");
 
@@ -29,15 +37,7 @@ export default async function InventoryPage() {
     where: { id: tenantId },
   });
 
-  const rawInventory = await prisma.inventoryItem.findMany({
-    where: { tenantId },
-    include: {
-      cardTemplate: true,
-    },
-    orderBy: {
-      cardTemplate: { name: "asc" },
-    },
-  });
+  const { items: rawInventory, total, pageCount } = await getInventoryPaginated(tenantId, page, limit, search);
 
   const inventory = rawInventory.map((item) => ({
     id: item.id,
@@ -80,7 +80,7 @@ export default async function InventoryPage() {
       </div>
 
       <div className="bg-card rounded-lg shadow-sm border p-3 md:p-4 overflow-hidden">
-        <DataTable columns={columns} data={inventory} />
+        <DataTable columns={columns} data={inventory} pageCount={pageCount} />
       </div>
     </div>
   );

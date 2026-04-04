@@ -11,7 +11,9 @@ import {
   ColumnFiltersState,
   RowSelectionState,
   useReactTable,
+  PaginationState,
 } from "@tanstack/react-table";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
@@ -46,12 +48,18 @@ import { toast } from "sonner";
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
+  pageCount?: number;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
+  pageCount,
 }: DataTableProps<TData, TValue>) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     [],
@@ -83,9 +91,31 @@ export function DataTable<TData, TValue>({
     return Array.from(langs).sort();
   }, [data]);
 
+  const [{ pageIndex, pageSize }, setPagination] = React.useState<PaginationState>({
+    pageIndex: searchParams ? Number(searchParams.get("page") || 1) - 1 : 0,
+    pageSize: searchParams ? Number(searchParams.get("limit") || 10) : 10,
+  });
+
+  const pagination = React.useMemo(
+    () => ({
+      pageIndex,
+      pageSize,
+    }),
+    [pageIndex, pageSize]
+  );
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(searchParams?.toString() || "");
+    params.set("page", (pageIndex + 1).toString());
+    params.set("limit", pageSize.toString());
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [pageIndex, pageSize, pathname, router]);
+
   const table = useReactTable({
     data,
     columns,
+    pageCount: pageCount,
+    manualPagination: pageCount !== undefined,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -93,10 +123,12 @@ export function DataTable<TData, TValue>({
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
     state: {
       sorting,
       columnFilters,
       rowSelection,
+      pagination,
     },
   });
 

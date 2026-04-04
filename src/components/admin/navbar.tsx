@@ -44,15 +44,15 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b border-border/50 bg-gradient-to-r from-background to-background/95 backdrop-blur-md px-4 lg:h-[70px] lg:px-6 shadow-sm">
       <Sheet>
-        <SheetTrigger>
+        <SheetTrigger render={
           <Button
             variant="ghost"
             size="icon"
             className="shrink-0 md:hidden hover:bg-muted/60"
-          >
-            <Menu className="h-5 w-5" />
-            <span className="sr-only">Toggle navigation menu</span>
-          </Button>
+          />
+        }>
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle navigation menu</span>
         </SheetTrigger>
         <SheetContent side="left" className="flex flex-col p-0">
           <SheetHeader className="border-b border-border/30 px-6 py-5">

@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { ShopClient } from "@/components/shop/ShopClient";
 import { Sparkles } from "lucide-react";
+import { getStorefrontInventory } from "@/lib/services/inventory.service";
 
 export default async function ShopPage() {
   const headersList = await headers();
@@ -27,8 +28,16 @@ export default async function ShopPage() {
     where: { id: tenantId },
   });
 
+  const inventory = await getStorefrontInventory(tenantId);
+
+  // Convert hex to HSL if needed, or simply pass hex if CSS variables in the project support it.
+  // Assuming the project is set up with Tailwind where --primary needs HSL, or just overriding the style.
+  const customStyles = tenant?.brandColor 
+    ? ({ "--primary": tenant.brandColor } as React.CSSProperties) 
+    : {};
+
   return (
-    <main className="flex-1 bg-background min-h-screen">
+    <main className="flex-1 bg-background min-h-screen" style={customStyles}>
       {/* Hero Section */}
       <div className="relative bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white overflow-hidden shadow-2xl">
         {/* Animated background elements */}
@@ -71,7 +80,7 @@ export default async function ShopPage() {
 
       {/* Shop Content */}
       <div className="container mx-auto px-4 py-16 md:py-20">
-        <ShopClient tenantId={tenantId} />
+        <ShopClient tenantId={tenantId} initialInventory={inventory} />
       </div>
     </main>
   );
