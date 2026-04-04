@@ -13,6 +13,14 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
 import { useCart } from "@/store/useCart";
 import { CartDrawer } from "./CartDrawer";
 import { SetBadge } from "@/components/ui/set-badge";
@@ -23,10 +31,14 @@ import {
   ChevronLeft,
   ChevronRight,
   ShoppingCart,
+  Filter,
+  Search,
 } from "lucide-react";
 import Image from "next/image";
 
 const ITEMS_PER_PAGE = 20;
+
+
 
 type ShopItem = {
   id: string;
@@ -66,12 +78,21 @@ export function ShopClient({
   const searchParams = useSearchParams();
 
   // Extract selected filters from searchParams
-  const selectedColor = searchParams.get("color");
+  const selectedColors = searchParams.get("color")?.split(",") || [];
   const selectedType = searchParams.get("type");
   const selectedSet = searchParams.get("set");
+  const searchQuery = searchParams.get("q") || "";
+  const sortOption = searchParams.get("sort") || "name_asc";
 
   // Track recently added items for visual feedback
   const [addedItems, setAddedItems] = useState<Record<string, boolean>>({});
+  const [setSearch, setSetSearch] = useState("");
+  const [localQuery, setLocalQuery] = useState(searchQuery);
+
+  useEffect(() => {
+    setLocalQuery(searchQuery);
+  }, [searchQuery]);
+  const [imageLoaded, setImageLoaded] = useState<Record<string, boolean>>({});
   const { addItem } = useCart();
 
   const updateFilters = (key: string, value: string | null) => {
@@ -79,6 +100,27 @@ export function ShopClient({
     if (value) params.set(key, value);
     else params.delete(key);
     params.set("page", "1"); // Reset to page 1 on filter
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const toggleColor = (c: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (c === null) {
+      params.delete("color");
+    } else {
+      let current = params.get("color")?.split(",") || [];
+      if (current.includes(c)) {
+        current = current.filter(x => x !== c);
+      } else {
+        current.push(c);
+      }
+      if (current.length > 0) {
+        params.set("color", current.join(","));
+      } else {
+        params.delete("color");
+      }
+    }
+    params.set("page", "1");
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
@@ -117,7 +159,7 @@ export function ShopClient({
 
   return (
     <div className="flex flex-col md:flex-row gap-8 items-start">
-      <aside className="w-full md:w-64 shrink-0 bg-white p-4 rounded-xl border shadow-sm sticky top-6">
+      <aside className="hidden md:block w-full md:w-64 shrink-0 bg-white p-4 rounded-xl border shadow-sm sticky top-6">
         <Accordion
           multiple
           defaultValue={["color", "type", "set"]}
@@ -130,21 +172,27 @@ export function ShopClient({
             <AccordionContent>
               <div className="flex flex-wrap gap-2 pt-2">
                 <Badge
-                  variant={selectedColor === null ? "default" : "outline"}
+                  variant={selectedColors.length === 0 ? "default" : "outline"}
                   className="cursor-pointer hover:opacity-80 pb-0.5"
-                  onClick={() => updateFilters("color", null)}
+                  onClick={() => toggleColor(null)}
                 >
                   Todas
                 </Badge>
                 {colors.map((c) => (
-                  <Badge
+                  <button
                     key={c}
-                    variant={selectedColor === c ? "default" : "outline"}
-                    className="cursor-pointer hover:opacity-80 pb-0.5"
-                    onClick={() => updateFilters("color", c)}
+                    title={c}
+                    className={`h-8 w-8 rounded-full transition-all flex items-center justify-center overflow-hidden bg-white/20 border border-muted-foreground/20 ${
+                      selectedColors.includes(c) ? "ring-2 ring-primary ring-offset-2 scale-110" : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
+                    }`}
+                    onClick={() => toggleColor(c)}
                   >
-                    {c}
-                  </Badge>
+                    <img
+                      src={`https://svgs.scryfall.io/card-symbols/${c}.svg`}
+                      alt={c}
+                      className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal"
+                    />
+                  </button>
                 ))}
               </div>
             </AccordionContent>
@@ -183,19 +231,29 @@ export function ShopClient({
             </AccordionTrigger>
             <AccordionContent>
               <div className="flex flex-col gap-1.5 border-l-2 pl-3 mt-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                <Input 
+                  placeholder="Buscar edição..."
+                  value={setSearch}
+                  onChange={(e) => setSetSearch(e.target.value)}
+                  className="h-8 mb-2 text-xs"
+                />
                 <button
-                  className={`text-left text-sm py-1 font-medium transition-colors ${selectedSet === null ? "text-primary" : "text-muted-foreground hover:text-primary/70"}`}
+                  className={`text-left w-full py-1.5 px-2 rounded-md transition-colors flex items-center hover:bg-muted/50 ${selectedSet === null ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"}`}
                   onClick={() => updateFilters("set", null)}
                 >
-                  Todas as Edições
+                  <span className="text-xs font-bold uppercase font-mono tracking-wider ml-[1.35rem]">Todas as Edições</span>
                 </button>
-                {sets.map((s) => (
+                {sets.filter(s => s.toLowerCase().includes(setSearch.toLowerCase())).map((s) => (
                   <button
                     key={s}
-                    className={`text-left text-sm py-1 font-medium transition-colors ${selectedSet === s ? "text-primary" : "text-muted-foreground hover:text-primary/70"}`}
+                    className={`text-left w-full py-1 px-2 rounded-md transition-colors flex items-center hover:bg-muted/50 ${selectedSet === s ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"}`}
                     onClick={() => updateFilters("set", s)}
                   >
-                    {s}
+                    <SetBadge 
+                      setCode={s} 
+                      iconClassName="h-4 w-4 drop-shadow-none opacity-80" 
+                      textClassName={selectedSet === s ? "text-primary font-bold" : ""} 
+                    />
                   </button>
                 ))}
               </div>
@@ -203,7 +261,7 @@ export function ShopClient({
           </AccordionItem>
         </Accordion>
 
-        {(selectedColor || selectedType || selectedSet) && (
+        {(selectedColors.length > 0 || selectedType || selectedSet) && (
           <Button
             variant="ghost"
             size="sm"
@@ -215,18 +273,166 @@ export function ShopClient({
         )}
       </aside>
 
-      <div className="flex-1">
-        <div className="mb-6 flex justify-between items-center">
-          <span className="text-sm font-medium bg-muted px-3 py-1 rounded-full text-muted-foreground">
-            {totalItems}{" "}
-            {totalItems === 1 ? "card" : "cards"}
-            {totalPages > 1 && (
+      <div className="flex-1 pb-32">
+        <div className="mb-6 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b pb-6">
+          <div className="flex flex-col sm:flex-row w-full gap-4 xl:w-auto">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar cartas pelo nome..."
+                value={localQuery}
+                onChange={(e) => setLocalQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") updateFilters("q", localQuery);
+                }}
+                className="pl-9 h-9 border-input shadow-sm w-full bg-background"
+              />
+            </div>
+            <select
+              className="h-9 px-3 py-1.5 rounded-md border border-input bg-background shadow-sm text-sm font-medium focus-visible:outline-none focus:ring-1 focus:ring-ring w-full sm:w-[180px]"
+              value={sortOption}
+              onChange={(e) => updateFilters("sort", e.target.value)}
+            >
+              <option value="name_asc">A-Z (Ordem Alfabética)</option>
+              <option value="name_desc">Z-A (Inverso)</option>
+              <option value="price_asc">Menor Preço</option>
+              <option value="price_desc">Maior Preço</option>
+            </select>
+          </div>
+          <div className="flex flex-row justify-between xl:justify-end items-center gap-4 w-full xl:w-auto">
+            <Sheet>
+              <SheetTrigger className="md:hidden flex items-center justify-center gap-2 font-bold shadow-sm border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 rounded-md transition-colors text-sm">
+                  <Filter className="w-4 h-4" /> Filtros
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[85vw] sm:max-w-[350px] overflow-y-auto px-4 py-6">
+                <SheetHeader className="mb-6 text-left">
+                  <SheetTitle className="text-2xl font-black">Filtros da Loja</SheetTitle>
+                </SheetHeader>
+                <Accordion
+                  multiple
+                  defaultValue={["color", "type", "set"]}
+                  className="w-full"
+                >
+                  <AccordionItem value="color" className="border-b-0 pb-2">
+                    <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">
+                      Cores
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <Badge
+                          variant={selectedColors.length === 0 ? "default" : "outline"}
+                          className="cursor-pointer hover:opacity-80 pb-0.5"
+                          onClick={() => toggleColor(null)}
+                        >
+                          Todas
+                        </Badge>
+                        {colors.map((c) => (
+                          <button
+                            key={c}
+                            title={c}
+                            className={`h-8 w-8 rounded-full transition-all flex items-center justify-center overflow-hidden bg-white/20 border border-muted-foreground/20 ${
+                              selectedColors.includes(c) ? "ring-2 ring-primary ring-offset-2 scale-110" : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
+                            }`}
+                            onClick={() => toggleColor(c)}
+                          >
+                            <img
+                              src={`https://svgs.scryfall.io/card-symbols/${c}.svg`}
+                              alt={c}
+                              className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal"
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="type" className="border-b-0 pb-2">
+                    <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">
+                      Tipos
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <Badge
+                          variant={selectedType === null ? "default" : "outline"}
+                          className="cursor-pointer hover:opacity-80 pb-0.5"
+                          onClick={() => updateFilters("type", null)}
+                        >
+                          Todos
+                        </Badge>
+                        {types.map((t) => (
+                          <Badge
+                            key={t}
+                            variant={selectedType === t ? "default" : "outline"}
+                            className="cursor-pointer hover:opacity-80 pb-0.5"
+                            onClick={() => updateFilters("type", t)}
+                          >
+                            {t}
+                          </Badge>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  <AccordionItem value="set" className="border-b-0">
+                    <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">
+                      Edições
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="flex flex-col gap-1.5 border-l-2 pl-3 mt-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                        <Input 
+                          placeholder="Buscar edição..."
+                          value={setSearch}
+                          onChange={(e) => setSetSearch(e.target.value)}
+                          className="h-8 mb-2 text-xs"
+                        />
+                        <button
+                          className={`text-left w-full py-1.5 px-2 rounded-md transition-colors flex items-center hover:bg-muted/50 ${selectedSet === null ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                          onClick={() => updateFilters("set", null)}
+                        >
+                          <span className="text-xs font-bold uppercase font-mono tracking-wider ml-[1.35rem]">Todas as Edições</span>
+                        </button>
+                        {sets.filter(s => s.toLowerCase().includes(setSearch.toLowerCase())).map((s) => (
+                          <button
+                            key={s}
+                            className={`text-left w-full py-1 px-2 rounded-md transition-colors flex items-center hover:bg-muted/50 ${selectedSet === s ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                            onClick={() => updateFilters("set", s)}
+                          >
+                            <SetBadge 
+                              setCode={s} 
+                              iconClassName="h-4 w-4 drop-shadow-none opacity-80" 
+                              textClassName={selectedSet === s ? "text-primary font-bold" : ""} 
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+
+                {(selectedColors.length > 0 || selectedType || selectedSet) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full mt-4 text-xs text-muted-foreground"
+                    onClick={clearFilters}
+                  >
+                    Limpar Filtros
+                  </Button>
+                )}
+              </SheetContent>
+            </Sheet>
+
+            <span className="text-sm font-medium bg-muted px-3 py-1 rounded-full text-muted-foreground">
+              {totalItems}{" "}
+              {totalItems === 1 ? "card" : "cards"}
+              {totalPages > 1 && (
               <>
                 {" "}
                 · Página {currentPage} de {totalPages}
               </>
             )}
           </span>
+          </div>
         </div>
 
         {filteredInventory.length === 0 ? (
@@ -238,7 +444,7 @@ export function ShopClient({
             <p className="text-sm mb-6">
               Tente ajustar ou limpar os filtros para ver mais resultados.
             </p>
-            {(selectedColor || selectedType || selectedSet) && (
+            {(selectedColors.length > 0 || selectedType || selectedSet) && (
               <Button onClick={clearFilters}>
                 Limpar Todos os Filtros
               </Button>
@@ -262,14 +468,18 @@ export function ShopClient({
                   >
                     <div className="aspect-[2/3] w-full bg-muted/30 relative overflow-hidden flex items-center justify-center group-hover:bg-muted/50 transition-colors">
                       {item.cardTemplate?.imageUrl ? (
-                        <Image
-                          src={item.cardTemplate.imageUrl}
-                          alt={item.cardTemplate.name}
-                          fill
-                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                          className="object-cover w-full h-full"
-                          loading="lazy"
-                        />
+                        <>
+                          {!imageLoaded[item.id] && <Skeleton className="absolute inset-0 z-0 bg-muted-foreground/10 animate-pulse" />}
+                          <Image
+                            src={item.cardTemplate.imageUrl}
+                            alt={item.cardTemplate.name}
+                            fill
+                            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+                            className={`object-cover w-full h-full transition-opacity duration-300 ${imageLoaded[item.id] ? 'opacity-100 z-10' : 'opacity-0'}`}
+                            loading="lazy"
+                            onLoad={() => setImageLoaded(prev => ({...prev, [item.id]: true}))}
+                          />
+                        </>
                       ) : (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60 text-xs font-medium space-y-2">
                           <div className="w-12 h-16 border-2 border-dashed border-muted-foreground/30 rounded flex items-center justify-center">

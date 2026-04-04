@@ -16,11 +16,7 @@ export function SetBadge({
   textClassName
 }: SetBadgeProps) {
   if (!setCode) return null
-  let imgSrc = `https://svgs.scryfall.io/sets/${setCode.toLowerCase()}.svg`
-  if (['sch'].includes(setCode.toLowerCase())) {
-    imgSrc = 'https://svgs.scryfall.io/sets/star.svg'
-  }
-
+  const imgSrc = `https://svgs.scryfall.io/sets/${setCode.toLowerCase()}.svg`
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -29,6 +25,10 @@ export function SetBadge({
         alt={`${setCode} set icon`}
         title={`Set: ${setCode}`}
         className={cn("h-3.5 w-3.5 dark:invert shrink-0", iconClassName)}
+        onError={(e) => {
+          e.currentTarget.src = "https://svgs.scryfall.io/sets/star.svg"
+          e.currentTarget.onerror = null // Evita loop infinito se a estrela também falhar
+        }}
       />
       {showText && (
         <span className={cn("text-xs text-muted-foreground uppercase font-mono tracking-wider", textClassName)}>

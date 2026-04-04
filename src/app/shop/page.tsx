@@ -13,6 +13,8 @@ export default async function ShopPage(props: {
     color: typeof searchParams?.color === "string" ? searchParams.color : undefined,
     type: typeof searchParams?.type === "string" ? searchParams.type : undefined,
     set: typeof searchParams?.set === "string" ? searchParams.set : undefined,
+    search: typeof searchParams?.q === "string" ? searchParams.q : undefined,
+    sort: typeof searchParams?.sort === "string" ? searchParams.sort : undefined,
   };
 
   const headersList = await headers();

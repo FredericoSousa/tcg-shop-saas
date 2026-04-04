@@ -60,7 +60,7 @@ export default async function HomePage() {
               <span className="text-5xl font-black text-white">{shopName.charAt(0)}</span>
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-black tracking-tight mb-6 drop-shadow-lg leading-[1.1]">
+            <h1 className="text-5xl md:text-7xl font-black font-heading tracking-tight mb-6 drop-shadow-lg leading-[1.1]">
               {shopName}
             </h1>
             <p className="text-xl md:text-2xl text-zinc-300 max-w-2xl mx-auto font-medium mb-10 leading-relaxed">
@@ -104,7 +104,7 @@ export default async function HomePage() {
       {recentCards.length > 0 && (
         <section className="container mx-auto px-6 pt-20 pb-8">
           <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-zinc-900">
+            <h2 className="text-3xl md:text-4xl font-black font-heading tracking-tight">
               Destaques do Estoque
             </h2>
             <p className="text-muted-foreground mt-2 font-medium">
@@ -112,7 +112,7 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 md:gap-4 max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 max-w-4xl mx-auto">
             {recentCards.map((item) => (
               <Link
                 key={item.id}
@@ -135,7 +135,9 @@ export default async function HomePage() {
                   )}
                 </div>
                 <div className="p-3">
-                  <h3 className="font-bold text-sm leading-tight line-clamp-1">{item.cardTemplate?.name}</h3>
+                  <h3 className="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem]" title={item.cardTemplate?.name}>
+                    {item.cardTemplate?.name}
+                  </h3>
                   <div className="flex items-center justify-between mt-1.5">
                     <span className="text-[10px] font-semibold px-1 py-0.5 bg-muted rounded border inline-flex items-center justify-center">
                       <SetBadge 
