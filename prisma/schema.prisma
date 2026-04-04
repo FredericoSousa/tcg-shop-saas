@@ -64,6 +64,8 @@ model InventoryItem {
   orderItems   OrderItem[]
 
   @@index([tenantId])
+  @@index([tenantId, quantity])
+  @@index([cardTemplateId])
 }
 
 enum OrderStatus {

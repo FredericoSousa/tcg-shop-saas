@@ -1,5 +1,7 @@
 "use client";
 
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +24,7 @@ import {
   ChevronRight,
   ShoppingCart,
 } from "lucide-react";
+import Image from "next/image";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -43,102 +46,56 @@ type ShopItem = {
   } | null;
 };
 
-export function ShopClient({ tenantId, initialInventory }: { tenantId: string, initialInventory: any[] }) {
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [selectedSet, setSelectedSet] = useState<string | null>(null);
+export function ShopClient({ 
+  tenantId, 
+  initialInventory, 
+  availableFilters,
+  pageCount,
+  totalItems,
+  currentPage 
+}: { 
+  tenantId: string, 
+  initialInventory: any[],
+  availableFilters: { colors: string[], types: string[], sets: string[] },
+  pageCount: number,
+  totalItems: number,
+  currentPage: number
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Extract selected filters from searchParams
+  const selectedColor = searchParams.get("color");
+  const selectedType = searchParams.get("type");
+  const selectedSet = searchParams.get("set");
 
   // Track recently added items for visual feedback
   const [addedItems, setAddedItems] = useState<Record<string, boolean>>({});
-  const [currentPage, setCurrentPage] = useState(1);
-
   const { addItem } = useCart();
 
-  const {
-    data: inventory,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["inventory"],
-    queryFn: async () => {
-      const res = await fetch("/api/inventory", {
-        headers: {
-          "x-tenant-id": tenantId || "",
-        },
-      });
-      if (!res.ok) throw new Error("Failed to fetch");
-      return res.json();
-    },
-    initialData: initialInventory,
-    staleTime: 60000,
-  });
+  const updateFilters = (key: string, value: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set(key, value);
+    else params.delete(key);
+    params.set("page", "1"); // Reset to page 1 on filter
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
-  const { colors, types, sets } = useMemo(() => {
-    if (!inventory) return { colors: [], types: [], sets: [] };
-
-    const colorSet = new Set<string>();
-    const typeSet = new Set<string>();
-    const setSet = new Set<string>();
-
-    inventory.forEach((item: ShopItem) => {
-      const meta = item.cardTemplate?.metadata;
-      if (meta?.colors && Array.isArray(meta.colors)) {
-        meta.colors.forEach((c: string) => colorSet.add(c));
-      }
-      if (meta?.type_line) {
-        const mainType = meta.type_line.split("—")[0].trim().split(" ")[0];
-        if (mainType) typeSet.add(mainType);
-      }
-      if (item.cardTemplate?.set) {
-        setSet.add(item.cardTemplate.set.toUpperCase());
-      }
-    });
-
-    return {
-      colors: Array.from(colorSet).sort(),
-      types: Array.from(typeSet).sort(),
-      sets: Array.from(setSet).sort(),
-    };
-  }, [inventory]);
-
-  const filteredInventory = useMemo(() => {
-    if (!inventory) return [];
-    return inventory.filter((item: ShopItem) => {
-      const meta = item.cardTemplate?.metadata;
-      if (
-        selectedColor &&
-        (!meta?.colors || !meta.colors.includes(selectedColor))
-      )
-        return false;
-      if (
-        selectedType &&
-        (!meta?.type_line || !meta.type_line.includes(selectedType))
-      )
-        return false;
-      if (selectedSet && item.cardTemplate?.set?.toUpperCase() !== selectedSet)
-        return false;
-      return true;
-    });
-  }, [inventory, selectedColor, selectedType, selectedSet]);
-
-  // Reset to page 1 when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [selectedColor, selectedType, selectedSet]);
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredInventory.length / ITEMS_PER_PAGE),
-  );
-  const paginatedItems = filteredInventory.slice(
-    (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE,
-  );
+  const clearFilters = () => {
+    router.replace(pathname, { scroll: false });
+  };
 
   const handlePageChange = useCallback((page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", page.toString());
+    router.replace(`${pathname}?${params.toString()}`, { scroll: true });
+  }, [pathname, router, searchParams]);
+
+  const { colors, types, sets } = availableFilters;
+  const filteredInventory = initialInventory;
+  const totalPages = pageCount;
+
 
   const handleAddToCart = (item: ShopItem) => {
     addItem({
@@ -158,73 +115,6 @@ export function ShopClient({ tenantId, initialInventory }: { tenantId: string, i
     }, 1500);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col md:flex-row gap-8 items-start">
-        <aside className="w-full md:w-64 shrink-0 space-y-8 bg-white p-6 rounded-xl border shadow-sm h-[600px]">
-          <Skeleton className="h-8 w-1/2 mb-4" />
-          <div className="flex flex-wrap gap-2 mb-8">
-            <Skeleton className="h-6 w-16" />
-            <Skeleton className="h-6 w-12" />
-          </div>
-          <Skeleton className="h-8 w-1/2 mb-4" />
-          <div className="flex flex-wrap gap-2 mb-8">
-            <Skeleton className="h-6 w-20" />
-            <Skeleton className="h-6 w-14" />
-          </div>
-          <Skeleton className="h-8 w-1/2 mb-4" />
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-4/5" />
-          </div>
-        </aside>
-        <div className="flex-1 w-full">
-          <Skeleton className="h-6 w-32 mb-6" />
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col"
-              >
-                <Skeleton className="aspect-[2/3] w-full" />
-                <div className="p-4 space-y-3">
-                  <Skeleton className="h-4 w-3/4" />
-                  <div className="flex gap-2">
-                    <Skeleton className="h-4 w-8" />
-                    <Skeleton className="h-4 w-8" />
-                  </div>
-                  <Skeleton className="h-6 w-1/2 mt-auto" />
-                  <Skeleton className="h-8 w-full mt-2" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 text-red-500 bg-red-50 rounded-xl border-2 border-red-200 animate-in fade-in duration-500">
-        <div className="mb-4 p-3 bg-red-100 rounded-full">
-          <AlertCircle className="w-12 h-12 opacity-90" />
-        </div>
-        <h3 className="text-xl font-bold mb-2">Erro ao carregar o estoque</h3>
-        <p className="text-sm font-medium opacity-80 mb-6">
-          Por favor, tente novamente mais tarde.
-        </p>
-        <Button
-          onClick={() => window.location.reload()}
-          variant="outline"
-          className="border-red-300 hover:bg-red-100 text-red-700 transition-all duration-200 hover:scale-105 active:scale-95"
-        >
-          Tentar Novamente
-        </Button>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col md:flex-row gap-8 items-start">
       <aside className="w-full md:w-64 shrink-0 bg-white p-4 rounded-xl border shadow-sm sticky top-6">
@@ -242,7 +132,7 @@ export function ShopClient({ tenantId, initialInventory }: { tenantId: string, i
                 <Badge
                   variant={selectedColor === null ? "default" : "outline"}
                   className="cursor-pointer hover:opacity-80 pb-0.5"
-                  onClick={() => setSelectedColor(null)}
+                  onClick={() => updateFilters("color", null)}
                 >
                   Todas
                 </Badge>
@@ -251,7 +141,7 @@ export function ShopClient({ tenantId, initialInventory }: { tenantId: string, i
                     key={c}
                     variant={selectedColor === c ? "default" : "outline"}
                     className="cursor-pointer hover:opacity-80 pb-0.5"
-                    onClick={() => setSelectedColor(c)}
+                    onClick={() => updateFilters("color", c)}
                   >
                     {c}
                   </Badge>
@@ -269,7 +159,7 @@ export function ShopClient({ tenantId, initialInventory }: { tenantId: string, i
                 <Badge
                   variant={selectedType === null ? "default" : "outline"}
                   className="cursor-pointer hover:opacity-80 pb-0.5"
-                  onClick={() => setSelectedType(null)}
+                  onClick={() => updateFilters("type", null)}
                 >
                   Todos
                 </Badge>
@@ -278,7 +168,7 @@ export function ShopClient({ tenantId, initialInventory }: { tenantId: string, i
                     key={t}
                     variant={selectedType === t ? "default" : "outline"}
                     className="cursor-pointer hover:opacity-80 pb-0.5"
-                    onClick={() => setSelectedType(t)}
+                    onClick={() => updateFilters("type", t)}
                   >
                     {t}
                   </Badge>
@@ -295,7 +185,7 @@ export function ShopClient({ tenantId, initialInventory }: { tenantId: string, i
               <div className="flex flex-col gap-1.5 border-l-2 pl-3 mt-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
                 <button
                   className={`text-left text-sm py-1 font-medium transition-colors ${selectedSet === null ? "text-primary" : "text-muted-foreground hover:text-primary/70"}`}
-                  onClick={() => setSelectedSet(null)}
+                  onClick={() => updateFilters("set", null)}
                 >
                   Todas as Edições
                 </button>
@@ -303,7 +193,7 @@ export function ShopClient({ tenantId, initialInventory }: { tenantId: string, i
                   <button
                     key={s}
                     className={`text-left text-sm py-1 font-medium transition-colors ${selectedSet === s ? "text-primary" : "text-muted-foreground hover:text-primary/70"}`}
-                    onClick={() => setSelectedSet(s)}
+                    onClick={() => updateFilters("set", s)}
                   >
                     {s}
                   </button>
@@ -318,11 +208,7 @@ export function ShopClient({ tenantId, initialInventory }: { tenantId: string, i
             variant="ghost"
             size="sm"
             className="w-full mt-4 text-xs text-muted-foreground"
-            onClick={() => {
-              setSelectedColor(null);
-              setSelectedType(null);
-              setSelectedSet(null);
-            }}
+            onClick={clearFilters}
           >
             Limpar Filtros
           </Button>
@@ -332,8 +218,8 @@ export function ShopClient({ tenantId, initialInventory }: { tenantId: string, i
       <div className="flex-1">
         <div className="mb-6 flex justify-between items-center">
           <span className="text-sm font-medium bg-muted px-3 py-1 rounded-full text-muted-foreground">
-            {filteredInventory.length}{" "}
-            {filteredInventory.length === 1 ? "card" : "cards"}
+            {totalItems}{" "}
+            {totalItems === 1 ? "card" : "cards"}
             {totalPages > 1 && (
               <>
                 {" "}
@@ -353,13 +239,7 @@ export function ShopClient({ tenantId, initialInventory }: { tenantId: string, i
               Tente ajustar ou limpar os filtros para ver mais resultados.
             </p>
             {(selectedColor || selectedType || selectedSet) && (
-              <Button
-                onClick={() => {
-                  setSelectedColor(null);
-                  setSelectedType(null);
-                  setSelectedSet(null);
-                }}
-              >
+              <Button onClick={clearFilters}>
                 Limpar Todos os Filtros
               </Button>
             )}
@@ -367,7 +247,7 @@ export function ShopClient({ tenantId, initialInventory }: { tenantId: string, i
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {paginatedItems.map((item: ShopItem) => {
+              {filteredInventory.map((item: ShopItem) => {
                 const stockStatus =
                   item.quantity > 3
                     ? "text-green-600 bg-green-50"
@@ -382,10 +262,11 @@ export function ShopClient({ tenantId, initialInventory }: { tenantId: string, i
                   >
                     <div className="aspect-[2/3] w-full bg-muted/30 relative overflow-hidden flex items-center justify-center group-hover:bg-muted/50 transition-colors">
                       {item.cardTemplate?.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
+                        <Image
                           src={item.cardTemplate.imageUrl}
                           alt={item.cardTemplate.name}
+                          fill
+                          sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
                           className="object-cover w-full h-full"
                           loading="lazy"
                         />

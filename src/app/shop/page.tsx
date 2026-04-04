@@ -2,9 +2,19 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { ShopClient } from "@/components/shop/ShopClient";
 import { Sparkles } from "lucide-react";
-import { getStorefrontInventory } from "@/lib/services/inventory.service";
+import { getStorefrontInventory, getStorefrontFilters } from "@/lib/services/inventory.service";
 
-export default async function ShopPage() {
+export default async function ShopPage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const searchParams = await props.searchParams;
+  const page = Number(searchParams?.page) || 1;
+  const filters = {
+    color: typeof searchParams?.color === "string" ? searchParams.color : undefined,
+    type: typeof searchParams?.type === "string" ? searchParams.type : undefined,
+    set: typeof searchParams?.set === "string" ? searchParams.set : undefined,
+  };
+
   const headersList = await headers();
   const tenantId = headersList.get("x-tenant-id");
 
@@ -28,7 +38,8 @@ export default async function ShopPage() {
     where: { id: tenantId },
   });
 
-  const inventory = await getStorefrontInventory(tenantId);
+  const { items: inventory, total, pageCount } = await getStorefrontInventory(tenantId, page, filters);
+  const storefrontFilters = await getStorefrontFilters(tenantId);
 
   // Convert hex to HSL if needed, or simply pass hex if CSS variables in the project support it.
   // Assuming the project is set up with Tailwind where --primary needs HSL, or just overriding the style.
@@ -80,7 +91,14 @@ export default async function ShopPage() {
 
       {/* Shop Content */}
       <div className="container mx-auto px-4 py-16 md:py-20">
-        <ShopClient tenantId={tenantId} initialInventory={inventory} />
+        <ShopClient 
+          tenantId={tenantId} 
+          initialInventory={inventory} 
+          availableFilters={storefrontFilters}
+          pageCount={pageCount}
+          totalItems={total}
+          currentPage={page}
+        />
       </div>
     </main>
   );
