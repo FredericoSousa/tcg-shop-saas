@@ -46,7 +46,7 @@ export async function getInventoryPaginated(tenantId: string, page: number, limi
 export async function getStorefrontInventory(
   tenantId: string, 
   page: number = 1, 
-  filters?: { color?: string | string[], type?: string, set?: string, search?: string, sort?: string }
+  filters?: { color?: string | string[], type?: string | string[], set?: string, search?: string, sort?: string }
 ) {
   const limit = 20;
   const skip = (page - 1) * limit;
@@ -85,7 +85,12 @@ export async function getStorefrontInventory(
           
           if (!matchesColorless && !matchesColor) return false;
         }
-        if (filters?.type && (!meta?.type_line || !meta.type_line.includes(filters.type))) return false;
+        if (filters?.type) {
+          const expectedTypes = Array.isArray(filters.type) ? filters.type : filters.type.split(',');
+          if (!meta?.type_line) return false;
+          const matchesType = expectedTypes.some(t => meta?.type_line?.includes(t));
+          if (!matchesType) return false;
+        }
         if (filters?.set && item.cardTemplate.set.toUpperCase() !== filters.set.toUpperCase()) return false;
         return true;
       });

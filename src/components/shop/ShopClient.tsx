@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/store/useCart";
-import { CartDrawer } from "./CartDrawer";
 import { SetBadge } from "@/components/ui/set-badge";
 import {
   PackageOpen,
@@ -79,7 +78,7 @@ export function ShopClient({
 
   // Extract selected filters from searchParams
   const selectedColors = searchParams.get("color")?.split(",") || [];
-  const selectedType = searchParams.get("type");
+  const selectedTypes = searchParams.get("type")?.split(",") || [];
   const selectedSet = searchParams.get("set");
   const searchQuery = searchParams.get("q") || "";
   const sortOption = searchParams.get("sort") || "name_asc";
@@ -118,6 +117,27 @@ export function ShopClient({
         params.set("color", current.join(","));
       } else {
         params.delete("color");
+      }
+    }
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const toggleType = (t: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (t === null) {
+      params.delete("type");
+    } else {
+      let current = params.get("type")?.split(",") || [];
+      if (current.includes(t)) {
+        current = current.filter(x => x !== t);
+      } else {
+        current.push(t);
+      }
+      if (current.length > 0) {
+        params.set("type", current.join(","));
+      } else {
+        params.delete("type");
       }
     }
     params.set("page", "1");
@@ -205,18 +225,18 @@ export function ShopClient({
             <AccordionContent>
               <div className="flex flex-wrap gap-2 pt-2">
                 <Badge
-                  variant={selectedType === null ? "default" : "outline"}
+                  variant={selectedTypes.length === 0 ? "default" : "outline"}
                   className="cursor-pointer hover:opacity-80 pb-0.5"
-                  onClick={() => updateFilters("type", null)}
+                  onClick={() => toggleType(null)}
                 >
                   Todos
                 </Badge>
                 {types.map((t) => (
                   <Badge
                     key={t}
-                    variant={selectedType === t ? "default" : "outline"}
+                    variant={selectedTypes.includes(t) ? "default" : "outline"}
                     className="cursor-pointer hover:opacity-80 pb-0.5"
-                    onClick={() => updateFilters("type", t)}
+                    onClick={() => toggleType(t)}
                   >
                     {t}
                   </Badge>
@@ -261,7 +281,7 @@ export function ShopClient({
           </AccordionItem>
         </Accordion>
 
-        {(selectedColors.length > 0 || selectedType || selectedSet) && (
+        {(selectedColors.length > 0 || selectedTypes.length > 0 || selectedSet) && (
           <Button
             variant="ghost"
             size="sm"
@@ -353,18 +373,18 @@ export function ShopClient({
                     <AccordionContent>
                       <div className="flex flex-wrap gap-2 pt-2">
                         <Badge
-                          variant={selectedType === null ? "default" : "outline"}
+                          variant={selectedTypes.length === 0 ? "default" : "outline"}
                           className="cursor-pointer hover:opacity-80 pb-0.5"
-                          onClick={() => updateFilters("type", null)}
+                          onClick={() => toggleType(null)}
                         >
                           Todos
                         </Badge>
                         {types.map((t) => (
                           <Badge
                             key={t}
-                            variant={selectedType === t ? "default" : "outline"}
+                            variant={selectedTypes.includes(t) ? "default" : "outline"}
                             className="cursor-pointer hover:opacity-80 pb-0.5"
-                            onClick={() => updateFilters("type", t)}
+                            onClick={() => toggleType(t)}
                           >
                             {t}
                           </Badge>
@@ -409,7 +429,7 @@ export function ShopClient({
                   </AccordionItem>
                 </Accordion>
 
-                {(selectedColors.length > 0 || selectedType || selectedSet) && (
+                {(selectedColors.length > 0 || selectedTypes.length > 0 || selectedSet) && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -444,7 +464,7 @@ export function ShopClient({
             <p className="text-sm mb-6">
               Tente ajustar ou limpar os filtros para ver mais resultados.
             </p>
-            {(selectedColors.length > 0 || selectedType || selectedSet) && (
+            {(selectedColors.length > 0 || selectedTypes.length > 0 || selectedSet) && (
               <Button onClick={clearFilters}>
                 Limpar Todos os Filtros
               </Button>
@@ -648,9 +668,6 @@ export function ShopClient({
         )}
       </div>
 
-      <div className="fixed bottom-6 right-6 z-50">
-        <CartDrawer />
-      </div>
     </div>
   );
 }

@@ -25,7 +25,7 @@ export default async function HomePage() {
   })
 
   // Fetch some stats
-  const [totalCards, totalSets, recentCards] = await Promise.all([
+  const [totalCards, totalSets, mostExpensiveCards] = await Promise.all([
     prisma.inventoryItem.count({ where: { tenantId, quantity: { gt: 0 } } }),
     prisma.inventoryItem.findMany({
       where: { tenantId, quantity: { gt: 0 } },
@@ -35,7 +35,7 @@ export default async function HomePage() {
     prisma.inventoryItem.findMany({
       where: { tenantId, quantity: { gt: 0 } },
       include: { cardTemplate: true },
-      orderBy: { id: 'desc' },
+      orderBy: { price: 'desc' },
       take: 5,
     }),
   ])
@@ -101,7 +101,7 @@ export default async function HomePage() {
       </section>
 
       {/* Featured Cards */}
-      {recentCards.length > 0 && (
+      {mostExpensiveCards.length > 0 && (
         <section className="container mx-auto px-6 pt-20 pb-8">
           <div className="text-center mb-10">
             <h2 className="text-3xl md:text-4xl font-black font-heading tracking-tight">
@@ -113,7 +113,7 @@ export default async function HomePage() {
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 max-w-4xl mx-auto">
-            {recentCards.map((item) => (
+            {mostExpensiveCards.map((item) => (
               <Link
                 key={item.id}
                 href="/shop"
@@ -140,10 +140,10 @@ export default async function HomePage() {
                   </h3>
                   <div className="flex items-center justify-between mt-1.5">
                     <span className="text-[10px] font-semibold px-1 py-0.5 bg-muted rounded border inline-flex items-center justify-center">
-                      <SetBadge 
-                        setCode={item.cardTemplate?.set || ''} 
+                      <SetBadge
+                        setCode={item.cardTemplate?.set || ''}
                         className="gap-1"
-                        iconClassName="h-3 w-3" 
+                        iconClassName="h-3 w-3"
                         textClassName="text-[10px] font-semibold text-foreground tracking-normal m-0 p-0"
                       />
                     </span>

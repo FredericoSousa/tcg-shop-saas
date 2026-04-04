@@ -1,0 +1,60 @@
+import { headers } from "next/headers";
+import { prisma } from "@/lib/prisma";
+import { ShopClient } from "@/components/shop/ShopClient";
+import { Sparkles } from "lucide-react";
+import { getStorefrontInventory, getStorefrontFilters } from "@/lib/services/inventory.service";
+
+export default async function ShopPage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const searchParams = await props.searchParams;
+  const page = Number(searchParams?.page) || 1;
+  const filters = {
+    color: typeof searchParams?.color === "string" ? searchParams.color : undefined,
+    type: typeof searchParams?.type === "string" ? searchParams.type : undefined,
+    set: typeof searchParams?.set === "string" ? searchParams.set : undefined,
+    search: typeof searchParams?.q === "string" ? searchParams.q : undefined,
+    sort: typeof searchParams?.sort === "string" ? searchParams.sort : undefined,
+  };
+
+  const headersList = await headers();
+  const tenantId = headersList.get("x-tenant-id");
+
+  if (!tenantId) {
+    return (
+      <div className="p-8 text-center pt-24 min-h-screen flex items-center justify-center bg-muted/20">
+        <div className="bg-white p-12 rounded-2xl shadow-sm border max-w-md w-full space-y-4">
+          <div className="h-12 w-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto">
+            <Sparkles className="h-6 w-6 text-muted-foreground/50" />
+          </div>
+          <h1 className="text-2xl font-black mb-2">Loja não encontrada</h1>
+          <p className="text-muted-foreground text-sm">
+            Não foi possível identificar o lojista para esta página.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+  });
+
+  const { items: inventory, total, pageCount } = await getStorefrontInventory(tenantId, page, filters);
+  const storefrontFilters = await getStorefrontFilters(tenantId);
+
+  return (
+    <main className="flex-1">
+      <div className="container mx-auto px-4 py-8 md:py-12">
+        <ShopClient 
+          tenantId={tenantId} 
+          initialInventory={inventory} 
+          availableFilters={storefrontFilters}
+          pageCount={pageCount}
+          totalItems={total}
+          currentPage={page}
+        />
+      </div>
+    </main>
+  );
+}
