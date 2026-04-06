@@ -6,6 +6,8 @@ import { scryfall } from "@/lib/scryfall";
 import { revalidatePath } from "next/cache";
 import { Condition, Game, Prisma } from "@prisma/client";
 import { getCollectionById } from "@/lib/ligaMagic";
+import { logger, createTimer } from "@/lib/logger";
+import { cardCache, generateCardCacheKey } from "@/lib/cache/cardCache";
 
 export async function addInventoryItem(formData: FormData) {
   const headersList = await headers();
@@ -204,7 +206,10 @@ export async function resolveCardsBatch(
     extras?: string[];
   }[],
 ): Promise<(BulkItemResult & { originalLine: string })[]> {
+  const timer = createTimer("resolveCardsBatch");
+
   try {
+    // Build identifiers for Scryfall batch lookup
     const identifiers = items.map((item) => {
       if (item.setCode && item.cardNumber && item.setCode !== "PLST") {
         return {
@@ -217,12 +222,20 @@ export async function resolveCardsBatch(
       return id;
     });
 
+    // Fetch cards from Scryfall
     const cards = await scryfall.getCardsCollection(identifiers);
 
+    // Cache all results for future lookups
     const cardsMap = new Map<string, any>();
-    // Scryfall's collection result is usually not strictly ordered, we build a lookup map.
-    // Notice that card.name may contain commas, etc. We'll simplify names for best matching.
     cards.forEach((card) => {
+      const cacheKey = generateCardCacheKey({
+        name: card.name,
+        set: card.set,
+        collector_number: (card as any).collector_number,
+      });
+      cardCache.set(cacheKey, card);
+
+      // Also store with multiple keys for flexible matching
       const cardObj = card as any;
       const cName = card.name.toLowerCase();
       const cSet = card.set.toLowerCase();
@@ -249,10 +262,6 @@ export async function resolveCardsBatch(
       const key3 = `${iName}`;
       const key4 = `|${iSet}|${iNum}`;
 
-      // key1: name + set + num
-      // key4: set + num (ignores name, strong match if we requested by set + num)
-      // key2: name + set
-      // key3: name only
       const card =
         cardsMap.get(key1) ||
         (iSet && iNum ? cardsMap.get(key4) : undefined) ||
@@ -290,13 +299,19 @@ export async function resolveCardsBatch(
       }
     });
   } catch (error) {
-    console.error("API Batch search error", error);
+    logger.warn("Batch card resolution failed", {
+      action: "resolve_cards_batch",
+      itemsCount: items.length,
+      error: error instanceof Error ? error.message : String(error),
+    });
     return items.map((i) => ({
       ...i,
       status: "error",
       error: "Erro na busca em lote",
       originalLine: i.originalLine || "",
     }));
+  } finally {
+    timer.log({ action: "resolve_cards_batch", itemsCount: items.length });
   }
 }
 
@@ -310,6 +325,7 @@ export async function addBulkInventoryItems(
     extras?: string[];
   }[],
 ) {
+  const timer = createTimer("addBulkInventoryItems");
   const headersList = await headers();
   const tenantId = headersList.get("x-tenant-id");
 
@@ -327,122 +343,147 @@ export async function addBulkInventoryItems(
     error?: string;
   }[] = [];
 
-  // Pre-fetch all missing card templates outside the transaction
-  const uniqueScryfallIds = Array.from(new Set(items.map((i) => i.scryfallId)));
+  try {
+    // Pre-fetch all missing card templates outside the transaction
+    const uniqueScryfallIds = Array.from(
+      new Set(items.map((i) => i.scryfallId)),
+    );
 
-  const existingTemplates = await prisma.cardTemplate.findMany({
-    where: { id: { in: uniqueScryfallIds } },
-    select: { id: true, name: true },
-  });
-  const existingIds = new Set(existingTemplates.map((t) => t.id));
+    const existingTemplates = await prisma.cardTemplate.findMany({
+      where: { id: { in: uniqueScryfallIds } },
+      select: { id: true, name: true },
+    });
+    const existingIds = new Set(existingTemplates.map((t) => t.id));
 
-  const missingScryfallIds = uniqueScryfallIds.filter(
-    (id) => !existingIds.has(id),
-  );
+    const missingScryfallIds = uniqueScryfallIds.filter(
+      (id) => !existingIds.has(id),
+    );
 
-  const fetchedScryfallData = new Map<string, any>();
-  for (const id of missingScryfallIds) {
-    const data = await scryfall.getCardById(id);
-    if (data) {
-      fetchedScryfallData.set(id, data);
+    // Check cache first for missing IDs
+    const fetchedScryfallData = new Map<string, any>();
+    const stillMissing: string[] = [];
+
+    for (const id of missingScryfallIds) {
+      const cacheKey = generateCardCacheKey(id);
+      const cachedData = cardCache.get(cacheKey);
+      if (cachedData) {
+        fetchedScryfallData.set(id, cachedData);
+      } else {
+        stillMissing.push(id);
+      }
     }
-  }
 
-  // Fast database transaction for mutations only
-  await prisma.$transaction(
-    async (tx) => {
-      // Keep track of names for response
-      const nameMap = new Map<string, string>();
-      for (const t of existingTemplates) {
-        nameMap.set(t.id, t.name);
+    // Fetch from Scryfall only what's not in cache
+    for (const id of stillMissing) {
+      const data = await scryfall.getCardById(id);
+      if (data) {
+        fetchedScryfallData.set(id, data);
+        const cacheKey = generateCardCacheKey(id);
+        cardCache.set(cacheKey, data);
       }
+    }
 
-      // 1. Create missing templates
-      for (const id of missingScryfallIds) {
-        const scryfallData = fetchedScryfallData.get(id);
-        if (!scryfallData) continue;
-
-        const scryfallObj = scryfallData as Record<string, unknown>;
-        const imageUris = scryfallObj.image_uris as
-          | Record<string, string>
-          | undefined;
-
-        const newTemplate = await tx.cardTemplate.create({
-          data: {
-            id: id,
-            name: scryfallData.name,
-            set: scryfallData.set.toUpperCase(),
-            imageUrl:
-              imageUris?.normal ||
-              imageUris?.large ||
-              imageUris?.png ||
-              (scryfallData as any).card_faces?.[0]?.image_uris?.normal ||
-              null,
-            backImageUrl:
-              (scryfallData as any).card_faces?.[1]?.image_uris?.normal || null,
-            game: Game.MAGIC,
-            metadata: scryfallData as unknown as Prisma.InputJsonObject,
-          },
-        });
-        nameMap.set(id, newTemplate.name);
-      }
-
-      // 2. Create inventory items
-      for (const item of items) {
-        // Check if template exists (either existing or just created)
-        if (!nameMap.has(item.scryfallId)) {
-          results.push({
-            cardName: item.scryfallId,
-            status: "error",
-            error: "Card not found in Scryfall",
-          });
-          continue;
+    // Fast database transaction for mutations only
+    await prisma.$transaction(
+      async (tx) => {
+        const nameMap = new Map<string, string>();
+        for (const t of existingTemplates) {
+          nameMap.set(t.id, t.name);
         }
 
-        const existing = await tx.inventoryItem.findFirst({
-          where: {
-            tenantId,
-            cardTemplateId: item.scryfallId,
-            price: item.price,
-            condition: item.condition,
-            language: item.language,
-            extras: { equals: item.extras || [] },
-          },
-        });
+        // 1. Create missing templates
+        for (const id of missingScryfallIds) {
+          const scryfallData = fetchedScryfallData.get(id);
+          if (!scryfallData) continue;
 
-        if (existing) {
-          await tx.inventoryItem.update({
-            where: { id: existing.id },
+          const scryfallObj = scryfallData as Record<string, unknown>;
+          const imageUris = scryfallObj.image_uris as
+            | Record<string, string>
+            | undefined;
+
+          const newTemplate = await tx.cardTemplate.create({
             data: {
-              quantity: existing.quantity + item.quantity,
-              active: true,
+              id: id,
+              name: scryfallData.name,
+              set: scryfallData.set.toUpperCase(),
+              imageUrl:
+                imageUris?.normal ||
+                imageUris?.large ||
+                imageUris?.png ||
+                (scryfallData as any).card_faces?.[0]?.image_uris?.normal ||
+                null,
+              backImageUrl:
+                (scryfallData as any).card_faces?.[1]?.image_uris?.normal ||
+                null,
+              game: Game.MAGIC,
+              metadata: scryfallData as unknown as Prisma.InputJsonObject,
             },
           });
-        } else {
-          await tx.inventoryItem.create({
-            data: {
+          nameMap.set(id, newTemplate.name);
+        }
+
+        // 2. Create inventory items
+        for (const item of items) {
+          // Check if template exists (either existing or just created)
+          if (!nameMap.has(item.scryfallId)) {
+            results.push({
+              cardName: item.scryfallId,
+              status: "error",
+              error: "Card not found in Scryfall",
+            });
+            continue;
+          }
+
+          const existing = await tx.inventoryItem.findFirst({
+            where: {
               tenantId,
               cardTemplateId: item.scryfallId,
               price: item.price,
-              quantity: item.quantity,
               condition: item.condition,
               language: item.language,
-              extras: item.extras || [],
+              extras: { equals: item.extras || [] },
             },
           });
+
+          if (existing) {
+            await tx.inventoryItem.update({
+              where: { id: existing.id },
+              data: {
+                quantity: existing.quantity + item.quantity,
+                active: true,
+              },
+            });
+          }
+
+          results.push({
+            cardName: nameMap.get(item.scryfallId)!,
+            status: "success",
+          });
         }
+      },
+      { timeout: 20000 },
+    );
 
-        results.push({
-          cardName: nameMap.get(item.scryfallId)!,
-          status: "success",
-        });
-      }
-    },
-    { timeout: 15000 },
-  ); // increased timeout just in case it's a huge bulk
-
-  revalidatePath("/admin/inventory");
-  return results;
+    revalidatePath("/admin/inventory");
+    logger.info("Bulk inventory items added successfully", {
+      action: "add_bulk_inventory",
+      itemsCount: items.length,
+      successCount: results.filter((r) => r.status === "success").length,
+    });
+    return results;
+  } catch (error) {
+    logger.error(
+      "Error adding bulk inventory items",
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        action: "add_bulk_inventory",
+        itemsCount: items.length,
+      },
+    );
+    throw error;
+  } finally {
+    timer.log({ action: "add_bulk_inventory", itemsCount: items.length });
+  }
 }
 
 const LM_CONDITION_MAP: Record<string, Condition> = {
@@ -464,32 +505,53 @@ const LM_LANGUAGE_MAP: Record<string, string> = {
 export async function importLigaMagicCollection(
   collectionId: string,
 ): Promise<(BulkItemResult & { originalLine: string })[]> {
+  const timer = createTimer("importLigaMagicCollection");
+
   if (!collectionId.trim()) {
     throw new Error("ID da coleção é obrigatório");
   }
 
-  const cards = await getCollectionById(collectionId.trim());
+  try {
+    logger.info("Starting LigaMagic collection import", {
+      action: "import_ligamagic_collection",
+      collectionId,
+    });
 
-  if (!cards.length) {
-    throw new Error("Nenhum card encontrado na coleção");
+    const cards = await getCollectionById(collectionId.trim());
+
+    if (!cards.length) {
+      throw new Error("Nenhum card encontrado na coleção");
+    }
+
+    return cards.map((card) => {
+      const condition = LM_CONDITION_MAP[card.condition ?? ""] || "NM";
+      const language =
+        LM_LANGUAGE_MAP[card.language?.toLowerCase() ?? ""] || "EN";
+
+      return {
+        cardName: (card as any).name ?? "Unknown",
+        quantity: card.quantity || 1,
+        condition,
+        language,
+        price: card.price || 0,
+        status: "success" as const,
+        setCode: card.set?.toUpperCase(),
+        cardNumber: card.cardNumber || undefined,
+        extras: card.extras || [],
+        originalLine: `${card.quantity} ${(card as any).name} [${card.set?.toUpperCase() ?? "?"}] #${card.cardNumber}`,
+      };
+    });
+  } catch (error) {
+    logger.error(
+      "Error importing LigaMagic collection",
+      error instanceof Error ? error : new Error(String(error)),
+      {
+        action: "import_ligamagic_collection",
+        collectionId,
+      },
+    );
+    throw error;
+  } finally {
+    timer.log({ action: "import_ligamagic_collection", collectionId });
   }
-
-  return cards.map((card) => {
-    const condition = LM_CONDITION_MAP[card.condition ?? ""] || "NM";
-    const language =
-      LM_LANGUAGE_MAP[card.language?.toLowerCase() ?? ""] || "EN";
-
-    return {
-      cardName: (card as any).name ?? "Unknown",
-      quantity: card.quantity || 1,
-      condition,
-      language,
-      price: card.price || 0,
-      status: "success" as const,
-      setCode: card.set?.toUpperCase(),
-      cardNumber: card.cardNumber || undefined,
-      extras: card.extras || [],
-      originalLine: `${card.quantity} ${(card as any).name} [${card.set?.toUpperCase() ?? "?"}] #${card.cardNumber}`,
-    };
-  });
 }

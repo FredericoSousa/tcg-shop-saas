@@ -1,243 +1,385 @@
-'use client'
+"use client";
 
-import { useState, useTransition } from 'react'
-import { Button } from '@/components/ui/button'
-import { Loader2, Trash2, CheckCircle2, XCircle, Upload, FileText, ArrowRight, Globe, AlertTriangle, RefreshCw } from 'lucide-react'
-import { searchCardByName, resolveCardsBatch, addBulkInventoryItems, importLigaMagicCollection } from '@/app/actions/inventory'
-import type { BulkItemResult } from '@/app/actions/inventory'
-import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Input } from '@/components/ui/input'
-import { SetBadge } from '@/components/ui/set-badge'
-import { ChipListInput } from '@/components/ui/chip-list-input'
+import { useState, useTransition } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Loader2,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  Upload,
+  FileText,
+  ArrowRight,
+  Globe,
+  AlertTriangle,
+  RefreshCw,
+} from "lucide-react";
+import {
+  searchCardByName,
+  resolveCardsBatch,
+  addBulkInventoryItems,
+  importLigaMagicCollection,
+} from "@/app/actions/inventory";
+import type { BulkItemResult } from "@/app/actions/inventory";
+import type { ImportProgress } from "@/lib/scrapers/ligaMagicScraper";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { SetBadge } from "@/components/ui/set-badge";
+import { ChipListInput } from "@/components/ui/chip-list-input";
+import { ImportProgressDisplay } from "@/components/admin/import-progress-display";
 
 type ParsedLine = {
-  quantity: number
-  cardName: string
-  setCode: string
-  cardNumber?: string
-  condition: string
-  language: string
-  price: number
-  extras: string[]
-  raw: string
-}
+  quantity: number;
+  cardName: string;
+  setCode: string;
+  cardNumber?: string;
+  condition: string;
+  language: string;
+  price: number;
+  extras: string[];
+  raw: string;
+};
 
-const VALID_CONDITIONS = ['NM', 'SP', 'MP', 'HP', 'D']
-const VALID_LANGUAGES = ['EN', 'PT', 'JP']
-const VALID_EXTRAS = ['FOIL', 'PROMO', 'PRE_RELEASE', 'FNM', 'DCI', 'TEXTLESS', 'SIGNED', 'OVERSIZED', 'ALTERED', 'FOIL_ETCHED', 'MISPRINT', 'MISCUT']
+const VALID_CONDITIONS = ["NM", "SP", "MP", "HP", "D"];
+const VALID_LANGUAGES = ["EN", "PT", "JP"];
+const VALID_EXTRAS = [
+  "FOIL",
+  "PROMO",
+  "PRE_RELEASE",
+  "FNM",
+  "DCI",
+  "TEXTLESS",
+  "SIGNED",
+  "OVERSIZED",
+  "ALTERED",
+  "FOIL_ETCHED",
+  "MISPRINT",
+  "MISCUT",
+];
 
 const EXAMPLE_TEXT = `4 Lightning Bolt [M25] #169 NM EN 2.50
 2 Counterspell [TMP] SP PT 5.00
 1 Black Lotus [LEA] #232 NM EN 25000.00
-3 Sol Ring [C21] MP EN 15.00`
+3 Sol Ring [C21] MP EN 15.00`;
 
 function parseLine(line: string): ParsedLine | null {
-  const trimmed = line.trim()
-  if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('//')) return null
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith("#") || trimmed.startsWith("//"))
+    return null;
 
   // Format: <qty> <card name> [SET] <condition> <language> <price>
   // [SET] is optional, e.g. [M25], (LEA), M25
   // Price is the last token, language second-to-last, condition third-to-last
-  const tokens = trimmed.split(/\s+/)
-  if (tokens.length < 5) return null
+  const tokens = trimmed.split(/\s+/);
+  if (tokens.length < 5) return null;
 
-  const quantity = parseInt(tokens[0], 10)
-  if (isNaN(quantity) || quantity < 1) return null
+  const quantity = parseInt(tokens[0], 10);
+  if (isNaN(quantity) || quantity < 1) return null;
 
-  const price = parseFloat(tokens[tokens.length - 1].replace(',', '.'))
-  if (isNaN(price) || price < 0) return null
+  const price = parseFloat(tokens[tokens.length - 1].replace(",", "."));
+  if (isNaN(price) || price < 0) return null;
 
-  const language = tokens[tokens.length - 2].toUpperCase()
-  const condition = tokens[tokens.length - 3].toUpperCase()
+  const language = tokens[tokens.length - 2].toUpperCase();
+  const condition = tokens[tokens.length - 3].toUpperCase();
 
-  if (!VALID_CONDITIONS.includes(condition)) return null
-  if (!VALID_LANGUAGES.includes(language)) return null
+  if (!VALID_CONDITIONS.includes(condition)) return null;
+  if (!VALID_LANGUAGES.includes(language)) return null;
 
-  const nameTokens = tokens.slice(1, tokens.length - 3)
+  const nameTokens = tokens.slice(1, tokens.length - 3);
 
-  let setCode: string | undefined
-  let cardNumber: string | undefined
+  let setCode: string | undefined;
+  let cardNumber: string | undefined;
 
   // Extract optional #NUMBER
-  const numTokenIndex = nameTokens.findIndex(t => /^#\d+$/.test(t))
+  const numTokenIndex = nameTokens.findIndex((t) => /^#\d+$/.test(t));
   if (numTokenIndex !== -1) {
-    cardNumber = nameTokens[numTokenIndex].replace('#', '')
-    nameTokens.splice(numTokenIndex, 1)
+    cardNumber = nameTokens[numTokenIndex].replace("#", "");
+    nameTokens.splice(numTokenIndex, 1);
   }
 
   // Extract optional [SET] or (SET)
-  const setTokenIndex = nameTokens.findIndex(t => /^\[.+\]$/.test(t) || /^\(.+\)$/.test(t))
+  const setTokenIndex = nameTokens.findIndex(
+    (t) => /^\[.+\]$/.test(t) || /^\(.+\)$/.test(t),
+  );
   if (setTokenIndex !== -1) {
-    setCode = nameTokens[setTokenIndex].replace(/[\[\]\(\)]/g, '').toUpperCase()
-    nameTokens.splice(setTokenIndex, 1)
+    setCode = nameTokens[setTokenIndex]
+      .replace(/[\[\]\(\)]/g, "")
+      .toUpperCase();
+    nameTokens.splice(setTokenIndex, 1);
   }
 
-  const extras: string[] = []
-  while (nameTokens.length > 0 && VALID_EXTRAS.includes(nameTokens[nameTokens.length - 1].toUpperCase())) {
-    extras.unshift(nameTokens.pop()!.toUpperCase())
+  const extras: string[] = [];
+  while (
+    nameTokens.length > 0 &&
+    VALID_EXTRAS.includes(nameTokens[nameTokens.length - 1].toUpperCase())
+  ) {
+    extras.unshift(nameTokens.pop()!.toUpperCase());
   }
 
-  const cardName = nameTokens.join(' ')
-  if (!cardName) return null
+  const cardName = nameTokens.join(" ");
+  if (!cardName) return null;
 
-  return { quantity, cardName, setCode: setCode || '', cardNumber, condition, language, price, extras, raw: trimmed }
+  return {
+    quantity,
+    cardName,
+    setCode: setCode || "",
+    cardNumber,
+    condition,
+    language,
+    price,
+    extras,
+    raw: trimmed,
+  };
 }
 
-type ImportMode = 'text' | 'ligamagic'
+type ImportMode = "text" | "ligamagic";
 
 export function BulkImportForm() {
-  const [importMode, setImportMode] = useState<ImportMode>('text')
-  const [textInput, setTextInput] = useState('')
-  const [ligamagicId, setLigamagicId] = useState('')
-  const [step, setStep] = useState<'input' | 'preview'>('input')
-  const [items, setItems] = useState<(BulkItemResult & { originalLine: string })[]>([])
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [processProgress, setProcessProgress] = useState({ current: 0, total: 0 })
-  const [isPending, startTransition] = useTransition()
-  const router = useRouter()
+  const [importMode, setImportMode] = useState<ImportMode>("text");
+  const [textInput, setTextInput] = useState("");
+  const [ligamagicId, setLigamagicId] = useState("");
+  const [step, setStep] = useState<"input" | "preview">("input");
+  const [items, setItems] = useState<
+    (BulkItemResult & { originalLine: string })[]
+  >([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [processProgress, setProcessProgress] = useState({
+    current: 0,
+    total: 0,
+  });
+  const [importProgress, setImportProgress] = useState<ImportProgress | null>(
+    null,
+  );
+  const [isStreamingProgress, setIsStreamingProgress] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
-  // === Text import handler ===
-  const handleProcessText = async () => {
-    const lines = textInput.split('\n').filter(l => l.trim())
-    const parsed: ParsedLine[] = []
-    const errors: string[] = []
+  // === Helper: Merge duplicate cards by key ===
+  const mergeDuplicateCards = (cards: ParsedLine[]): ParsedLine[] => {
+    const merged = cards.reduce(
+      (acc, curr) => {
+        const key = `${curr.cardName.toLowerCase()}|${curr.setCode}|${curr.cardNumber || ""}|${curr.condition}|${curr.language}|${curr.price}|${curr.extras.join(",")}`;
+        if (acc[key]) {
+          acc[key].quantity += curr.quantity;
+        } else {
+          acc[key] = { ...curr };
+        }
+        return acc;
+      },
+      {} as Record<string, ParsedLine>,
+    );
+    return Object.values(merged);
+  };
 
-    lines.forEach((line, i) => {
-      const result = parseLine(line)
-      if (result) {
-        parsed.push(result)
-      } else if (line.trim() && !line.trim().startsWith('#') && !line.trim().startsWith('//')) {
-        errors.push(`Linha ${i + 1}: formato inválido — "${line.trim()}"`)
-      }
-    })
-
-    if (errors.length) {
-      toast.error(`${errors.length} linha(s) com erro de formato`, {
-        description: errors.slice(0, 3).join('\n'),
-        duration: 6000,
-      })
-    }
-
-    if (!parsed.length) {
-      toast.error('Nenhuma linha válida encontrada.')
-      return
-    }
-
-    setIsProcessing(true)
-
-    // Merge duplicates
-    const mergedParsed = parsed.reduce((acc, curr) => {
-      const key = `${curr.cardName.toLowerCase()}|${curr.setCode}|${curr.cardNumber || ''}|${curr.condition}|${curr.language}|${curr.price}|${curr.extras.join(',')}`;
-      if (acc[key]) {
-        acc[key].quantity += curr.quantity;
-      } else {
-        acc[key] = { ...curr };
-      }
-      return acc;
-    }, {} as Record<string, ParsedLine>);
-    const parsedListToResolve = Object.values(mergedParsed);
-
-    setProcessProgress({ current: parsedListToResolve.length, total: parsedListToResolve.length })
-
-    const batchRequest = parsedListToResolve.map(p => ({
-      cardName: p.cardName,
-      setCode: p.setCode || undefined,
-      cardNumber: p.cardNumber,
-      quantity: p.quantity,
-      condition: p.condition,
-      language: p.language,
-      price: p.price,
-      extras: p.extras,
-      originalLine: p.raw
-    }));
-
+  // === Helper: Process cards in batches ===
+  const processCarsInBatches = async (batchRequest: any[]) => {
     const CHUNK_SIZE = 75;
     let results: any[] = [];
     for (let i = 0; i < batchRequest.length; i += CHUNK_SIZE) {
       const chunk = batchRequest.slice(i, i + CHUNK_SIZE);
       const chunkResults = await resolveCardsBatch(chunk);
       results = results.concat(chunkResults);
+      setProcessProgress({
+        current: Math.min(i + CHUNK_SIZE, batchRequest.length),
+        total: batchRequest.length,
+      });
+    }
+    return results;
+  };
+
+  // === Text import handler ===
+  const handleProcessText = async () => {
+    const lines = textInput.split("\n").filter((l) => l.trim());
+    const parsed: ParsedLine[] = [];
+    const errors: string[] = [];
+
+    lines.forEach((line, i) => {
+      const result = parseLine(line);
+      if (result) {
+        parsed.push(result);
+      } else if (
+        line.trim() &&
+        !line.trim().startsWith("#") &&
+        !line.trim().startsWith("//")
+      ) {
+        errors.push(`Linha ${i + 1}: formato inválido — "${line.trim()}"`);
+      }
+    });
+
+    if (errors.length) {
+      toast.error(`${errors.length} linha(s) com erro de formato`, {
+        description: errors.slice(0, 3).join("\n"),
+        duration: 6000,
+      });
     }
 
-    setItems(results)
-    setIsProcessing(false)
-    setStep('preview')
-  }
-
-  // === Liga Magic import handler ===
-  const handleProcessLigaMagic = async () => {
-    if (!ligamagicId.trim()) {
-      toast.error('Informe o ID da coleção da Liga Magic.')
-      return
+    if (!parsed.length) {
+      toast.error("Nenhuma linha válida encontrada.");
+      return;
     }
 
-    setIsProcessing(true)
+    setIsProcessing(true);
+    setProcessProgress({ current: 0, total: parsed.length });
 
     try {
-      const collectionCards = await importLigaMagicCollection(ligamagicId)
+      const mergedParsed = mergeDuplicateCards(parsed);
 
-      if (!collectionCards.length) {
-        toast.error('Nenhum card encontrado na coleção.')
-        setIsProcessing(false)
-        return
-      }
-
-      // Now resolve each card via Scryfall in chunks of 75
-      const batchRequest = collectionCards.map(card => ({
-        cardName: card.cardName,
-        setCode: card.setCode || undefined,
-        cardNumber: card.cardNumber,
-        quantity: card.quantity,
-        condition: card.condition,
-        language: card.language,
-        price: card.price,
-        extras: card.extras,
-        originalLine: card.originalLine
+      const batchRequest = mergedParsed.map((p) => ({
+        cardName: p.cardName,
+        setCode: p.setCode || undefined,
+        cardNumber: p.cardNumber,
+        quantity: p.quantity,
+        condition: p.condition,
+        language: p.language,
+        price: p.price,
+        extras: p.extras,
+        originalLine: p.raw,
       }));
 
-      const CHUNK_SIZE = 75;
-      let results: any[] = [];
-      for (let i = 0; i < batchRequest.length; i += CHUNK_SIZE) {
-        const chunk = batchRequest.slice(i, i + CHUNK_SIZE);
-        const chunkResults = await resolveCardsBatch(chunk);
-        results = results.concat(chunkResults);
-      }
-
-      setItems(results)
-      setStep('preview')
+      const results = await processCarsInBatches(batchRequest);
+      setItems(results);
+      setStep("preview");
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'Erro ao importar coleção'
-      toast.error(msg)
+      toast.error(
+        error instanceof Error ? error.message : "Erro ao processar lista",
+      );
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
     }
-  }
+  };
+
+  // === Liga Magic import handler with SSE streaming ===
+  const handleProcessLigaMagic = async () => {
+    if (!ligamagicId.trim()) {
+      toast.error("Informe o ID da coleção da Liga Magic.");
+      return;
+    }
+
+    setIsProcessing(true);
+    setIsStreamingProgress(true);
+    setImportProgress(null);
+    setProcessProgress({ current: 0, total: 0 });
+
+    try {
+      // Use SSE to stream progress updates in real-time
+      const eventSource = new EventSource(
+        `/api/import-collection-stream?id=${encodeURIComponent(ligamagicId)}`,
+      );
+
+      let hasError = false;
+
+      eventSource.onmessage = (event) => {
+        try {
+          const progress: ImportProgress = JSON.parse(event.data);
+          setImportProgress(progress);
+
+          if (progress.status === "completed" && !hasError) {
+            eventSource.close();
+            // After streaming is done, fetch the actual collection data
+            setTimeout(async () => {
+              try {
+                const cards = await importLigaMagicCollection(ligamagicId);
+
+                if (!cards.length) {
+                  toast.error("Nenhum card encontrado na coleção.");
+                  setIsStreamingProgress(false);
+                  return;
+                }
+
+                setProcessProgress({ current: 0, total: cards.length });
+
+                const batchRequest = cards.map((card) => ({
+                  cardName: card.cardName,
+                  setCode: card.setCode || undefined,
+                  cardNumber: card.cardNumber,
+                  quantity: card.quantity,
+                  condition: card.condition,
+                  language: card.language,
+                  price: card.price,
+                  extras: card.extras,
+                  originalLine: card.originalLine,
+                }));
+
+                const results = await processCarsInBatches(batchRequest);
+                setItems(results);
+                setStep("preview");
+              } catch (error) {
+                const msg =
+                  error instanceof Error
+                    ? error.message
+                    : "Erro ao importar coleção";
+                toast.error(msg);
+              } finally {
+                setIsStreamingProgress(false);
+              }
+            }, 500);
+          } else if (progress.status === "error") {
+            hasError = true;
+            eventSource.close();
+            toast.error("Erro ao importar coleção. Tente novamente.");
+            setIsStreamingProgress(false);
+          }
+        } catch (e) {
+          console.error("Error parsing progress:", e);
+        }
+      };
+
+      eventSource.onerror = () => {
+        eventSource.close();
+        toast.error("Conexão perdida durante a importação.");
+        setIsStreamingProgress(false);
+      };
+    } catch (error) {
+      const msg =
+        error instanceof Error ? error.message : "Erro ao importar coleção";
+      toast.error(msg);
+      setIsStreamingProgress(false);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleRemoveItem = (index: number) => {
-    setItems(prev => prev.filter((_, i) => i !== index))
-  }
+    setItems((prev) => prev.filter((_, i) => i !== index));
+  };
 
-  const handleUpdateItem = (index: number, field: string, value: string | number | string[]) => {
-    setItems(prev => prev.map((item, i) => {
-      if (i !== index) return item
-      return { ...item, [field]: value }
-    }))
-  }
+  const handleUpdateItem = (
+    index: number,
+    field: string,
+    value: string | number | string[],
+  ) => {
+    setItems((prev) =>
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        return { ...item, [field]: value };
+      }),
+    );
+  };
 
-  const [reResolvingIndex, setReResolvingIndex] = useState<number | null>(null)
+  const [reResolvingIndex, setReResolvingIndex] = useState<number | null>(null);
 
   const handleReResolve = async (index: number) => {
-    const item = items[index]
-    if (!item) return
+    const item = items[index];
+    if (!item) return;
 
-    setReResolvingIndex(index)
+    setReResolvingIndex(index);
     try {
       // Use the normal search API directly for re-processing since it supports fuzzy matching via the text search API
-      const found = await searchCardByName(item.cardName, item.setCode, item.cardNumber);
+      const found = await searchCardByName(
+        item.cardName,
+        item.setCode,
+        item.cardNumber,
+      );
 
-      if (found && found.status === 'success') {
+      if (found && found.status === "success") {
         const resultItem = {
           ...item,
           ...found,
@@ -245,40 +387,57 @@ export function BulkImportForm() {
           condition: item.condition,
           language: item.language,
           price: item.price,
-          status: 'success' as const
+          status: "success" as const,
         };
 
-        setItems(prev => prev.map((it, i) => {
-          if (i !== index) return it
-          return resultItem;
-        }))
+        setItems((prev) =>
+          prev.map((it, i) => {
+            if (i !== index) return it;
+            return resultItem;
+          }),
+        );
       } else {
-        setItems(prev => prev.map((it, i) => {
-          if (i !== index) return it
-          return { ...it, status: 'error' as const, error: `Não encontrado com nome "${it.cardName}" e set "${it.setCode || '(vazio)'}"`, scryfallId: undefined, imageUrl: undefined }
-        }))
+        setItems((prev) =>
+          prev.map((it, i) => {
+            if (i !== index) return it;
+            return {
+              ...it,
+              status: "error" as const,
+              error: `Não encontrado com nome "${it.cardName}" e set "${it.setCode || "(vazio)"}"`,
+              scryfallId: undefined,
+              imageUrl: undefined,
+            };
+          }),
+        );
       }
     } catch {
-      toast.error('Erro ao buscar no Scryfall')
+      toast.error("Erro ao buscar no Scryfall");
     } finally {
-      setReResolvingIndex(null)
+      setReResolvingIndex(null);
     }
-  }
+  };
 
-  const successItems = items.filter(i => i.status === 'success' && i.scryfallId)
-  const errorItems = items.filter(i => i.status === 'error')
+  const successItems = items.filter(
+    (i) => i.status === "success" && i.scryfallId,
+  );
+  const errorItems = items.filter((i) => i.status === "error");
 
   const handleConfirm = () => {
     startTransition(async () => {
       try {
-        const toAdd = successItems.map(item => ({
+        const toAdd = successItems.map((item) => ({
           scryfallId: item.scryfallId!,
           quantity: item.quantity,
-          condition: item.condition as 'NM' | 'SP' | 'MP' | 'HP' | 'D',
-          language: item.language as 'EN' | 'PT' | 'JP',
+          condition: item.condition as "NM" | "SP" | "MP" | "HP" | "D",
+          language: item.language as "EN" | "PT" | "JP",
           price: item.price,
           extras: item.extras || [],
-        }))
+        }));
+
+        if (!toAdd.length) {
+          toast.error("Nenhum card com sucesso para adicionar.");
+          return;
+        }
 
         const CHUNK_SIZE = 50;
         let totalSuccesses = 0;
@@ -288,106 +447,150 @@ export function BulkImportForm() {
           const chunk = toAdd.slice(i, i + CHUNK_SIZE);
           const results = await addBulkInventoryItems(chunk);
 
-          totalSuccesses += results.filter(r => r.status === 'success').length;
-          totalErrors += results.filter(r => r.status === 'error').length;
+          totalSuccesses += results.filter(
+            (r) => r.status === "success",
+          ).length;
+          totalErrors += results.filter((r) => r.status === "error").length;
         }
 
         if (totalSuccesses > 0) {
-          toast.success(`${totalSuccesses} card(s) adicionados ao estoque!`)
+          toast.success(
+            `✓ ${totalSuccesses} card(s) adicionado(s) ao estoque!`,
+          );
         }
         if (totalErrors > 0) {
-          toast.error(`${totalErrors} card(s) falharam ao salvar.`)
+          toast.error(`✗ ${totalErrors} card(s) falharam ao salvar.`);
         }
 
-        router.push('/admin/inventory')
+        router.push("/admin/inventory");
       } catch (error) {
-        const msg = error instanceof Error ? error.message : 'Erro ao salvar'
-        toast.error(msg)
+        const msg = error instanceof Error ? error.message : "Erro ao salvar";
+        toast.error(msg);
       }
-    })
-  }
+    });
+  };
 
   const handleReset = () => {
-    setStep('input')
-    setItems([])
-  }
+    setStep("input");
+    setItems([]);
+  };
 
   return (
-    <div className="bg-card rounded-xl shadow-sm border overflow-hidden">
-      {step === 'input' && (
+    <div className="bg-card rounded-xl shadow-lg border overflow-hidden">
+      {step === "input" && (
         <div className="flex flex-col">
-          {/* Tab switcher */}
-          <div className="flex border-b">
+          {/* Enhanced Tab switcher */}
+          <div className="flex border-b bg-muted/30 dark:bg-muted/10 p-1">
             <button
-              onClick={() => setImportMode('text')}
-              className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${importMode === 'text'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
+              onClick={() => setImportMode("text")}
+              className={`flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 px-6 py-3.5 text-sm font-semibold transition-all rounded-lg mx-1 ${
+                importMode === "text"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/20"
+              }`}
             >
               <FileText className="h-4 w-4" />
-              Lista de Texto
+              <span className="hidden sm:inline">Lista de Texto</span>
+              <span className="sm:hidden">Texto</span>
             </button>
             <button
-              onClick={() => setImportMode('ligamagic')}
-              className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${importMode === 'ligamagic'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
+              onClick={() => setImportMode("ligamagic")}
+              className={`flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 px-6 py-3.5 text-sm font-semibold transition-all rounded-lg mx-1 ${
+                importMode === "ligamagic"
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/20"
+              }`}
             >
               <Globe className="h-4 w-4" />
-              Coleção Liga Magic
+              <span className="hidden sm:inline">LigaMagic</span>
+              <span className="sm:hidden">LM</span>
             </button>
           </div>
 
           {/* Text import */}
-          {importMode === 'text' && (
+          {importMode === "text" && (
             <div className="p-6 md:p-8 flex flex-col gap-6">
-              <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg border border-dashed">
-                <FileText className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-medium mb-1">Formato esperado (uma linha por card):</p>
-                  <code className="text-xs bg-background px-2 py-1 rounded font-mono block mt-1">
-                    &lt;quantidade&gt; &lt;nome do card&gt; [SET] #Nº &lt;condição&gt; &lt;idioma&gt; &lt;preço&gt;
-                  </code>
-                  <p className="text-muted-foreground mt-2">
-                    <span className="font-medium">[SET]:</span> obrigatório (ex: [M25]) &nbsp;|&nbsp;
-                    <span className="font-medium">#Nº:</span> opcional (ex: #169) &nbsp;|&nbsp;
-                    <span className="font-medium">Condições:</span> NM, SP, MP, HP, D &nbsp;|&nbsp;
-                    <span className="font-medium">Idiomas:</span> EN, PT, JP
+              {/* Info box with better styling */}
+              <div className="flex gap-4 p-4 md:p-5 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/50 rounded-xl">
+                <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <div className="text-sm space-y-2">
+                  <p className="font-semibold text-blue-900 dark:text-blue-100">
+                    Formato esperado (uma linha por card):
                   </p>
-                  <p className="text-muted-foreground mt-1 text-xs">
-                    Linhas iniciando com <code className="bg-background px-1 rounded">#</code> ou <code className="bg-background px-1 rounded">//</code> são ignoradas.
+                  <code className="text-xs bg-background dark:bg-background/50 px-3 py-2 rounded-lg font-mono block border border-blue-200 dark:border-blue-800/30">
+                    &lt;quantidade&gt; &lt;nome do card&gt; [SET] #Nº
+                    &lt;condição&gt; &lt;idioma&gt; &lt;preço&gt;
+                  </code>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-800 dark:text-blue-200">
+                    <div>
+                      <span className="font-semibold">[SET]:</span> obrigatório
+                      (ex: [M25])
+                    </div>
+                    <div>
+                      <span className="font-semibold">#Nº:</span> opcional (ex:
+                      #169)
+                    </div>
+                    <div>
+                      <span className="font-semibold">Condições:</span> NM, SP,
+                      MP, HP, D
+                    </div>
+                    <div>
+                      <span className="font-semibold">Idiomas:</span> EN, PT, JP
+                    </div>
+                  </div>
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    Linhas iniciando com{" "}
+                    <code className="bg-background dark:bg-background/50 px-1 rounded">
+                      #
+                    </code>{" "}
+                    ou{" "}
+                    <code className="bg-background dark:bg-background/50 px-1 rounded">
+                      //
+                    </code>{" "}
+                    são ignoradas.
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Lista de Cards</label>
+                  <label className="text-sm font-semibold">
+                    Lista de Cards
+                  </label>
                   <Button
                     type="button"
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="text-xs h-7"
+                    className="text-xs h-8"
                     onClick={() => setTextInput(EXAMPLE_TEXT)}
                   >
-                    Inserir exemplo
+                    📋 Inserir exemplo
                   </Button>
                 </div>
                 <textarea
-                  className="w-full min-h-[280px] rounded-lg border bg-background p-4 text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-colors placeholder:text-muted-foreground/50"
+                  className="w-full min-h-[320px] rounded-xl border bg-background dark:bg-background/50 p-4 text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-muted-foreground/50 dark:placeholder:text-muted-foreground/30"
                   placeholder={`# Exemplo:\n4 Lightning Bolt [M25] #169 NM EN 2.50\n2 Counterspell [TMP] SP PT 5.00\n1 Sol Ring [C21] MP EN 15.00`}
                   value={textInput}
-                  onChange={e => setTextInput(e.target.value)}
+                  onChange={(e) => setTextInput(e.target.value)}
                   autoFocus
                 />
-                <p className="text-xs text-muted-foreground">
-                  {textInput.split('\n').filter(l => l.trim() && !l.trim().startsWith('#') && !l.trim().startsWith('//')).length} linha(s) detectadas
+                <p className="text-xs text-muted-foreground flex items-center gap-2">
+                  <span className="inline-block h-2 w-2 rounded-full bg-primary"></span>
+                  {
+                    textInput
+                      .split("\n")
+                      .filter(
+                        (l) =>
+                          l.trim() &&
+                          !l.trim().startsWith("#") &&
+                          !l.trim().startsWith("//"),
+                      ).length
+                  }{" "}
+                  linha(s) detectada(s)
                 </p>
               </div>
 
-              <div className="flex justify-end gap-3">
+              <div className="flex justify-end gap-3 pt-2">
                 <Button
                   onClick={handleProcessText}
                   disabled={!textInput.trim() || isProcessing}
@@ -397,7 +600,7 @@ export function BulkImportForm() {
                   {isProcessing ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Resolvendo Múltiplos Cards...
+                      Resolvendo...
                     </>
                   ) : (
                     <>
@@ -411,45 +614,72 @@ export function BulkImportForm() {
           )}
 
           {/* Liga Magic import */}
-          {importMode === 'ligamagic' && (
+          {importMode === "ligamagic" && (
             <div className="p-6 md:p-8 flex flex-col gap-6">
-              <div className="flex items-start gap-3 p-4 bg-muted/50 rounded-lg border border-dashed">
-                <Globe className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-medium mb-1">Importar da Liga Magic</p>
-                  <p className="text-muted-foreground">
-                    Informe o ID da coleção da Liga Magic para importar automaticamente todos os cards.
-                    O ID pode ser encontrado na URL da coleção: <code className="bg-background px-1 rounded text-xs">ligamagic.com.br/?view=colecao/colecao&id=<strong>123456</strong></code>
+              {/* Progress Display */}
+              {(isStreamingProgress || importProgress) && (
+                <div className="animate-in fade-in slide-in-from-top-2 duration-300">
+                  <ImportProgressDisplay
+                    progress={importProgress}
+                    isImporting={isStreamingProgress}
+                    title="Importando coleção LigaMagic..."
+                  />
+                </div>
+              )}
+
+              {/* Info box */}
+              <div className="flex gap-4 p-4 md:p-5 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/50 rounded-xl">
+                <Globe className="h-6 w-6 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+                <div className="text-sm space-y-2">
+                  <p className="font-semibold text-purple-900 dark:text-purple-100">
+                    Importar da Liga Magic
+                  </p>
+                  <p className="text-purple-800 dark:text-purple-200">
+                    Informe o ID da coleção para importar automaticamente todos
+                    os cards.
+                  </p>
+                  <p className="text-xs text-purple-700 dark:text-purple-300">
+                    O ID pode ser encontrado na URL:{" "}
+                    <code className="bg-background dark:bg-background/50 px-2 py-1 rounded font-mono">
+                      ligamagic.com.br/?view=colecao/colecao&id=
+                      <strong>123456</strong>
+                    </code>
                   </p>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-medium">ID da Coleção</label>
-                <div className="flex gap-3">
+              <div className="flex flex-col gap-3">
+                <label className="text-sm font-semibold">ID da Coleção</label>
+                <div className="flex flex-col sm:flex-row gap-3">
                   <Input
-                    placeholder="Ex: 475083"
+                    placeholder="Ex: 123456"
                     value={ligamagicId}
-                    onChange={e => setLigamagicId(e.target.value)}
-                    className="max-w-xs font-mono"
-                    onKeyDown={e => e.key === 'Enter' && handleProcessLigaMagic()}
+                    onChange={(e) => setLigamagicId(e.target.value)}
+                    className="font-mono text-sm"
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleProcessLigaMagic()
+                    }
                     autoFocus
+                    disabled={isStreamingProgress}
                   />
                   <Button
                     onClick={handleProcessLigaMagic}
-                    disabled={!ligamagicId.trim() || isProcessing}
-                    className="gap-2"
+                    disabled={
+                      !ligamagicId.trim() || isProcessing || isStreamingProgress
+                    }
+                    className="gap-2 whitespace-nowrap"
                     size="lg"
                   >
-                    {isProcessing ? (
+                    {isProcessing || isStreamingProgress ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Importando Coleção...
+                        <span className="hidden sm:inline">Importando...</span>
+                        <span className="sm:hidden">...</span>
                       </>
                     ) : (
                       <>
                         <ArrowRight className="h-4 w-4" />
-                        Importar Coleção
+                        Importar
                       </>
                     )}
                   </Button>
@@ -460,41 +690,66 @@ export function BulkImportForm() {
         </div>
       )}
 
-      {step === 'preview' && (
+      {step === "preview" && (
         <div className="flex flex-col">
           {/* Summary bar */}
-          <div className="p-4 md:p-6 border-b bg-muted/30 flex flex-col sm:flex-row items-start sm:items-center gap-3 justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm">
-                <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                <span className="font-medium">{successItems.length} encontrado(s)</span>
+          <div className="p-4 md:p-6 border-b bg-gradient-to-r from-muted/50 to-muted/30 dark:from-muted/20 dark:to-muted/10 flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+            <div className="flex flex-wrap items-center gap-6">
+              <div className="flex items-center gap-3 text-sm font-semibold">
+                <div className="flex items-center justify-center h-8 w-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Encontrados</p>
+                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                    {successItems.length}
+                  </p>
+                </div>
               </div>
               {errorItems.length > 0 && (
-                <div className="flex items-center gap-2 text-sm">
-                  <XCircle className="h-4 w-4 text-red-500" />
-                  <span className="font-medium">{errorItems.length} com erro</span>
+                <div className="flex items-center gap-3 text-sm font-semibold">
+                  <div className="flex items-center justify-center h-8 w-8 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                    <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Com erro</p>
+                    <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                      {errorItems.length}
+                    </p>
+                  </div>
                 </div>
               )}
             </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={handleReset}>
-                Voltar e Editar
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleReset}
+                className="flex-1 sm:flex-none"
+              >
+                ← Voltar
               </Button>
               <Button
                 onClick={handleConfirm}
                 disabled={!successItems.length || isPending}
                 size="sm"
-                className="gap-2"
+                className="gap-2 flex-1 sm:flex-none"
               >
                 {isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Salvando...
+                    <span className="hidden sm:inline">Salvando...</span>
+                    <span className="sm:hidden">...</span>
                   </>
                 ) : (
                   <>
                     <Upload className="h-4 w-4" />
-                    Adicionar {successItems.length} Card(s) ao Estoque
+                    <span className="hidden md:inline">
+                      Adicionar {successItems.length} Card(s)
+                    </span>
+                    <span className="md:hidden">
+                      {successItems.length} Cards
+                    </span>
                   </>
                 )}
               </Button>
@@ -505,41 +760,74 @@ export function BulkImportForm() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/20">
-                  <th className="py-3 px-4 text-left font-medium">Status</th>
-                  <th className="py-3 px-4 text-left font-medium">Card</th>
-                  <th className="py-3 px-4 text-left font-medium">Edição</th>
-                  <th className="py-3 px-4 text-center font-medium">Nº</th>
-                  <th className="py-3 px-4 text-center font-medium">Qtd</th>
-                  <th className="py-3 px-4 text-center font-medium">Condição</th>
-                  <th className="py-3 px-4 text-center font-medium">Idioma</th>
-                  <th className="py-3 px-4 text-center font-medium">Extras</th>
-                  <th className="py-3 px-4 text-right font-medium">Preço (R$)</th>
-                  <th className="py-3 px-4 text-center font-medium w-12"></th>
+                <tr className="border-b bg-muted/50 dark:bg-muted/20">
+                  <th className="py-3 px-4 text-left font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                    Status
+                  </th>
+                  <th className="py-3 px-4 text-left font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                    Card
+                  </th>
+                  <th className="py-3 px-4 text-left font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                    Edição
+                  </th>
+                  <th className="py-3 px-4 text-center font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                    Nº
+                  </th>
+                  <th className="py-3 px-4 text-center font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                    Qtd
+                  </th>
+                  <th className="py-3 px-4 text-center font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                    Condição
+                  </th>
+                  <th className="py-3 px-4 text-center font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                    Idioma
+                  </th>
+                  <th className="py-3 px-4 text-center font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                    Extras
+                  </th>
+                  <th className="py-3 px-4 text-right font-semibold text-muted-foreground uppercase text-xs tracking-wide">
+                    Preço
+                  </th>
+                  <th className="py-3 px-4 text-center font-semibold text-muted-foreground uppercase text-xs tracking-wide w-12"></th>
                 </tr>
               </thead>
               <tbody>
                 {items.map((item, index) => (
                   <tr
                     key={index}
-                    className={`border-b transition-colors hover:bg-muted/30 ${item.status === 'error' ? 'bg-red-500/5' : ''}`}
+                    className={`border-b transition-colors hover:bg-muted/50 dark:hover:bg-muted/20 ${
+                      item.status === "error"
+                        ? "bg-red-50/50 dark:bg-red-950/20"
+                        : "bg-background dark:bg-background"
+                    }`}
                   >
                     <td className="py-3 px-4">
-                      {item.status === 'success' ? (
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                      {item.status === "success" ? (
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
                       ) : (
                         <div className="flex items-center gap-2">
-                          <XCircle className="h-5 w-5 text-red-500 shrink-0" />
-                          <span className="text-xs text-red-500 max-w-[120px] truncate" title={item.error}>{item.error}</span>
+                          <XCircle className="h-5 w-5 text-red-500 dark:text-red-400 shrink-0" />
+                          <span
+                            className="text-xs text-red-600 dark:text-red-400 max-w-[120px] truncate"
+                            title={item.error}
+                          >
+                            {item.error}
+                          </span>
                         </div>
                       )}
                     </td>
                     <td className="py-3 px-4">
-                      {item.status === 'error' ? (
+                      {item.status === "error" ? (
                         <div className="flex flex-col gap-1">
                           <Input
                             value={item.cardName}
-                            onChange={e => handleUpdateItem(index, 'cardName', e.target.value)}
+                            onChange={(e) =>
+                              handleUpdateItem(
+                                index,
+                                "cardName",
+                                e.target.value,
+                              )
+                            }
                             className="h-8 text-sm w-full font-medium"
                             placeholder="Nome do Card"
                           />
@@ -556,7 +844,10 @@ export function BulkImportForm() {
                           ) : (
                             <div className="w-8 h-11 bg-muted rounded shrink-0" />
                           )}
-                          <span className="font-semibold truncate max-w-[200px]" title={item.cardName}>
+                          <span
+                            className="font-semibold truncate max-w-[200px]"
+                            title={item.cardName}
+                          >
                             {item.cardName}
                           </span>
                         </div>
@@ -564,10 +855,19 @@ export function BulkImportForm() {
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1.5">
-                        <SetBadge setCode={item.setCode || ''} showText={false} />
+                        <SetBadge
+                          setCode={item.setCode || ""}
+                          showText={false}
+                        />
                         <Input
-                          value={item.setCode || ''}
-                          onChange={e => handleUpdateItem(index, 'setCode', e.target.value.toUpperCase())}
+                          value={item.setCode || ""}
+                          onChange={(e) =>
+                            handleUpdateItem(
+                              index,
+                              "setCode",
+                              e.target.value.toUpperCase(),
+                            )
+                          }
                           className="w-20 h-8 text-xs font-mono uppercase"
                           placeholder="SET"
                         />
@@ -586,18 +886,25 @@ export function BulkImportForm() {
                           )}
                         </Button>
                       </div>
-                      {item.error && item.status === 'success' && (
+                      {item.error && item.status === "success" && (
                         <div className="flex items-center gap-1 mt-1">
                           <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
-                          <span className="text-[10px] text-amber-500 truncate" title={item.error}>{item.error}</span>
+                          <span
+                            className="text-[10px] text-amber-500 truncate"
+                            title={item.error}
+                          >
+                            {item.error}
+                          </span>
                         </div>
                       )}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <Input
                         type="text"
-                        value={item.cardNumber || ''}
-                        onChange={e => handleUpdateItem(index, 'cardNumber', e.target.value)}
+                        value={item.cardNumber || ""}
+                        onChange={(e) =>
+                          handleUpdateItem(index, "cardNumber", e.target.value)
+                        }
                         className="w-16 text-center h-8 text-sm mx-auto font-mono"
                         placeholder="—"
                       />
@@ -606,17 +913,25 @@ export function BulkImportForm() {
                       <Input
                         type="number"
                         value={item.quantity}
-                        onChange={e => handleUpdateItem(index, 'quantity', parseInt(e.target.value) || 1)}
+                        onChange={(e) =>
+                          handleUpdateItem(
+                            index,
+                            "quantity",
+                            parseInt(e.target.value) || 1,
+                          )
+                        }
                         className="w-16 text-center h-8 text-sm mx-auto"
                         min={1}
-                        disabled={item.status === 'error'}
+                        disabled={item.status === "error"}
                       />
                     </td>
                     <td className="py-3 px-4 text-center">
                       <Select
                         value={item.condition}
-                        onValueChange={v => v && handleUpdateItem(index, 'condition', v)}
-                        disabled={item.status === 'error'}
+                        onValueChange={(v) =>
+                          v && handleUpdateItem(index, "condition", v)
+                        }
+                        disabled={item.status === "error"}
                       >
                         <SelectTrigger className="w-20 h-8 text-xs mx-auto">
                           <SelectValue />
@@ -633,8 +948,10 @@ export function BulkImportForm() {
                     <td className="py-3 px-4 text-center">
                       <Select
                         value={item.language}
-                        onValueChange={v => v && handleUpdateItem(index, 'language', v)}
-                        disabled={item.status === 'error'}
+                        onValueChange={(v) =>
+                          v && handleUpdateItem(index, "language", v)
+                        }
+                        disabled={item.status === "error"}
                       >
                         <SelectTrigger className="w-20 h-8 text-xs mx-auto">
                           <SelectValue />
@@ -649,11 +966,11 @@ export function BulkImportForm() {
                     <td className="py-3 px-4">
                       <ChipListInput
                         values={item.extras || []}
-                        onChange={(v) => handleUpdateItem(index, 'extras', v)}
+                        onChange={(v) => handleUpdateItem(index, "extras", v)}
                         suggestions={VALID_EXTRAS}
                         placeholder="Extras"
                         className="min-w-[120px]"
-                        disabled={item.status === 'error'}
+                        disabled={item.status === "error"}
                       />
                     </td>
                     <td className="py-3 px-4 text-right">
@@ -661,10 +978,16 @@ export function BulkImportForm() {
                         type="number"
                         step="0.01"
                         value={item.price}
-                        onChange={e => handleUpdateItem(index, 'price', parseFloat(e.target.value) || 0)}
+                        onChange={(e) =>
+                          handleUpdateItem(
+                            index,
+                            "price",
+                            parseFloat(e.target.value) || 0,
+                          )
+                        }
                         className="w-24 text-right h-8 text-sm ml-auto"
                         min={0}
-                        disabled={item.status === 'error'}
+                        disabled={item.status === "error"}
                       />
                     </td>
                     <td className="py-3 px-4 text-center">
@@ -720,5 +1043,5 @@ export function BulkImportForm() {
         </div>
       )}
     </div>
-  )
+  );
 }
