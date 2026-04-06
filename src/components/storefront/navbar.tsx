@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CartDrawer } from "@/components/shop/CartDrawer";
+import { CartDrawer } from "@/components/shop/cart-drawer";
 
 export function Navbar({ tenant }: { tenant: { name: string; brandColor: string | null } | null }) {
   return (

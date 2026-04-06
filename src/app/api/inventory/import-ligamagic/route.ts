@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCollectionById } from "@/lib/ligaMagic";
+import { getCollectionById } from "@/lib/liga-magic";
 import { logger, createTimer } from "@/lib/logger";
 import type { Condition } from "@prisma/client";
 

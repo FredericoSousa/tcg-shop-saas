@@ -15,7 +15,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import type { BulkItemResult } from "@/lib/types/inventory";
-import type { ImportProgress } from "@/lib/scrapers/ligaMagicScraper";
+import type { ImportProgress } from "@/lib/scrapers/liga-magic-scraper";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import {

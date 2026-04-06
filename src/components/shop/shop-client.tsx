@@ -20,7 +20,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
-import { useCart } from "@/store/useCart";
+import { useCart } from "@/store/use-cart";
 import { SetBadge } from "@/components/ui/set-badge";
 import {
   PackageOpen,

@@ -5,7 +5,7 @@ import { scryfall } from "@/lib/scryfall";
 import { revalidatePath } from "next/cache";
 import { Condition, Game, Prisma } from "@prisma/client";
 import { logger, createTimer } from "@/lib/logger";
-import { cardCache, generateCardCacheKey } from "@/lib/cache/cardCache";
+import { cardCache, generateCardCacheKey } from "@/lib/cache/card-cache";
 import { ScryfallCard } from "@/lib/types/scryfall";
 
 export async function POST(request: NextRequest) {

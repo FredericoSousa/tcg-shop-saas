@@ -1,6 +1,6 @@
 import { getBrowser } from "../puppeteer";
 import { logger } from "../logger";
-import { convertSetCode } from "../constants/cardMappings";
+import { convertSetCode } from "../constants/card-mappings";
 import { Page } from "puppeteer-core";
 import { JSDOM } from "jsdom";
 

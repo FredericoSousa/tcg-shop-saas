@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { scryfall } from "@/lib/scryfall";
 import { logger, createTimer } from "@/lib/logger";
-import { cardCache, generateCardCacheKey } from "@/lib/cache/cardCache";
+import { cardCache, generateCardCacheKey } from "@/lib/cache/card-cache";
 import type { BulkItemResult } from "@/lib/types/inventory";
 import { ScryfallCard } from "@/lib/types/scryfall";
 

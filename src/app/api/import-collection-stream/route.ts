@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
-import { getCollectionById } from "@/lib/scrapers/ligaMagicScraper";
-import type { ImportProgress } from "@/lib/scrapers/ligaMagicScraper";
+import { getCollectionById } from "@/lib/scrapers/liga-magic-scraper";
+import type { ImportProgress } from "@/lib/scrapers/liga-magic-scraper";
 
 /**
  * SSE endpoint for streaming LigaMagic collection import progress

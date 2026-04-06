@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { ShopClient } from "@/components/shop/ShopClient";
+import { ShopClient } from "@/components/shop/shop-client";
 import { Sparkles } from "lucide-react";
 import { getStorefrontInventory, getStorefrontFilters } from "@/lib/services/inventory.service";
 

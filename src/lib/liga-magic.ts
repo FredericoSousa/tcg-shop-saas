@@ -3,12 +3,12 @@
  * This file maintains backward compatibility while delegating to the new scraper
  */
 
-import { getCollectionById as scrapeCollection } from "./scrapers/ligaMagicScraper";
+import { getCollectionById as scrapeCollection } from "./scrapers/liga-magic-scraper";
 import {
   LIGAMAGIC_CONDITIONS,
   LIGAMAGIC_LANGUAGES,
   LIGAMAGIC_EXTRAS,
-} from "./constants/cardMappings";
+} from "./constants/card-mappings";
 
 export type CollectionCard = {
   quantity: number;

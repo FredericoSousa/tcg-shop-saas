@@ -2,7 +2,7 @@
 
 import React from "react";
 import { AlertTriangle, CheckCircle2, Loader2, Zap } from "lucide-react";
-import type { ImportProgress } from "@/lib/scrapers/ligaMagicScraper";
+import type { ImportProgress } from "@/lib/scrapers/liga-magic-scraper";
 
 interface ImportProgressDisplayProps {
   progress: ImportProgress | null;
