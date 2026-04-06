@@ -39,7 +39,7 @@ export default async function AdminLayout({
       <div className="grid min-h-screen w-full md:grid-cols-[250px_1fr] bg-background font-sans antialiased text-foreground gap-0">
         <Sidebar tenantName={tenant?.name} />
         <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-muted/5">
-          <Navbar />
+          <Navbar username={session.username} />
           <main className="flex-1 flex flex-col gap-5 p-3 md:p-4 lg:p-6 w-full">
             {children}
           </main>

@@ -12,6 +12,7 @@ export interface SessionData {
   userId: string;
   username: string;
   tenantId: string;
+  role: "ADMIN" | "USER";
 }
 
 /**
@@ -116,6 +117,7 @@ export async function authenticateUser(
     userId: user.id,
     username: user.username,
     tenantId: user.tenantId,
+    role: user.role as "ADMIN" | "USER",
   };
 }
 
@@ -126,6 +128,7 @@ export async function createUser(
   username: string,
   password: string,
   tenantId: string,
+  role: "ADMIN" | "USER" = "USER",
 ) {
   const hashedPassword = await hashPassword(password);
 
@@ -134,6 +137,7 @@ export async function createUser(
       username,
       passwordHash: hashedPassword,
       tenantId,
+      role,
     },
   });
 }

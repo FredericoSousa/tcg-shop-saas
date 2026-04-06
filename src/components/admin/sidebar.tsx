@@ -7,12 +7,14 @@ import {
   Package,
   ShoppingCart,
   Settings,
+  Users,
 } from "lucide-react";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Estoque", href: "/admin/inventory", icon: Package },
   { name: "Vendas", href: "/admin/orders", icon: ShoppingCart },
+  { name: "Usuários", href: "/admin/users", icon: Users },
   { name: "Configurações", href: "/admin/settings", icon: Settings },
 ];
 

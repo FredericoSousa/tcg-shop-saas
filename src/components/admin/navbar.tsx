@@ -23,15 +23,20 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Package, ShoppingCart } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, Users } from "lucide-react";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Estoque", href: "/admin/inventory", icon: Package },
   { name: "Vendas", href: "/admin/orders", icon: ShoppingCart },
+  { name: "Usuários", href: "/admin/users", icon: Users },
 ];
 
-export function Navbar() {
+interface NavbarProps {
+  username?: string;
+}
+
+export function Navbar({ username }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { setTheme, theme } = useTheme();
@@ -149,15 +154,20 @@ export function Navbar() {
             <Avatar className="h-8 w-8">
               <AvatarImage src="" alt="Avatar" />
               <AvatarFallback className="bg-primary/15 text-primary font-bold text-sm">
-                L
+                {username?.charAt(0).toUpperCase() || "U"}
               </AvatarFallback>
             </Avatar>
-            <span className="hidden sm:inline text-sm font-medium">Loja</span>
+            <span className="hidden sm:inline text-sm font-medium">
+              {username || "Usuário"}
+            </span>
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuGroup>
-              <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+              <DropdownMenuLabel className="flex flex-col">
+                <span className="text-sm font-semibold">{username}</span>
+                <span className="text-xs text-muted-foreground font-normal">Minha Conta</span>
+              </DropdownMenuLabel>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
