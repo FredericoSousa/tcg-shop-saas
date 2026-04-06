@@ -18,7 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import type { ScryfallCard } from "@scryfall/api-types";
+import { ScryfallCard } from "@/lib/types/scryfall";
 
 const VALID_EXTRAS = [
   { value: "FOIL", label: "Foil" },
@@ -35,7 +35,7 @@ const VALID_EXTRAS = [
   { value: "MISCUT", label: "Miscut" },
 ];
 
-type Card = ScryfallCard.Any;
+type Card = ScryfallCard;
 
 export function AddCardDialog() {
   const [open, setOpen] = useState(false);
@@ -161,14 +161,12 @@ export function AddCardDialog() {
                 </legend>
                 <div className="max-h-72 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
                   {results.map((card) => {
-                    const cardObj = card as Record<string, unknown>;
-                    const imageUris = cardObj.image_uris as
-                      | Record<string, string>
-                      | undefined;
+                    const cardObj = card;
+                    const imageUris = cardObj.image_uris;
                     const imageUrl =
                       imageUris?.small ||
                       imageUris?.normal ||
-                      (cardObj as any).card_faces[0].image_uris.normal ||
+                      cardObj.card_faces?.[0]?.image_uris?.normal ||
                       "";
                     return (
                       <label
@@ -197,7 +195,7 @@ export function AddCardDialog() {
                         </div>
                         <div className="flex flex-col flex-1 min-w-0">
                           <span className="font-semibold text-sm leading-tight">
-                            {(card as any).printed_name ?? card.name}
+                            {String(card.printed_name || card.name || "")}
                           </span>
                           <span className="text-xs text-muted-foreground">
                             {card.set_name} ({card.set.toUpperCase()})

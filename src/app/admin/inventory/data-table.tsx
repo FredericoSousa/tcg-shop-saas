@@ -48,8 +48,6 @@ import {
   Trash2,
   X,
   Loader2,
-  Check,
-  AlertCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -78,24 +76,27 @@ export function DataTable<TData, TValue>({
 
   const uniqueSets = React.useMemo(() => {
     const sets = new Set<string>();
-    data.forEach((item: any) => {
-      if (item.cardTemplate?.set) sets.add(item.cardTemplate.set);
+    data.forEach((item: TData) => {
+      const i = item as { cardTemplate?: { set?: string } };
+      if (i.cardTemplate?.set) sets.add(i.cardTemplate.set);
     });
     return Array.from(sets).sort();
   }, [data]);
 
   const uniqueConditions = React.useMemo(() => {
     const conditions = new Set<string>();
-    data.forEach((item: any) => {
-      if (item.condition) conditions.add(item.condition);
+    data.forEach((item: TData) => {
+      const i = item as { condition?: string };
+      if (i.condition) conditions.add(i.condition);
     });
     return Array.from(conditions).sort();
   }, [data]);
 
   const uniqueLanguages = React.useMemo(() => {
     const langs = new Set<string>();
-    data.forEach((item: any) => {
-      if (item.language) langs.add(item.language);
+    data.forEach((item: TData) => {
+      const i = item as { language?: string };
+      if (i.language) langs.add(i.language);
     });
     return Array.from(langs).sort();
   }, [data]);
@@ -148,7 +149,7 @@ export function DataTable<TData, TValue>({
 
   const handleBulkDelete = async () => {
     const selectedRows = table.getFilteredSelectedRowModel().rows;
-    const ids = selectedRows.map((row) => (row.original as any).id);
+    const ids = selectedRows.map((row) => (row.original as { id: string }).id);
 
     setIsDeleting(true);
     try {
@@ -355,9 +356,9 @@ export function DataTable<TData, TValue>({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext(),
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                     </TableHead>
                   );
                 })}

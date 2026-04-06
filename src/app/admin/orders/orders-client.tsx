@@ -1,7 +1,6 @@
 "use client";
 
 import { OrderStatusManager } from "@/components/admin/order-status-manager";
-import { SetBadge } from "@/components/ui/set-badge";
 import { OrderStatus } from "@prisma/client";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";

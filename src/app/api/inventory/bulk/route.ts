@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { Condition, Game, Prisma } from "@prisma/client";
 import { logger, createTimer } from "@/lib/logger";
 import { cardCache, generateCardCacheKey } from "@/lib/cache/cardCache";
+import { ScryfallCard } from "@/lib/types/scryfall";
 
 export async function POST(request: NextRequest) {
   const timer = createTimer("addBulkInventoryItems");
@@ -58,12 +59,12 @@ export async function POST(request: NextRequest) {
     );
 
     // Check cache first for missing IDs
-    const fetchedScryfallData = new Map<string, any>();
+    const fetchedScryfallData = new Map<string, ScryfallCard>();
     const stillMissing: string[] = [];
 
     for (const id of missingScryfallIds) {
       const cacheKey = generateCardCacheKey(id);
-      const cachedData = cardCache.get(cacheKey);
+      const cachedData = cardCache.get(cacheKey) as ScryfallCard | null;
       if (cachedData) {
         fetchedScryfallData.set(id, cachedData);
       } else {
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     // Fetch from Scryfall only what's not in cache
     for (const id of stillMissing) {
-      const data = await scryfall.getCardById(id);
+      const data = (await scryfall.getCardById(id)) as ScryfallCard | null;
       if (data) {
         fetchedScryfallData.set(id, data);
         const cacheKey = generateCardCacheKey(id);
@@ -94,10 +95,8 @@ export async function POST(request: NextRequest) {
           const scryfallData = fetchedScryfallData.get(id);
           if (!scryfallData) continue;
 
-          const scryfallObj = scryfallData as Record<string, unknown>;
-          const imageUris = scryfallObj.image_uris as
-            | Record<string, string>
-            | undefined;
+          const scryfallObj = scryfallData;
+          const imageUris = scryfallObj.image_uris;
 
           const newTemplate = await tx.cardTemplate.create({
             data: {
@@ -108,11 +107,10 @@ export async function POST(request: NextRequest) {
                 imageUris?.normal ||
                 imageUris?.large ||
                 imageUris?.png ||
-                (scryfallData as any).card_faces?.[0]?.image_uris?.normal ||
+                scryfallObj.card_faces?.[0]?.image_uris?.normal ||
                 null,
               backImageUrl:
-                (scryfallData as any).card_faces?.[1]?.image_uris?.normal ||
-                null,
+                scryfallObj.card_faces?.[1]?.image_uris?.normal || null,
               game: Game.MAGIC,
               metadata: scryfallData as unknown as Prisma.InputJsonObject,
             },

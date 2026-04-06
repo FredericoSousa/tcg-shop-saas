@@ -191,7 +191,7 @@ export default async function AdminDashboardPage() {
             </div>
           ) : (
             <div className="divide-y divide-border/30">
-              {recentOrders.map((order, idx) => (
+              {recentOrders.map((order) => (
                 <Link key={order.id} href={`/admin/orders/${order.id}`}>
                   <div
                     className={`flex items-center justify-between p-4 hover:bg-muted/30 transition-all duration-200 cursor-pointer group`}

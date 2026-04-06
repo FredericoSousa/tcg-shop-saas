@@ -1,5 +1,4 @@
 import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
 import { ShopClient } from "@/components/shop/ShopClient";
 import { Sparkles } from "lucide-react";
 import { getStorefrontInventory, getStorefrontFilters } from "@/lib/services/inventory.service";
@@ -38,10 +37,6 @@ export default async function ShopPage(props: {
     );
   }
 
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: tenantId },
-  });
-
   const { items: inventory, total, pageCount } = await getStorefrontInventory(tenantId, page, filters);
   const storefrontFilters = await getStorefrontFilters(tenantId);
 
@@ -53,9 +48,9 @@ export default async function ShopPage(props: {
           <p className="text-muted-foreground mt-2 text-lg">Encontre o card perfeito para o seu deck</p>
         </header>
 
-        <ShopClient 
-          tenantId={tenantId} 
-          initialInventory={inventory} 
+        <ShopClient
+          tenantId={tenantId}
+          initialInventory={inventory}
           availableFilters={storefrontFilters}
           pageCount={pageCount}
           totalItems={total}

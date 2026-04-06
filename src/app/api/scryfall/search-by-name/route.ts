@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { scryfall } from "@/lib/scryfall";
 import type { BulkItemResult } from "@/lib/types/inventory";
+import { ScryfallCard } from "@/lib/types/scryfall";
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,14 +22,13 @@ export async function POST(request: NextRequest) {
       query += ` number:${cardNumber}`;
     }
 
-    const cards = await scryfall.searchCards(query);
+    const cards = (await scryfall.searchCards(query)) as ScryfallCard[];
     if (!cards.length) {
       return NextResponse.json(null);
     }
 
     const card = cards[0];
-    const cardObj = card as Record<string, unknown>;
-    const imageUris = cardObj.image_uris as Record<string, string> | undefined;
+    const imageUris = card.image_uris;
 
     const result: BulkItemResult = {
       cardName: card.name,
@@ -41,11 +41,11 @@ export async function POST(request: NextRequest) {
       imageUrl:
         imageUris?.small ||
         imageUris?.normal ||
-        (card as any).card_faces?.[0]?.image_uris?.small ||
+        card.card_faces?.[0]?.image_uris?.small ||
         "",
       setName: card.set_name,
       setCode: card.set.toUpperCase(),
-      cardNumber: (cardObj.collector_number as string) ?? "",
+      cardNumber: card.collector_number || "",
     };
 
     return NextResponse.json(result);

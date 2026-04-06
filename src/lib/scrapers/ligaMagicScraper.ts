@@ -68,7 +68,7 @@ function extractCardsFromHtml(cardsHtml: string): CollectionCard[] {
         }
 
         // Extract set code from image URL or data attribute
-        let setCode =
+        const setCode =
           setImageEl
             ?.getAttribute("data-src")
             ?.split("/ed_mtg/")[1]
@@ -122,10 +122,10 @@ function extractCardsFromHtml(cardsHtml: string): CollectionCard[] {
         );
 
         // Extract extras - safe split
-        let extras: string[] =
+        const extras: string[] =
           extrasEl?.textContent
             ?.split(", ")
-            ?.map((e: any) =>
+            ?.map((e: string) =>
               e
                 .trim()
                 .replaceAll(" / ", "/")
@@ -231,7 +231,7 @@ export async function getCollectionById(
   onProgress?: (progress: ImportProgress) => void,
 ): Promise<CollectionCard[]> {
   const timer = { start: Date.now() };
-  let browser: any = null;
+  let browser: import("puppeteer-core").Browser | null = null;
   const allCards: CollectionCard[] = [];
   let totalParsedElements = 0;
 
@@ -253,7 +253,7 @@ export async function getCollectionById(
       if (!paginationEl) return { totalPages: 1 };
 
       try {
-        const lastPageEl = Array.from(paginationEl.children).pop() as any;
+        const lastPageEl = Array.from(paginationEl.children).pop() as HTMLAnchorElement | null;
         const lastPageUrl = new URL(lastPageEl?.href || "");
         const lastPageNumber =
           Number(lastPageUrl.searchParams.get("page")) ?? 1;
@@ -318,7 +318,8 @@ export async function getCollectionById(
       const batchSize = 3;
       for (let i = 0; i < pageNumbers.length; i += batchSize) {
         const batch = pageNumbers.slice(i, i + batchSize);
-        const pages = await Promise.all(batch.map(() => browser.newPage()));
+        if (!browser) throw new Error("Browser not initialized");
+        const pages = await Promise.all(batch.map(() => browser!.newPage()));
 
         try {
           const results = await Promise.all(

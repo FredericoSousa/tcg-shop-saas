@@ -3,6 +3,7 @@ import { scryfall } from "@/lib/scryfall";
 import { logger, createTimer } from "@/lib/logger";
 import { cardCache, generateCardCacheKey } from "@/lib/cache/cardCache";
 import type { BulkItemResult } from "@/lib/types/inventory";
+import { ScryfallCard } from "@/lib/types/scryfall";
 
 export async function POST(request: NextRequest) {
   const timer = createTimer("resolveCardsBatch");
@@ -35,29 +36,28 @@ export async function POST(request: NextRequest) {
           collector_number: item.cardNumber,
         };
       }
-      const id: any = { name: item.cardName };
+      const id: { name: string; set?: string; collector_number?: string } = { name: item.cardName };
       if (item.setCode) id.set = item.setCode.toLowerCase();
       return id;
     });
 
     // Fetch cards from Scryfall
-    const cards = await scryfall.getCardsCollection(identifiers);
+    const rawCards = await scryfall.getCardsCollection(identifiers);
+    const cards = rawCards as ScryfallCard[];
 
     // Cache all results for future lookups
-    const cardsMap = new Map<string, any>();
+    const cardsMap = new Map<string, ScryfallCard>();
     cards.forEach((card) => {
       const cacheKey = generateCardCacheKey({
         name: card.name,
         set: card.set,
-        collector_number: (card as any).collector_number,
+        collector_number: card.collector_number,
       });
       cardCache.set(cacheKey, card);
 
-      // Also store with multiple keys for flexible matching
-      const cardObj = card as any;
       const cName = card.name.toLowerCase();
       const cSet = card.set.toLowerCase();
-      const cNum = cardObj.collector_number || "";
+      const cNum = card.collector_number || "";
 
       const key1 = `${cName}|${cSet}|${cNum}`;
       const key2 = `${cName}|${cSet}|`;
@@ -88,22 +88,18 @@ export async function POST(request: NextRequest) {
           cardsMap.get(key3);
 
         if (card) {
-          const cardObj = card as any;
-          const imageUris = cardObj.image_uris as
-            | Record<string, string>
-            | undefined;
           return {
             ...item,
             status: "success" as const,
             scryfallId: card.id,
             imageUrl:
-              imageUris?.small ||
-              imageUris?.normal ||
-              cardObj.card_faces?.[0]?.image_uris?.small ||
+              card.image_uris?.small ||
+              card.image_uris?.normal ||
+              card.card_faces?.[0]?.image_uris?.small ||
               "",
             setName: card.set_name,
             setCode: card.set.toUpperCase(),
-            cardNumber: (cardObj.collector_number as string) ?? "",
+            cardNumber: card.collector_number || "",
             extras: item.extras || [],
             originalLine: item.originalLine || "",
           };

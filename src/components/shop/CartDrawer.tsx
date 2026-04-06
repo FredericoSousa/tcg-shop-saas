@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ShoppingCart, Plus, Minus, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
-import { useRouter, useParams } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 
 const checkoutSchema = z.object({
   name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres'),
@@ -30,7 +30,6 @@ export function CartDrawer() {
   const [isProcessing, setIsProcessing] = useState(false)
   const router = useRouter()
   // Try to get tenantId from URL if using dynamic route, or rely on headers/cookie.
-  const params = useParams()
   // Since we might be just at /shop, we don't necessarily need tenantId for pushing,
   // but let's navigate relative or absolute to a known route:
   // /shop/success or just /success? Wait, the project structure for shop is just `/shop/page.tsx`.

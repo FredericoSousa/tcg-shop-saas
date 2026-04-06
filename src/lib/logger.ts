@@ -10,7 +10,7 @@ interface LogContext {
   tenantId?: string;
   duration?: number;
   itemsProcessed?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 class Logger {

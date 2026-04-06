@@ -5,7 +5,7 @@
  */
 
 interface CacheEntry {
-  data: any;
+  data: unknown;
   timestamp: number;
   ttl: number;
 }
@@ -14,7 +14,7 @@ class CardCache {
   private cache: Map<string, CacheEntry> = new Map();
   private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minutos
 
-  set(key: string, data: any, ttl?: number): void {
+  set(key: string, data: unknown, ttl?: number): void {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
@@ -22,7 +22,7 @@ class CardCache {
     });
   }
 
-  get(key: string): any | null {
+  get(key: string): unknown | null {
     const entry = this.cache.get(key);
     if (!entry) return null;
 

@@ -21,12 +21,6 @@ export type CollectionCard = {
   extras: string[];
 };
 
-type Set = {
-  id: string;
-  name: string;
-  code: string;
-};
-
 /**
  * Get collection by ID - delegates to improved scraper
  */
@@ -38,18 +32,3 @@ export async function getCollectionById(id: string): Promise<CollectionCard[]> {
 export const ligaMagicConditions = LIGAMAGIC_CONDITIONS;
 export const ligaMagicLanguages = LIGAMAGIC_LANGUAGES;
 export const ligamagicExtras = LIGAMAGIC_EXTRAS;
-
-/**
- * Get all available Magic sets from LigaMagic
- */
-export async function getCardPrices({
-  name,
-  set,
-}: {
-  name: string;
-  set?: string;
-}): Promise<Set[]> {
-  // This function is kept for backward compatibility but isn't implemented
-  // as it requires additional scraping logic
-  return [];
-}

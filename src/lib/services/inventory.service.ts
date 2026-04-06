@@ -2,6 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { unstable_cache } from "next/cache";
 
+interface CardMetadata {
+  color_identity?: string[];
+  type_line?: string;
+}
+
 export async function getInventoryPaginated(tenantId: string, page: number, limit: number, search?: string) {
   const skip = (page - 1) * limit;
 
@@ -76,7 +81,7 @@ export async function getStorefrontInventory(
       // Filter in JS since parsing complex JSON arrays reliably in Prisma varies.
       // But because it's in unstable_cache, it only runs once per hour (per filter combination).
       const filtered = allItems.filter(item => {
-        const meta = item.cardTemplate.metadata as any;
+        const meta = item.cardTemplate.metadata as unknown as CardMetadata;
         if (filters?.color) {
           const expectedColors = Array.isArray(filters.color) ? filters.color : filters.color.split(',');
           const cardColors = meta?.color_identity || [];
@@ -172,7 +177,7 @@ export async function getStorefrontFilters(tenantId: string) {
       const setSet = new Set<string>();
 
       items.forEach((item) => {
-        const meta = item.cardTemplate?.metadata as any;
+        const meta = item.cardTemplate?.metadata as unknown as CardMetadata;
         if (meta?.color_identity && Array.isArray(meta.color_identity)) {
           meta.color_identity.forEach((c: string) => colorSet.add(c));
         }

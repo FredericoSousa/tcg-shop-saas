@@ -37,7 +37,7 @@ export default async function InventoryPage(props: {
     where: { id: tenantId },
   });
 
-  const { items: rawInventory, total, pageCount } = await getInventoryPaginated(tenantId, page, limit, search);
+  const { items: rawInventory, pageCount } = await getInventoryPaginated(tenantId, page, limit, search);
 
   const inventory = rawInventory.map((item) => ({
     id: item.id,

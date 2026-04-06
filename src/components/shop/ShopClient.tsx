@@ -2,8 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,7 +24,6 @@ import { useCart } from "@/store/useCart";
 import { SetBadge } from "@/components/ui/set-badge";
 import {
   PackageOpen,
-  AlertCircle,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -36,7 +34,6 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 
-const ITEMS_PER_PAGE = 20;
 
 type ShopItem = {
   id: string;
@@ -59,7 +56,6 @@ type ShopItem = {
 };
 
 export function ShopClient({
-  tenantId,
   initialInventory,
   availableFilters,
   pageCount,
@@ -67,7 +63,7 @@ export function ShopClient({
   currentPage,
 }: {
   tenantId: string;
-  initialInventory: any[];
+  initialInventory: ShopItem[];
   availableFilters: {
     colors: string[];
     types: string[];
@@ -257,16 +253,17 @@ export function ShopClient({
                   <button
                     key={c}
                     title={c}
-                    className={`h-8 w-8 rounded-full transition-all flex items-center justify-center overflow-hidden bg-white/20 border border-muted-foreground/20 ${
-                      selectedColors.includes(c)
+                    className={`h-8 w-8 rounded-full transition-all flex items-center justify-center overflow-hidden bg-white/20 border border-muted-foreground/20 ${selectedColors.includes(c)
                         ? "ring-2 ring-primary ring-offset-2 scale-110"
                         : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
-                    }`}
+                      }`}
                     onClick={() => toggleColor(c)}
                   >
-                    <img
+                    <Image
                       src={`https://svgs.scryfall.io/card-symbols/${c}.svg`}
                       alt={c}
+                      width={32}
+                      height={32}
                       className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal"
                     />
                   </button>
@@ -417,15 +414,15 @@ export function ShopClient({
           selectedSubtypes.length > 0 ||
           selectedExtras.length > 0 ||
           selectedSet) && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full mt-4 text-xs text-muted-foreground"
-            onClick={clearFilters}
-          >
-            Limpar Filtros
-          </Button>
-        )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full mt-4 text-xs text-muted-foreground"
+              onClick={clearFilters}
+            >
+              Limpar Filtros
+            </Button>
+          )}
       </aside>
 
       <div className="flex-1 pb-32">
@@ -492,16 +489,17 @@ export function ShopClient({
                           <button
                             key={c}
                             title={c}
-                            className={`h-8 w-8 rounded-full transition-all flex items-center justify-center overflow-hidden bg-white/20 border border-muted-foreground/20 ${
-                              selectedColors.includes(c)
+                            className={`h-8 w-8 rounded-full transition-all flex items-center justify-center overflow-hidden bg-white/20 border border-muted-foreground/20 ${selectedColors.includes(c)
                                 ? "ring-2 ring-primary ring-offset-2 scale-110"
                                 : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
-                            }`}
+                              }`}
                             onClick={() => toggleColor(c)}
                           >
-                            <img
+                            <Image
                               src={`https://svgs.scryfall.io/card-symbols/${c}.svg`}
                               alt={c}
+                              width={32}
+                              height={32}
                               className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal"
                             />
                           </button>
@@ -663,15 +661,15 @@ export function ShopClient({
                   selectedSubtypes.length > 0 ||
                   selectedExtras.length > 0 ||
                   selectedSet) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full mt-4 text-xs text-muted-foreground"
-                    onClick={clearFilters}
-                  >
-                    Limpar Filtros
-                  </Button>
-                )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full mt-4 text-xs text-muted-foreground"
+                      onClick={clearFilters}
+                    >
+                      Limpar Filtros
+                    </Button>
+                  )}
               </SheetContent>
             </Sheet>
 
@@ -701,8 +699,8 @@ export function ShopClient({
               selectedSubtypes.length > 0 ||
               selectedExtras.length > 0 ||
               selectedSet) && (
-              <Button onClick={clearFilters}>Limpar Todos os Filtros</Button>
-            )}
+                <Button onClick={clearFilters}>Limpar Todos os Filtros</Button>
+              )}
           </div>
         ) : (
           <>
@@ -729,7 +727,7 @@ export function ShopClient({
                           <Image
                             src={
                               flippedCards[item.id] &&
-                              item.cardTemplate.backImageUrl
+                                item.cardTemplate.backImageUrl
                                 ? item.cardTemplate.backImageUrl
                                 : item.cardTemplate.imageUrl
                             }
@@ -807,7 +805,7 @@ export function ShopClient({
                         <span
                           className="text-[10px] font-semibold px-1 py-0.5 bg-muted rounded border border-gray-200 truncate max-w-[100px] flex items-center justify-center cursor-default"
                           title={
-                            (item.cardTemplate?.metadata as any)?.set_name ||
+                            (item.cardTemplate?.metadata as unknown as Record<string, string>)?.set_name ||
                             item.cardTemplate?.set ||
                             ""
                           }

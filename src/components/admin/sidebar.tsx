@@ -7,7 +7,6 @@ import {
   Package,
   ShoppingCart,
   Settings,
-  Sparkles,
 } from "lucide-react";
 
 const sidebarItems = [

@@ -8,7 +8,6 @@ const JWT_SECRET = new TextEncoder().encode(
 
 // Routes that require authentication
 const PROTECTED_ROUTES = ["/admin"];
-const PUBLIC_ROUTES = ["/login", "/"];
 
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl;

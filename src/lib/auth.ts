@@ -35,7 +35,7 @@ export async function verifyPassword(
  * Create a session token
  */
 export async function createSessionToken(data: SessionData): Promise<string> {
-  const token = await new SignJWT(data as any)
+  const token = await new SignJWT(data as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("7d")
     .sign(JWT_SECRET);
@@ -51,7 +51,7 @@ export async function verifySessionToken(
   try {
     const verified = await jwtVerify(token, JWT_SECRET);
     return verified.payload as unknown as SessionData;
-  } catch (err) {
+  } catch {
     return null;
   }
 }

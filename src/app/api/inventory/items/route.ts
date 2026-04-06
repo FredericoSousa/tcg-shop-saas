@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { scryfall } from "@/lib/scryfall";
 import { revalidatePath } from "next/cache";
 import { Game, Prisma } from "@prisma/client";
+import { ScryfallCard } from "@/lib/types/scryfall";
 
 export async function POST(request: NextRequest) {
   const headersList = await headers();
@@ -46,10 +47,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const scryfallObj = scryfallData as Record<string, unknown>;
-      const imageUris = scryfallObj.image_uris as
-        | Record<string, string>
-        | undefined;
+      const scryfallObj = scryfallData as ScryfallCard;
+      const imageUris = scryfallObj.image_uris;
 
       cardTemplate = await prisma.cardTemplate.create({
         data: {
@@ -60,10 +59,10 @@ export async function POST(request: NextRequest) {
             imageUris?.normal ||
             imageUris?.large ||
             imageUris?.png ||
-            (scryfallData as any).card_faces?.[0]?.image_uris?.normal ||
+            scryfallObj.card_faces?.[0]?.image_uris?.normal ||
             null,
           backImageUrl:
-            (scryfallData as any).card_faces?.[1]?.image_uris?.normal || null,
+            scryfallObj.card_faces?.[1]?.image_uris?.normal || null,
           game: Game.MAGIC,
           metadata: scryfallData as unknown as Prisma.InputJsonObject,
         },

@@ -145,7 +145,7 @@ export function BulkImportForm() {
     (BulkItemResult & { originalLine: string })[]
   >([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [processProgress, setProcessProgress] = useState({
+  const [, setProcessProgress] = useState({
     current: 0,
     total: 0,
   });
@@ -174,9 +174,21 @@ export function BulkImportForm() {
   };
 
   // === Helper: Process cards in batches ===
-  const processCarsInBatches = async (batchRequest: any[]) => {
+  const processCarsInBatches = async (
+    batchRequest: Array<{
+      cardName: string;
+      setCode?: string;
+      cardNumber?: string;
+      quantity: number;
+      condition: string;
+      language: string;
+      price: number;
+      extras: string[];
+      originalLine: string;
+    }>,
+  ) => {
     const CHUNK_SIZE = 75;
-    let results: any[] = [];
+    let results: (BulkItemResult & { originalLine: string })[] = [];
     for (let i = 0; i < batchRequest.length; i += CHUNK_SIZE) {
       const chunk = batchRequest.slice(i, i + CHUNK_SIZE);
       const response = await fetch("/api/scryfall/resolve-batch", {
@@ -315,7 +327,7 @@ export function BulkImportForm() {
                   condition: card.condition,
                   language: card.language,
                   price: card.price,
-                  extras: card.extras,
+                  extras: card.extras || [],
                   originalLine: card.originalLine,
                 }));
 
@@ -507,11 +519,10 @@ export function BulkImportForm() {
           <div className="flex border-b bg-muted/30 dark:bg-muted/10 p-1">
             <button
               onClick={() => setImportMode("text")}
-              className={`flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 px-6 py-3.5 text-sm font-semibold transition-all rounded-lg mx-1 ${
-                importMode === "text"
+              className={`flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 px-6 py-3.5 text-sm font-semibold transition-all rounded-lg mx-1 ${importMode === "text"
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/20"
-              }`}
+                }`}
             >
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Lista de Texto</span>
@@ -519,11 +530,10 @@ export function BulkImportForm() {
             </button>
             <button
               onClick={() => setImportMode("ligamagic")}
-              className={`flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 px-6 py-3.5 text-sm font-semibold transition-all rounded-lg mx-1 ${
-                importMode === "ligamagic"
+              className={`flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 px-6 py-3.5 text-sm font-semibold transition-all rounded-lg mx-1 ${importMode === "ligamagic"
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/20"
-              }`}
+                }`}
             >
               <Globe className="h-4 w-4" />
               <span className="hidden sm:inline">LigaMagic</span>
@@ -569,7 +579,7 @@ export function BulkImportForm() {
                     </code>{" "}
                     ou{" "}
                     <code className="bg-background dark:bg-background/50 px-1 rounded">
-                      //
+                      {"//"}
                     </code>{" "}
                     são ignoradas.
                   </p>
@@ -819,11 +829,10 @@ export function BulkImportForm() {
                 {items.map((item, index) => (
                   <tr
                     key={index}
-                    className={`border-b transition-colors hover:bg-muted/50 dark:hover:bg-muted/20 ${
-                      item.status === "error"
+                    className={`border-b transition-colors hover:bg-muted/50 dark:hover:bg-muted/20 ${item.status === "error"
                         ? "bg-red-50/50 dark:bg-red-950/20"
                         : "bg-background dark:bg-background"
-                    }`}
+                      }`}
                   >
                     <td className="py-3 px-4">
                       {item.status === "success" ? (

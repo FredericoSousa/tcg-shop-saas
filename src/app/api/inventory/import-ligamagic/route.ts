@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         LM_LANGUAGE_MAP[card.language?.toLowerCase() ?? ""] || "EN";
 
       return {
-        cardName: (card as any).name ?? "Unknown",
+        cardName: card.name ?? "Unknown",
         quantity: card.quantity || 1,
         condition,
         language,
@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
         setCode: card.set?.toUpperCase(),
         cardNumber: card.cardNumber || undefined,
         extras: card.extras || [],
-        originalLine: `${card.quantity} ${(card as any).name} [${card.set?.toUpperCase() ?? "?"}] #${card.cardNumber}`,
+        originalLine: `${card.quantity} ${card.name ?? "Unknown"} [${card.set?.toUpperCase() ?? "?"}] #${card.cardNumber}`,
       };
     });
 
