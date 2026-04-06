@@ -152,3 +152,47 @@ export async function DELETE(request: NextRequest) {
     );
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  const headersList = await headers();
+  const tenantId = headersList.get("x-tenant-id");
+
+  if (!tenantId) {
+    return NextResponse.json(
+      { error: "Unauthorized: Tenant ID missing" },
+      { status: 401 },
+    );
+  }
+
+  try {
+    const { id, price, quantity } = await request.json();
+
+    if (!id || (price === undefined && quantity === undefined)) {
+      return NextResponse.json(
+        { error: "Invalid data" },
+        { status: 400 },
+      );
+    }
+
+    const data: Prisma.InventoryItemUpdateInput = {};
+    if (price !== undefined) data.price = new Prisma.Decimal(price);
+    if (quantity !== undefined) data.quantity = parseInt(quantity, 10);
+
+    await prisma.inventoryItem.update({
+      where: {
+        id,
+        tenantId, // Ensure tenant isolation
+      },
+      data,
+    });
+
+    revalidatePath("/admin/inventory");
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error updating inventory item:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}

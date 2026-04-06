@@ -52,11 +52,11 @@ export async function getInventoryPaginated(tenantId: string, page: number, limi
 export async function getStorefrontInventory(
   tenantId: string, 
   page: number = 1, 
-  filters?: { color?: string | string[], type?: string | string[], subtype?: string | string[], set?: string, extras?: string | string[], search?: string, sort?: string }
+  filters?: { color?: string | string[], type?: string | string[], subtype?: string | string[], set?: string, extras?: string | string[], language?: string | string[], search?: string, sort?: string }
 ) {
   const limit = 20;
   const skip = (page - 1) * limit;
-  const cacheKey = `storefront-inventory-${tenantId}-p${page}-${filters?.color?.toString() || 'all'}-${filters?.type || 'all'}-${filters?.subtype || 'all'}-${filters?.set || 'all'}-${filters?.extras || 'all'}-${filters?.search || 'none'}-${filters?.sort || 'def'}`;
+  const cacheKey = `storefront-inventory-${tenantId}-p${page}-${filters?.color?.toString() || 'all'}-${filters?.type || 'all'}-${filters?.subtype || 'all'}-${filters?.set || 'all'}-${filters?.extras || 'all'}-${filters?.language || 'all'}-${filters?.search || 'none'}-${filters?.sort || 'def'}`;
 
   return unstable_cache(
     async () => {
@@ -113,6 +113,10 @@ export async function getStorefrontInventory(
           const matchesExtras = expectedExtras.some(e => itemExtras.includes(e));
           if (!matchesExtras) return false;
         }
+        if (filters?.language) {
+          const expectedLangs = Array.isArray(filters.language) ? filters.language : filters.language.split(',');
+          if (!expectedLangs.includes(item.language)) return false;
+        }
         return true;
       });
 
@@ -167,7 +171,7 @@ export async function getStorefrontFilters(tenantId: string) {
     async () => {
       const items = await prisma.inventoryItem.findMany({
         where: { tenantId, active: true, quantity: { gt: 0 } },
-        select: { extras: true, cardTemplate: { select: { metadata: true, set: true } } }
+        select: { extras: true, language: true, cardTemplate: { select: { metadata: true, set: true } } }
       });
 
       const colorSet = new Set<string>();
@@ -175,6 +179,7 @@ export async function getStorefrontFilters(tenantId: string) {
       const subtypeSet = new Set<string>();
       const extrasSet = new Set<string>();
       const setSet = new Set<string>();
+      const languageSet = new Set<string>();
 
       items.forEach((item) => {
         const meta = item.cardTemplate?.metadata as unknown as CardMetadata;
@@ -195,6 +200,9 @@ export async function getStorefrontFilters(tenantId: string) {
         if (item.extras && Array.isArray(item.extras)) {
           item.extras.forEach((e: string) => extrasSet.add(e));
         }
+        if (item.language) {
+          languageSet.add(item.language);
+        }
       });
 
       return {
@@ -203,6 +211,7 @@ export async function getStorefrontFilters(tenantId: string) {
         subtypes: Array.from(subtypeSet).sort(),
         extras: Array.from(extrasSet).sort(),
         sets: Array.from(setSet).sort(),
+        languages: Array.from(languageSet).sort(),
       };
     },
     [`storefront-filters-${tenantId}`],

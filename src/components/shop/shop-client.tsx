@@ -22,6 +22,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useCart } from "@/store/use-cart";
 import { SetBadge } from "@/components/ui/set-badge";
+import { LanguageBadge } from "@/components/ui/language-badge";
+import { cn } from "@/lib/utils";
 import {
   PackageOpen,
   Check,
@@ -70,6 +72,7 @@ export function ShopClient({
     subtypes: string[];
     extras: string[];
     sets: string[];
+    languages: string[];
   };
   pageCount: number;
   totalItems: number;
@@ -84,6 +87,7 @@ export function ShopClient({
   const selectedTypes = searchParams.get("type")?.split(",") || [];
   const selectedSubtypes = searchParams.get("subtype")?.split(",") || [];
   const selectedExtras = searchParams.get("extras")?.split(",") || [];
+  const selectedLanguages = searchParams.get("language")?.split(",") || [];
   const selectedSet = searchParams.get("set");
   const searchQuery = searchParams.get("q") || "";
   const sortOption = searchParams.get("sort") || "name_asc";
@@ -193,6 +197,27 @@ export function ShopClient({
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
+  const toggleLanguage = (l: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (l === null) {
+      params.delete("language");
+    } else {
+      let current = params.get("language")?.split(",") || [];
+      if (current.includes(l)) {
+        current = current.filter((x) => x !== l);
+      } else {
+        current.push(l);
+      }
+      if (current.length > 0) {
+        params.set("language", current.join(","));
+      } else {
+        params.delete("language");
+      }
+    }
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   const clearFilters = () => {
     router.replace(pathname, { scroll: false });
   };
@@ -206,7 +231,7 @@ export function ShopClient({
     [pathname, router, searchParams],
   );
 
-  const { colors, types, subtypes, extras, sets } = availableFilters;
+  const { colors, types, subtypes, extras, sets, languages } = availableFilters;
   const filteredInventory = initialInventory;
   const totalPages = pageCount;
 
@@ -254,8 +279,8 @@ export function ShopClient({
                     key={c}
                     title={c}
                     className={`h-8 w-8 rounded-full transition-all flex items-center justify-center overflow-hidden bg-white/20 border border-muted-foreground/20 ${selectedColors.includes(c)
-                        ? "ring-2 ring-primary ring-offset-2 scale-110"
-                        : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
+                      ? "ring-2 ring-primary ring-offset-2 scale-110"
+                      : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
                       }`}
                     onClick={() => toggleColor(c)}
                   >
@@ -365,6 +390,41 @@ export function ShopClient({
             </AccordionItem>
           )}
 
+          <AccordionItem value="language" className="border-b-0 pb-2">
+            <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">
+              Idiomas
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-wrap gap-2 pt-2">
+                <Badge
+                  variant={selectedLanguages.length === 0 ? "default" : "outline"}
+                  className="cursor-pointer hover:opacity-80 pb-0.5"
+                  onClick={() => toggleLanguage(null)}
+                >
+                  Todos
+                </Badge>
+                {languages.map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => toggleLanguage(l)}
+                    className="focus:outline-none"
+                  >
+                    <LanguageBadge
+                      language={l}
+                      showCode={true}
+                      className={cn(
+                        "cursor-pointer transition-all hover:scale-105",
+                        selectedLanguages.includes(l)
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-white hover:bg-muted"
+                      )}
+                    />
+                  </button>
+                ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
           <AccordionItem value="set" className="border-b-0">
             <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">
               Edições
@@ -413,6 +473,7 @@ export function ShopClient({
           selectedTypes.length > 0 ||
           selectedSubtypes.length > 0 ||
           selectedExtras.length > 0 ||
+          selectedLanguages.length > 0 ||
           selectedSet) && (
             <Button
               variant="ghost"
@@ -490,8 +551,8 @@ export function ShopClient({
                             key={c}
                             title={c}
                             className={`h-8 w-8 rounded-full transition-all flex items-center justify-center overflow-hidden bg-white/20 border border-muted-foreground/20 ${selectedColors.includes(c)
-                                ? "ring-2 ring-primary ring-offset-2 scale-110"
-                                : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
+                              ? "ring-2 ring-primary ring-offset-2 scale-110"
+                              : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
                               }`}
                             onClick={() => toggleColor(c)}
                           >
@@ -610,6 +671,43 @@ export function ShopClient({
                     </AccordionItem>
                   )}
 
+                  <AccordionItem value="language" className="border-b-0 pb-2">
+                    <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">
+                      Idiomas
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="flex flex-wrap gap-2 pt-2">
+                        <Badge
+                          variant={
+                            selectedLanguages.length === 0 ? "default" : "outline"
+                          }
+                          className="cursor-pointer hover:opacity-80 pb-0.5"
+                          onClick={() => toggleLanguage(null)}
+                        >
+                          Todos
+                        </Badge>
+                        {languages.map((l) => (
+                          <button
+                            key={l}
+                            onClick={() => toggleLanguage(l)}
+                            className="focus:outline-none"
+                          >
+                            <LanguageBadge
+                              language={l}
+                              showCode={true}
+                              className={cn(
+                                "cursor-pointer transition-all hover:scale-105",
+                                selectedLanguages.includes(l)
+                                  ? "bg-primary text-primary-foreground border-primary"
+                                  : "bg-white hover:bg-muted"
+                              )}
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
                   <AccordionItem value="set" className="border-b-0">
                     <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">
                       Edições
@@ -660,6 +758,7 @@ export function ShopClient({
                   selectedTypes.length > 0 ||
                   selectedSubtypes.length > 0 ||
                   selectedExtras.length > 0 ||
+                  selectedLanguages.length > 0 ||
                   selectedSet) && (
                     <Button
                       variant="ghost"
@@ -698,6 +797,7 @@ export function ShopClient({
               selectedTypes.length > 0 ||
               selectedSubtypes.length > 0 ||
               selectedExtras.length > 0 ||
+              selectedLanguages.length > 0 ||
               selectedSet) && (
                 <Button onClick={clearFilters}>Limpar Todos os Filtros</Button>
               )}
@@ -821,22 +921,12 @@ export function ShopClient({
                           className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200"
                           title="Condição"
                         >
-                          {item.condition === "NM"
-                            ? "🌟 NM"
-                            : item.condition === "SP"
-                              ? "⭐ SP"
-                              : item.condition}
+                          {item.condition}
                         </span>
-                        <span
-                          className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200"
-                          title="Idioma"
-                        >
-                          {item.language === "PT"
-                            ? "🇧🇷 PT"
-                            : item.language === "EN"
-                              ? "🇺🇸 EN"
-                              : item.language}
-                        </span>
+                        <LanguageBadge 
+                          language={item.language} 
+                          className="bg-muted border-gray-200" 
+                        />
                         {item.extras &&
                           item.extras.length > 0 &&
                           item.extras.map((ex) => (

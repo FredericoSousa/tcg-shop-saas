@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ArrowUpDown } from 'lucide-react'
 import { SetBadge } from '@/components/ui/set-badge'
+import { InlineEditCell } from '@/components/admin/inline-edit-cell'
+import { LanguageBadge } from '@/components/ui/language-badge'
 
 export type InventoryRow = {
   id: string
@@ -12,6 +14,7 @@ export type InventoryRow = {
   quantity: number
   condition: string
   language: string
+  extras: string[]
   cardTemplate: {
     name: string
     set: string
@@ -106,7 +109,30 @@ export const columns: ColumnDef<InventoryRow>[] = [
   },
   {
     accessorKey: 'language',
-    header: 'Idioma'
+    header: 'Idioma',
+    cell: ({ row }) => <LanguageBadge language={row.getValue('language')} />
+  },
+  {
+    accessorKey: 'extras',
+    header: 'Extras',
+    cell: ({ row }) => {
+      const extras = row.original.extras || []
+      if (extras.length === 0) return <span className="text-muted-foreground/30 text-xs">-</span>
+      
+      return (
+        <div className="flex flex-wrap gap-1">
+          {extras.map((extra) => (
+            <Badge 
+              key={extra} 
+              variant="secondary" 
+              className="text-[10px] px-1.5 py-0 font-medium bg-primary/10 text-primary border-primary/20"
+            >
+              {extra}
+            </Badge>
+          ))}
+        </div>
+      )
+    }
   },
   {
     accessorKey: 'price',
@@ -125,10 +151,15 @@ export const columns: ColumnDef<InventoryRow>[] = [
       )
     },
     cell: ({ row }) => {
-      const price = parseFloat(row.getValue('price'))
       return (
-        <div className="text-right font-mono tabular-nums font-medium">
-          {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(price)}
+        <div className="text-right">
+          <InlineEditCell
+            value={parseFloat(row.getValue('price'))}
+            id={row.original.id}
+            field="price"
+            prefix="R$ "
+            step="0.10"
+          />
         </div>
       )
     }
@@ -150,10 +181,13 @@ export const columns: ColumnDef<InventoryRow>[] = [
       )
     },
     cell: ({ row }) => {
-      const quantity = parseInt(row.getValue('quantity'), 10)
       return (
-        <div className="text-right font-mono tabular-nums font-medium">
-          {quantity}
+        <div className="text-right">
+          <InlineEditCell
+            value={parseInt(row.getValue('quantity'), 10)}
+            id={row.original.id}
+            field="quantity"
+          />
         </div>
       )
     }

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ScryfallCard } from "@/lib/types/scryfall";
+import { LanguageBadge } from "@/components/ui/language-badge";
 
 const VALID_EXTRAS = [
   { value: "FOIL", label: "Foil" },
@@ -271,17 +272,17 @@ export function AddCardDialog() {
                         <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="NM">🌟 Near Mint (NM)</SelectItem>
+                        <SelectItem value="NM">Near Mint (NM)</SelectItem>
                         <SelectItem value="SP">
-                          ⭐ Slightly Played (SP)
+                          Slightly Played (SP)
                         </SelectItem>
                         <SelectItem value="MP">
-                          👍 Moderately Played (MP)
+                          Moderately Played (MP)
                         </SelectItem>
                         <SelectItem value="HP">
-                          👎 Heavily Played (HP)
+                          Heavily Played (HP)
                         </SelectItem>
-                        <SelectItem value="D">💔 Damaged (D)</SelectItem>
+                        <SelectItem value="D">Damaged (D)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -302,9 +303,15 @@ export function AddCardDialog() {
                         <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="EN">🇺🇸 Inglês (EN)</SelectItem>
-                        <SelectItem value="PT">🇧🇷 Português (PT)</SelectItem>
-                        <SelectItem value="JP">🇯🇵 Japonês (JP)</SelectItem>
+                        <SelectItem value="EN">
+                          <LanguageBadge language="EN" className="bg-transparent border-0 p-0 shadow-none" />
+                        </SelectItem>
+                        <SelectItem value="PT">
+                          <LanguageBadge language="PT" className="bg-transparent border-0 p-0 shadow-none" />
+                        </SelectItem>
+                        <SelectItem value="JP">
+                          <LanguageBadge language="JP" className="bg-transparent border-0 p-0 shadow-none" />
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -322,11 +329,10 @@ export function AddCardDialog() {
                     {VALID_EXTRAS.map((extra) => (
                       <label
                         key={extra.value}
-                        className={`flex items-center gap-2 p-2 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                          selectedExtras.includes(extra.value)
+                        className={`flex items-center gap-2 p-2 rounded-lg border-2 cursor-pointer transition-all duration-200 ${selectedExtras.includes(extra.value)
                             ? "border-primary bg-primary/10 shadow-sm"
                             : "border-transparent bg-muted/50 hover:bg-muted/70"
-                        }`}
+                          }`}
                       >
                         <input
                           type="checkbox"

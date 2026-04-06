@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, UserPlus, Shield, User as UserIcon, Loader2 } from "lucide-react";
+import { Plus, Trash2, Shield, User as UserIcon, Loader2, Users } from "lucide-react";
+import { PageHeader } from "@/components/admin/page-header";
+import { StatusBadge } from "@/components/admin/status-badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -123,14 +125,16 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Usuários</h2>
-        <div className="flex items-center space-x-2">
+    <div className="flex flex-col gap-6 w-full">
+      <PageHeader
+        title="Usuários"
+        description="Gerencie quem tem acesso ao seu painel administrativo"
+        icon={Users}
+        actions={
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger
               render={
-                <Button className="bg-primary hover:bg-primary/90">
+                <Button className="bg-primary hover:bg-primary/90 shadow-sm transition-all duration-300">
                   <Plus className="mr-2 h-4 w-4" /> Novo Usuário
                 </Button>
               }
@@ -188,16 +192,10 @@ export default function UsersPage() {
               </form>
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
+        }
+      />
 
       <div className="overflow-hidden rounded-lg border border-border/50 bg-card/40 shadow-sm backdrop-blur-sm">
-        <div className="bg-muted/30 p-6 border-b border-border/30">
-          <h3 className="text-lg font-bold">Lista de Usuários</h3>
-          <p className="text-sm text-muted-foreground">
-            Gerencie quem tem acesso ao seu painel.
-          </p>
-        </div>
         <div className="p-0">
           {loading ? (
             <div className="flex h-32 items-center justify-center">
@@ -225,10 +223,7 @@ export default function UsersPage() {
                   users.map((user) => (
                     <TableRow key={user.id} className="group hover:bg-muted/30 transition-colors">
                       <TableCell>
-                        <div className="flex items-center">
-                          <div className="h-2 w-2 rounded-full bg-green-500 mr-2" />
-                          <span className="text-xs font-medium">Ativo</span>
-                        </div>
+                        <StatusBadge status="ACTIVE" />
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -239,19 +234,7 @@ export default function UsersPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold w-fit bg-muted text-muted-foreground border border-border/50">
-                          {user.role === "ADMIN" ? (
-                            <>
-                              <Shield className="h-3 w-3" />
-                              Admin
-                            </>
-                          ) : (
-                            <>
-                              <UserIcon className="h-3 w-3" />
-                              Usuário
-                            </>
-                          )}
-                        </div>
+                        <StatusBadge status={user.role} />
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {new Date(user.createdAt).toLocaleDateString("pt-BR")}

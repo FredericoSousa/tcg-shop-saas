@@ -101,6 +101,15 @@ export function DataTable<TData, TValue>({
     return Array.from(langs).sort();
   }, [data]);
 
+  const uniqueExtras = React.useMemo(() => {
+    const extras = new Set<string>();
+    data.forEach((item: TData) => {
+      const i = item as { extras?: string[] };
+      if (i.extras) i.extras.forEach((e) => extras.add(e));
+    });
+    return Array.from(extras).sort();
+  }, [data]);
+
   const [{ pageIndex, pageSize }, setPagination] = React.useState<PaginationState>({
     pageIndex: searchParams ? Number(searchParams.get("page") || 1) - 1 : 0,
     pageSize: searchParams ? Number(searchParams.get("limit") || 10) : 10,
@@ -178,114 +187,145 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-4 w-full">
       {/* Filters Section */}
-      <div className="flex flex-wrap items-center gap-3 pb-4 border-b border-border/50">
-        <Input
-          placeholder="Filtrar por nome..."
-          value={
-            (table
-              .getColumn("cardTemplate_name")
-              ?.getFilterValue() as string) ?? ""
-          }
-          onChange={(event) =>
-            table
-              .getColumn("cardTemplate_name")
-              ?.setFilterValue(event.target.value)
-          }
-          className="max-w-xs transition-all duration-200 focus-visible:ring-2"
-          aria-label="Filtrar tabela por nome do card"
-        />
+      <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-border/50">
+        <div className="relative w-full sm:max-w-xs">
+          <Input
+            placeholder="Buscar por nome..."
+            value={
+              (table
+                .getColumn("cardTemplate_name")
+                ?.getFilterValue() as string) ?? ""
+            }
+            onChange={(event) =>
+              table
+                .getColumn("cardTemplate_name")
+                ?.setFilterValue(event.target.value)
+            }
+            className="w-full transition-all duration-200 focus-visible:ring-2 pl-9"
+            aria-label="Filtrar tabela por nome do card"
+          />
+          <PackageOpen className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+        </div>
 
-        <Select
-          value={
-            (table.getColumn("cardTemplate_set")?.getFilterValue() as string) ??
-            "all"
-          }
-          onValueChange={(value) =>
-            table
-              .getColumn("cardTemplate_set")
-              ?.setFilterValue(value === "all" ? "" : value)
-          }
-        >
-          <SelectTrigger
-            className="w-44 transition-all duration-200 hover:border-primary/50"
-            aria-label="Filtrar por edição"
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            value={
+              (table.getColumn("cardTemplate_set")?.getFilterValue() as string) ??
+              "all"
+            }
+            onValueChange={(value) =>
+              table
+                .getColumn("cardTemplate_set")
+                ?.setFilterValue(value === "all" ? "" : value)
+            }
           >
-            <SelectValue placeholder="Filtrar por Edição" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas Edições</SelectItem>
-            {uniqueSets.map((set) => (
-              <SelectItem key={set} value={set}>
-                {set}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <SelectTrigger
+              className="w-[140px] h-9 text-xs transition-all duration-200 hover:border-primary/50"
+              aria-label="Filtrar por edição"
+            >
+              <SelectValue placeholder="Edição" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas Edições</SelectItem>
+              {uniqueSets.map((set) => (
+                <SelectItem key={set} value={set}>
+                  {set}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select
-          value={
-            (table.getColumn("condition")?.getFilterValue() as string) ?? "all"
-          }
-          onValueChange={(value) =>
-            table
-              .getColumn("condition")
-              ?.setFilterValue(value === "all" ? "" : value)
-          }
-        >
-          <SelectTrigger
-            className="w-44 transition-all duration-200 hover:border-primary/50"
-            aria-label="Filtrar por condição"
+          <Select
+            value={
+              (table.getColumn("condition")?.getFilterValue() as string) ?? "all"
+            }
+            onValueChange={(value) =>
+              table
+                .getColumn("condition")
+                ?.setFilterValue(value === "all" ? "" : value)
+            }
           >
-            <SelectValue placeholder="Filtrar Condição" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todas Condições</SelectItem>
-            {uniqueConditions.map((cond) => (
-              <SelectItem key={cond} value={cond}>
-                {cond}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <SelectTrigger
+              className="w-[130px] h-9 text-xs transition-all duration-200 hover:border-primary/50"
+              aria-label="Filtrar por condição"
+            >
+              <SelectValue placeholder="Condição" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas Condições</SelectItem>
+              {uniqueConditions.map((cond) => (
+                <SelectItem key={cond} value={cond}>
+                  {cond}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        <Select
-          value={
-            (table.getColumn("language")?.getFilterValue() as string) ?? "all"
-          }
-          onValueChange={(value) =>
-            table
-              .getColumn("language")
-              ?.setFilterValue(value === "all" ? "" : value)
-          }
-        >
-          <SelectTrigger
-            className="w-44 transition-all duration-200 hover:border-primary/50"
-            aria-label="Filtrar por idioma"
+          <Select
+            value={
+              (table.getColumn("language")?.getFilterValue() as string) ?? "all"
+            }
+            onValueChange={(value) =>
+              table
+                .getColumn("language")
+                ?.setFilterValue(value === "all" ? "" : value)
+            }
           >
-            <SelectValue placeholder="Filtrar Idioma" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Todos Idiomas</SelectItem>
-            {uniqueLanguages.map((lang) => (
-              <SelectItem key={lang} value={lang}>
-                {lang}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+            <SelectTrigger
+              className="w-[110px] h-9 text-xs transition-all duration-200 hover:border-primary/50"
+              aria-label="Filtrar por idioma"
+            >
+              <SelectValue placeholder="Idioma" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Idiomas</SelectItem>
+              {uniqueLanguages.map((lang) => (
+                <SelectItem key={lang} value={lang}>
+                  {lang}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClearFilters}
-            className="h-10 text-muted-foreground hover:text-foreground transition-all duration-200"
-            aria-label="Limpar todos os filtros"
+          <Select
+            value={
+              (table.getColumn("extras")?.getFilterValue() as string) ?? "all"
+            }
+            onValueChange={(value) =>
+              table
+                .getColumn("extras")
+                ?.setFilterValue(value === "all" ? "" : value)
+            }
           >
-            <X className="h-4 w-4 mr-1" />
-            Limpar
-          </Button>
-        )}
+            <SelectTrigger
+              className="w-[120px] h-9 text-xs transition-all duration-200 hover:border-primary/50"
+              aria-label="Filtrar por extras"
+            >
+              <SelectValue placeholder="Extras" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos Extras</SelectItem>
+              {uniqueExtras.map((extra) => (
+                <SelectItem key={extra} value={extra}>
+                  {extra}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearFilters}
+              className="h-9 px-2 text-muted-foreground hover:text-destructive transition-all duration-200 text-xs"
+              aria-label="Limpar todos os filtros"
+            >
+              <X className="h-3.5 w-3.5 mr-1" />
+              Limpar
+            </Button>
+          )}
+        </div>
       </div>
 
       {selectedCount > 0 && (

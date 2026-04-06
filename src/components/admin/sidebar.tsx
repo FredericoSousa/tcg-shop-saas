@@ -58,17 +58,13 @@ export function Sidebar({ tenantName }: SidebarProps) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`group flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all duration-200 ${
-                  isStrictActive
-                    ? "bg-primary text-white shadow-md hover:shadow-lg hover:bg-primary/90 dark:bg-primary dark:text-slate-950 dark:hover:bg-primary/95"
-                    : "text-muted-foreground dark:text-slate-50 hover:text-foreground dark:hover:text-white hover:bg-muted/50 dark:hover:bg-slate-700/60"
-                }`}
+                className={`group flex items-center gap-3 rounded-lg px-3.5 py-2.5 text-sm font-medium transition-all duration-200 ${isStrictActive
+                  ? "bg-primary text-white shadow-md hover:shadow-lg hover:bg-primary/90 dark:bg-primary dark:text-slate-950 dark:hover:bg-primary/95"
+                  : "text-muted-foreground dark:text-slate-50 hover:text-foreground dark:hover:text-white hover:bg-muted/50 dark:hover:bg-slate-700/60"
+                  }`}
               >
                 <item.icon className="h-4.5 w-4.5 shrink-0" />
                 <span>{item.name}</span>
-                {isStrictActive && (
-                  <div className="ml-auto h-2 w-2 rounded-full bg-white/60 dark:bg-white/80"></div>
-                )}
               </Link>
             );
           })}

@@ -2,25 +2,11 @@
 
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { Package, ShoppingCart, DollarSign, TrendingUp } from "lucide-react";
+import { PageHeader } from "@/components/admin/page-header";
+import { StatusBadge } from "@/components/admin/status-badge";
+import { LayoutDashboard, Package, ShoppingCart, DollarSign, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-const StatusT: Record<string, string> = {
-  PENDING: "Pendente",
-  PAID: "Pago",
-  SHIPPED: "Enviado",
-  CANCELLED: "Cancelado",
-};
-
-const StatusColor: Record<string, string> = {
-  PENDING:
-    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-  PAID: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-  SHIPPED: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-  CANCELLED: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-};
 
 export default async function AdminDashboardPage() {
   const headersList = await headers();
@@ -106,17 +92,11 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="space-y-2">
-        <div className="space-y-0.5">
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight text-foreground">
-            Dashboard
-          </h1>
-          <p className="text-sm text-muted-foreground max-w-2xl">
-            Acompanhe as métricas principais da sua loja em tempo real
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        description="Acompanhe as métricas principais da sua loja em tempo real"
+        icon={LayoutDashboard}
+      />
 
       {/* KPI Cards Grid */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -167,7 +147,7 @@ export default async function AdminDashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              className="transition-all duration-200 hover:scale-105 active:scale-95"
+              className="transition-all duration-300 hover:bg-muted/80 hover:shadow-sm"
             >
               Ver Tudo
             </Button>
@@ -233,11 +213,7 @@ export default async function AdminDashboardPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4 shrink-0">
-                      <Badge
-                        className={`${StatusColor[order.status]} border-0 text-[11px] font-bold uppercase px-2.5 py-1`}
-                      >
-                        {StatusT[order.status]}
-                      </Badge>
+                      <StatusBadge status={order.status} />
                       <span className="text-sm font-bold font-mono tabular-nums w-28 text-right text-foreground">
                         {new Intl.NumberFormat("pt-BR", {
                           style: "currency",

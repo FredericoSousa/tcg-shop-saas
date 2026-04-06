@@ -1,11 +1,12 @@
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { PageHeader } from "@/components/admin/page-header";
+import { Package, Upload } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { DataTable } from "./data-table";
 import { columns } from "./columns";
 import { AddCardDialog } from "./add-card-dialog";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Upload } from "lucide-react";
 import { getInventoryPaginated } from "@/lib/services/inventory.service";
 
 export default async function InventoryPage(props: {
@@ -45,6 +46,7 @@ export default async function InventoryPage(props: {
     quantity: item.quantity,
     condition: item.condition,
     language: item.language,
+    extras: item.extras,
     cardTemplate: {
       name: item.cardTemplate.name,
       set: item.cardTemplate.set,
@@ -54,30 +56,23 @@ export default async function InventoryPage(props: {
   }));
 
   return (
-    <div className="flex flex-col gap-4 w-full">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card p-5 rounded-lg border shadow-sm">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">
-            Gestão de Estoque
-          </h1>
-          <p className="text-muted-foreground mt-1 text-sm md:text-base">
-            Gerencie o inventário da loja{" "}
-            <span className="font-semibold text-foreground">
-              {tenant?.name || "sua loja"}
-            </span>
-            .
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href="/admin/inventory/bulk-import">
-            <Button variant="outline" className="gap-2">
-              <Upload className="h-4 w-4" />
-              Importar em Massa
-            </Button>
-          </Link>
-          <AddCardDialog />
-        </div>
-      </div>
+    <div className="flex flex-col gap-6 w-full">
+      <PageHeader
+        title="Gestão de Estoque"
+        description={`Gerencie o inventário da loja ${tenant?.name || "sua loja"}`}
+        icon={Package}
+        actions={
+          <>
+            <Link href="/admin/inventory/bulk-import">
+              <Button variant="outline" className="gap-2">
+                <Upload className="h-4 w-4" />
+                Importar em Massa
+              </Button>
+            </Link>
+            <AddCardDialog />
+          </>
+        }
+      />
 
       <div className="bg-card rounded-lg shadow-sm border p-3 md:p-4 overflow-hidden">
         <DataTable columns={columns} data={inventory} pageCount={pageCount} />

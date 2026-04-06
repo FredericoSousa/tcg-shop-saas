@@ -14,6 +14,7 @@ export default async function ShopPage(props: {
     subtype: typeof searchParams?.subtype === "string" ? searchParams.subtype : undefined,
     set: typeof searchParams?.set === "string" ? searchParams.set : undefined,
     extras: typeof searchParams?.extras === "string" ? searchParams.extras : undefined,
+    language: typeof searchParams?.language === "string" ? searchParams.language : undefined,
     search: typeof searchParams?.q === "string" ? searchParams.q : undefined,
     sort: typeof searchParams?.sort === "string" ? searchParams.sort : undefined,
   };

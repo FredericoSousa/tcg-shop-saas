@@ -1,7 +1,8 @@
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { OrdersClient } from "./orders-client";
+import { PageHeader } from "@/components/admin/page-header";
 import { ShoppingCart } from "lucide-react";
+import { OrdersClient } from "./orders-client";
 
 export default async function OrdersPage() {
   const headersList = await headers();
@@ -52,22 +53,12 @@ export default async function OrdersPage() {
   }));
 
   return (
-    <div className="flex flex-col gap-4 w-full">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card p-5 rounded-lg border shadow-sm">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-primary/10 rounded-lg shrink-0">
-            <ShoppingCart className="w-8 h-8 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">
-              Registro de Vendas
-            </h1>
-            <p className="text-muted-foreground mt-1 text-sm md:text-base">
-              Acompanhe e gerencie as compras realizadas na sua loja.
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col gap-6 w-full">
+      <PageHeader
+        title="Registro de Vendas"
+        description="Acompanhe e gerencie as compras realizadas na sua loja"
+        icon={ShoppingCart}
+      />
 
       <div className="bg-card rounded-lg shadow-sm border p-3 md:p-4">
         <OrdersClient orders={formattedOrders} />
