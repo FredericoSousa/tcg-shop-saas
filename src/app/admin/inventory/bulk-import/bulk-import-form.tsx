@@ -14,13 +14,7 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
-import {
-  searchCardByName,
-  resolveCardsBatch,
-  addBulkInventoryItems,
-  importLigaMagicCollection,
-} from "@/app/actions/inventory";
-import type { BulkItemResult } from "@/app/actions/inventory";
+import type { BulkItemResult } from "@/lib/types/inventory";
 import type { ImportProgress } from "@/lib/scrapers/ligaMagicScraper";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -185,7 +179,13 @@ export function BulkImportForm() {
     let results: any[] = [];
     for (let i = 0; i < batchRequest.length; i += CHUNK_SIZE) {
       const chunk = batchRequest.slice(i, i + CHUNK_SIZE);
-      const chunkResults = await resolveCardsBatch(chunk);
+      const response = await fetch("/api/scryfall/resolve-batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(chunk),
+      });
+      if (!response.ok) throw new Error("Erro na resolução em lote");
+      const chunkResults = await response.json();
       results = results.concat(chunkResults);
       setProcessProgress({
         current: Math.min(i + CHUNK_SIZE, batchRequest.length),
@@ -286,7 +286,18 @@ export function BulkImportForm() {
             // After streaming is done, fetch the actual collection data
             setTimeout(async () => {
               try {
-                const cards = await importLigaMagicCollection(ligamagicId);
+                const importResponse = await fetch("/api/inventory/import-ligamagic", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ collectionId: ligamagicId }),
+                });
+
+                if (!importResponse.ok) {
+                  const errData = await importResponse.json();
+                  throw new Error(errData.error || "Erro ao importar coleção");
+                }
+
+                const cards: (BulkItemResult & { originalLine: string })[] = await importResponse.json();
 
                 if (!cards.length) {
                   toast.error("Nenhum card encontrado na coleção.");
@@ -296,7 +307,7 @@ export function BulkImportForm() {
 
                 setProcessProgress({ current: 0, total: cards.length });
 
-                const batchRequest = cards.map((card) => ({
+                const batchRequest = cards.map((card: BulkItemResult & { originalLine: string }) => ({
                   cardName: card.cardName,
                   setCode: card.setCode || undefined,
                   cardNumber: card.cardNumber,
@@ -373,11 +384,16 @@ export function BulkImportForm() {
     setReResolvingIndex(index);
     try {
       // Use the normal search API directly for re-processing since it supports fuzzy matching via the text search API
-      const found = await searchCardByName(
-        item.cardName,
-        item.setCode,
-        item.cardNumber,
-      );
+      const searchResponse = await fetch("/api/scryfall/search-by-name", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: item.cardName,
+          setCode: item.setCode,
+          cardNumber: item.cardNumber,
+        }),
+      });
+      const found: BulkItemResult | null = searchResponse.ok ? await searchResponse.json() : null;
 
       if (found && found.status === "success") {
         const resultItem = {
@@ -445,7 +461,15 @@ export function BulkImportForm() {
 
         for (let i = 0; i < toAdd.length; i += CHUNK_SIZE) {
           const chunk = toAdd.slice(i, i + CHUNK_SIZE);
-          const results = await addBulkInventoryItems(chunk);
+          const bulkResponse = await fetch("/api/inventory/bulk", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(chunk),
+          });
+
+          if (!bulkResponse.ok) throw new Error("Erro ao salvar lote");
+
+          const results: { cardName: string; status: "success" | "error"; error?: string }[] = await bulkResponse.json();
 
           totalSuccesses += results.filter(
             (r) => r.status === "success",

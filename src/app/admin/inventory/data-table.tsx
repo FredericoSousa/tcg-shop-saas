@@ -51,7 +51,6 @@ import {
   Check,
   AlertCircle,
 } from "lucide-react";
-import { deleteInventoryItems } from "@/app/actions/inventory";
 import { toast } from "sonner";
 
 interface DataTableProps<TData, TValue> {
@@ -153,7 +152,14 @@ export function DataTable<TData, TValue>({
 
     setIsDeleting(true);
     try {
-      await deleteInventoryItems(ids);
+      const response = await fetch("/api/inventory/items", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+
+      if (!response.ok) throw new Error("Failed to delete");
+
       toast.success(`${ids.length} item(ns) removido(s) com sucesso.`);
       setRowSelection({});
       setIsDeleteDialogOpen(false);

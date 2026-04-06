@@ -21,10 +21,9 @@ import {
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, Package, ShoppingCart, Settings } from "lucide-react";
-import { logoutAction } from "@/app/actions/auth";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -34,6 +33,7 @@ const sidebarItems = [
 
 export function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const { setTheme, theme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -170,7 +170,10 @@ export function Navbar() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer font-medium"
-              onClick={() => logoutAction()}
+              onClick={async () => {
+                await fetch("/api/auth/logout", { method: "POST" });
+                router.push("/login");
+              }}
             >
               Sair
             </DropdownMenuItem>

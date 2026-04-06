@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { loginAction } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
@@ -47,16 +46,20 @@ export default function LoginPage() {
     }
 
     try {
-      const result = await loginAction(username, password, tenantId);
-      if (result?.error) {
-        setError(result.error);
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password, tenantId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok || result.error) {
+        setError(result.error || "An error occurred");
+      } else {
+        router.push("/admin");
       }
-    } catch (err: any) {
-      // loginAction uses redirect() which throws, so we catch it here
-      if (err?.digest?.includes("NEXT_REDIRECT")) {
-        // Redirect happened, which is expected
-        return;
-      }
+    } catch {
       setError("An error occurred");
     } finally {
       setLoading(false);

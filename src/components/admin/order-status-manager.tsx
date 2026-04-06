@@ -9,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { updateOrderStatus } from "@/app/actions/orders";
 import { OrderStatus } from "@prisma/client";
 import { toast } from "sonner";
 
@@ -55,7 +54,12 @@ export function OrderStatusManager({
     setStatus(newStatusValue);
 
     startTransition(async () => {
-      const res = await updateOrderStatus(orderId, newStatusValue);
+      const response = await fetch("/api/orders/status", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId, status: newStatusValue }),
+      });
+      const res = await response.json();
       if (res.success) {
         toast.success(
           `Status alterado para ${STATUS_OPTIONS.find((opt) => opt.value === newStatusValue)?.label}.`,

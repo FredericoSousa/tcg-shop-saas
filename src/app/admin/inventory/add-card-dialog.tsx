@@ -17,8 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { searchScryfallServer } from "@/app/actions/scryfall";
-import { addInventoryItem } from "@/app/actions/inventory";
 import { toast } from "sonner";
 import type { ScryfallCard } from "@scryfall/api-types";
 
@@ -52,7 +50,9 @@ export function AddCardDialog() {
     if (!query) return;
     setIsSearching(true);
     try {
-      const cards = await searchScryfallServer(query);
+      const response = await fetch(`/api/scryfall/search?q=${encodeURIComponent(query)}`);
+      if (!response.ok) throw new Error("Search failed");
+      const cards = await response.json();
       setResults(cards as Card[]);
     } catch {
       toast.error("Erro ao buscar o card.");
@@ -64,11 +64,26 @@ export function AddCardDialog() {
   const handleSubmit = async (formData: FormData) => {
     startTransition(async () => {
       try {
-        // Add selected extras to form data
-        selectedExtras.forEach((extra) => {
-          formData.append("extras", extra);
+        const body = {
+          scryfallId: formData.get("scryfallId") as string,
+          price: parseFloat(formData.get("price") as string),
+          quantity: parseInt(formData.get("quantity") as string, 10),
+          condition: formData.get("condition") as string,
+          language: formData.get("language") as string,
+          extras: selectedExtras,
+        };
+
+        const response = await fetch("/api/inventory/items", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
         });
-        await addInventoryItem(formData);
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || "Erro ao salvar o card");
+        }
+
         toast.success("Card adicionado ao inventário!");
         setOpen(false);
         setQuery("");

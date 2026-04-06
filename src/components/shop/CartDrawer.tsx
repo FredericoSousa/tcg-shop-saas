@@ -14,7 +14,6 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { ShoppingCart, Plus, Minus, Image as ImageIcon } from 'lucide-react'
-import { processCheckout } from '@/app/actions/checkout'
 import { toast } from 'sonner'
 import { useRouter, useParams } from 'next/navigation'
 
@@ -52,25 +51,36 @@ export function CartDrawer() {
     }
 
     setIsProcessing(true)
-    const res = await processCheckout(
-      items.map(item => ({
-        inventoryId: item.inventoryId,
-        quantity: item.quantity,
-        price: item.price
-      })),
-      { name: data.name, email: data.email || undefined }
-    )
 
-    setIsProcessing(false)
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: items.map(item => ({
+            inventoryId: item.inventoryId,
+            quantity: item.quantity,
+            price: item.price
+          })),
+          customerData: { name: data.name, email: data.email || undefined }
+        }),
+      })
 
-    if (res.success && res.orderId) {
-      toast.success('Compra finalizada com sucesso! Seu pedido foi registrado.')
-      clearCart()
-      setIsOpen(false)
-      form.reset()
-      router.push(`/shop/success?orderId=${res.orderId}`)
-    } else {
-      toast.error(res.error || 'Erro ao processar checkout.')
+      const res = await response.json()
+
+      if (res.success && res.orderId) {
+        toast.success('Compra finalizada com sucesso! Seu pedido foi registrado.')
+        clearCart()
+        setIsOpen(false)
+        form.reset()
+        router.push(`/shop/success?orderId=${res.orderId}`)
+      } else {
+        toast.error(res.error || 'Erro ao processar checkout.')
+      }
+    } catch {
+      toast.error('Erro ao processar checkout.')
+    } finally {
+      setIsProcessing(false)
     }
   }
 
