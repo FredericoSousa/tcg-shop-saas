@@ -5,12 +5,20 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ReactNode } from "react";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { getSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export default async function AdminLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  // Check if user is authenticated
+  const session = await getSession();
+  if (!session) {
+    redirect("/login");
+  }
+
   const headersList = await headers();
   const tenantId = headersList.get("x-tenant-id");
 

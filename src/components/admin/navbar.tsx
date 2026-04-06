@@ -24,6 +24,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, Package, ShoppingCart, Settings } from "lucide-react";
+import { logoutAction } from "@/app/actions/auth";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -50,13 +51,15 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b border-border/50 bg-gradient-to-r from-background to-background/95 backdrop-blur-md px-4 lg:h-[70px] lg:px-6 shadow-sm">
       <Sheet>
-        <SheetTrigger render={
-          <Button
-            variant="ghost"
-            size="icon"
-            className="shrink-0 md:hidden hover:bg-muted/60"
-          />
-        }>
+        <SheetTrigger
+          render={
+            <Button
+              variant="ghost"
+              size="icon"
+              className="shrink-0 md:hidden hover:bg-muted/60"
+            />
+          }
+        >
           <Menu className="h-5 w-5" />
           <span className="sr-only">Toggle navigation menu</span>
         </SheetTrigger>
@@ -122,7 +125,7 @@ export function Navbar() {
         >
           <div>
             {!mounted ? (
-               <div className="h-[18px] w-[18px]" />
+              <div className="h-[18px] w-[18px]" />
             ) : theme === "dark" ? (
               <Sun className="h-4.5 w-4.5" />
             ) : (
@@ -152,7 +155,9 @@ export function Navbar() {
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+            <DropdownMenuGroup>
+              <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+            </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
               <DropdownMenuItem className="cursor-pointer hover:bg-muted/60">
@@ -163,7 +168,10 @@ export function Navbar() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer font-medium">
+            <DropdownMenuItem
+              className="text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 cursor-pointer font-medium"
+              onClick={() => logoutAction()}
+            >
               Sair
             </DropdownMenuItem>
           </DropdownMenuContent>
