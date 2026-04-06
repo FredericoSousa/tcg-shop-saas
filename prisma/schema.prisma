@@ -21,11 +21,21 @@ enum Condition {
 }
 
 model Tenant {
-  id         String  @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
-  slug       String  @unique
-  name       String
-  active     Boolean @default(true)
-  brandColor String?
+  id           String  @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
+  slug         String  @unique
+  name         String
+  active       Boolean @default(true)
+  brandColor   String?
+  logoUrl      String?
+  faviconUrl   String?
+  description  String?
+  address      String?
+  phone        String?
+  email        String?
+  instagram    String?
+  whatsapp     String?
+  facebook     String?
+  twitter      String?
 
   inventory InventoryItem[]
   orders    Order[]

@@ -56,15 +56,20 @@ export default async function HomePage() {
         <div className="relative container mx-auto py-24 md:py-32 px-6 z-10">
           <div className="max-w-3xl mx-auto text-center">
             {/* Logo */}
-            <div className="w-24 h-24 bg-gradient-to-br from-primary via-blue-500 to-violet-600 rounded-3xl shadow-2xl flex items-center justify-center mb-8 mx-auto transform rotate-3 hover:rotate-0 transition-transform duration-500">
-              <span className="text-5xl font-black text-white">{shopName.charAt(0)}</span>
-            </div>
+            {tenant?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={tenant.logoUrl} alt={shopName} className="h-24 w-auto object-contain mb-8 mx-auto shadow-2xl" />
+            ) : (
+              <div className="w-24 h-24 bg-gradient-to-br from-primary via-blue-500 to-violet-600 rounded-3xl shadow-2xl flex items-center justify-center mb-8 mx-auto transform rotate-3 hover:rotate-0 transition-transform duration-500">
+                <span className="text-5xl font-black text-white">{shopName.charAt(0)}</span>
+              </div>
+            )}
 
-            <h1 className="text-5xl md:text-7xl font-black font-heading tracking-tight mb-6 drop-shadow-lg leading-[1.1]">
+            {!tenant?.logoUrl && <h1 className="text-5xl md:text-7xl font-black font-heading tracking-tight mb-6 drop-shadow-lg leading-[1.1]">
               {shopName}
-            </h1>
+            </h1>}
             <p className="text-xl md:text-2xl text-zinc-300 max-w-2xl mx-auto font-medium mb-10 leading-relaxed">
-              Encontre os melhores singles de Magic: The Gathering. Estoque atualizado em tempo real.
+              {tenant?.description || "Encontre os melhores singles de Magic: The Gathering. Estoque atualizado em tempo real."}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">

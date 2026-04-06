@@ -1,20 +1,25 @@
 import Link from "next/link";
 import { CartDrawer } from "@/components/shop/cart-drawer";
 
-export function Navbar({ tenant }: { tenant: { name: string; brandColor: string | null } | null }) {
+export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | null } | null }) {
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-950 text-zinc-100">
       <div className="container flex h-16 items-center px-4 mx-auto">
         <div className="mr-4 flex">
-          <Link href="/" className="mr-6 flex items-center space-x-2">
-            <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center">
-              <span className="text-white font-bold text-sm">
-                {tenant?.name?.charAt(0) || "T"}
-              </span>
-            </div>
-            <span className="hidden font-bold sm:inline-block text-white">
+          <Link href="/" className="mr-6 flex items-center space-x-3">
+            {tenant?.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={tenant.logoUrl} alt={tenant.name} className="h-8 w-auto object-contain" />
+            ) : (
+              <div className="w-8 h-8 rounded bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center">
+                <span className="text-white font-bold text-sm">
+                  {tenant?.name?.charAt(0) || "T"}
+                </span>
+              </div>
+            )}
+            {!tenant?.logoUrl && <span className="hidden font-bold sm:inline-block text-white">
               {tenant?.name || "TCG Shop"}
-            </span>
+            </span>}
           </Link>
         </div>
 
