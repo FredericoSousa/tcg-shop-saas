@@ -26,14 +26,14 @@ export default async function HomePage() {
 
   // Fetch some stats
   const [totalCards, totalSets, mostExpensiveCards] = await Promise.all([
-    prisma.inventoryItem.count({ where: { tenantId, quantity: { gt: 0 } } }),
+    prisma.inventoryItem.count({ where: { tenantId, active: true, quantity: { gt: 0 } } }),
     prisma.inventoryItem.findMany({
-      where: { tenantId, quantity: { gt: 0 } },
+      where: { tenantId, active: true, quantity: { gt: 0 } },
       select: { cardTemplate: { select: { set: true } } },
       distinct: ['cardTemplateId'],
     }),
     prisma.inventoryItem.findMany({
-      where: { tenantId, quantity: { gt: 0 } },
+      where: { tenantId, active: true, quantity: { gt: 0 } },
       include: { cardTemplate: true },
       orderBy: { price: 'desc' },
       take: 5,

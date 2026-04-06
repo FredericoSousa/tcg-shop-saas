@@ -48,7 +48,7 @@ type Card = {
     extras: string[]
 }
 
-type CollectionCard = Omit<Card, 'set'> & { set?: string, quantity: number, cardNumber: number }
+type CollectionCard = Omit<Card, 'set'> & { set?: string, quantity: number, cardNumber: string }
 
 export async function getCollectionById(id: string): Promise<CollectionCard[]> {
 
@@ -65,16 +65,103 @@ export async function getCollectionById(id: string): Promise<CollectionCard[]> {
             const cardsOnPage = await page.evaluate(() => {
                 return Array.from(
                     document.querySelectorAll(".pointer"))
-                    .map(item => ({
-                        quantity: Number(item?.children[0]?.textContent ?? 0),
-                        name: item?.children[3]?.children[0]?.children[1]?.textContent ?? item?.children[3]?.children[0]?.children[0]?.textContent,
-                        set: item?.children[2]?.children[0]?.getAttribute("data-src")?.split("/ed_mtg/")[1].split(".")[0].split('_')[0],
-                        cardNumber: Number(item?.children[1]?.textContent?.replace('#', '') ?? 0),
-                        price: Number(item?.children[9]?.textContent?.replace('R$', '')?.replace(',', '.') ?? 0),
-                        language: item?.children[5]?.children[0]?.getAttribute('src')?.split('/bandeiras/')[1].split('.')[0],
-                        condition: item?.children[6]?.textContent,
-                        extras: item.children[4].textContent.split(', ').filter(Boolean)
-                    }))
+                    .map(item => {
+                        const setCode = item?.children[2]?.children[0]?.getAttribute("data-src")?.split("/ed_mtg/")[1].split(".")[0].split('_')[0] ?? ''
+                        const isStoreChampionship = /SC\d*/g.test(setCode?.toUpperCase() ?? '')
+                        const isPlayNetwork = /PW\d*/g.test(setCode?.toUpperCase() ?? '')
+                        const isMysteryBooster = /MB\d/g.test(setCode?.toUpperCase() ?? '')
+
+                        const getSetCode = (setCode: string) => {
+                            const ligamagicToScryfallSetCode = {
+                                LA: "PLGM", // Promo: League
+                                MT: "MOR",  // Morningtide
+                                LW: "LRW",  // Lorwyn
+                                PC: "PLC",  // Planar Chaos
+                                TS: "TSP",  // Time Spiral
+                                CS: "CSP",  // Coldsnap
+                                DI: "DIS",  // Dissension
+                                CP: "PCMP", // Champs Promos
+                                GP: "GPT",  // Guildpact
+                                "9E": "9ED", // Ninth Edition
+                                UH: "UNH",  // Unhinged
+                                DS: "DST",  // Darksteel
+                                MI: "MRD",  // Mirrodin
+                                "8E": "8ED", // Eighth Edition
+                                SC: "SCG",  // Scourge
+                                LE: "LGN",  // Legions
+                                ON: "ONS",  // Onslaught
+                                JU: "JUD",  // Judgment
+                                TR: "TOR",  // Torment
+                                OD: "ODY",  // Odyssey
+                                DM: "DKM",  // Deckmasters
+                                AP: "APC",  // Apocalypse
+                                "7E": "7ED", // Seventh Edition
+                                PS: "PLS",  // Planeshift
+                                IN: "INV",  // Invasion
+                                BD: "BTD",  // Beatdown Box Set
+                                PR: "PCY",  // Prophecy
+                                NE: "NEM",  // Nemesis
+                                BR: "BRB",  // Battle Royale Box Set
+                                MM: "MMQ",  // Mercadian Masques
+                                ST: "S99",  // Starter 1999
+                                UD: "UDS",  // Urza's Destiny
+                                "6E": "6ED", // Classic Sixth Edition
+                                UL: "ULG",  // Urza's Legacy
+                                AT: "ATH",  // Anthologies
+                                US: "USG",  // Urza's Saga
+                                UG: "UGL",  // Unglued
+                                EX: "EXO",  // Exodus
+                                SH: "STH",  // Stronghold
+                                JR: "JGP",  // Judge Gift Program
+                                TP: "TMP",  // Tempest
+                                WL: "WTH",  // Weatherlight
+                                PO: "POR",  // Portal
+                                "5E": "5ED", // Fifth Edition
+                                VI: "VIS",  // Visions
+                                MR: "MIR",  // Mirage
+                                AI: "ALL",  // Alliances
+                                HL: "HML",  // Homelands
+                                RI: "RIN",  // Rinascimento
+                                RE: "REN",  // Renaissance
+                                CH: "CHR",  // Chronicles
+                                IA: "ICE",  // Ice Age
+                                "4E": "4ED", // Fourth Edition
+                                FE: "FEM",  // Fallen Empires
+                                DK: "DRK",  // The Dark
+                                LG: "LEG",  // Legends
+                                RV: "3ED",  // Revised Edition
+                                AQ: "ATQ",  // Antiquities
+                                UN: "2ED",  // Unlimited Edition
+                                AN: "ARN",  // Arabian Nights
+                                BE: "LEB",  // Limited Edition Beta
+                                AL: "LEA"   // Limited Edition Alpha
+                            };
+
+                            if (isStoreChampionship) return 'SCH'
+                            if (isMysteryBooster || setCode === 'PLIST') return 'PLST'
+                            if (isPlayNetwork) return setCode
+                            if (setCode.length < 3) return ligamagicToScryfallSetCode[setCode as keyof typeof ligamagicToScryfallSetCode] ?? setCode.padEnd(3, 'X')
+                            return setCode?.slice(-3)
+                        }
+
+                        const frontSideName = item?.children[3]?.children[0]?.children[1]?.textContent ?? item?.children[3]?.children[0]?.children[0]?.textContent
+                        const backSideName = item?.children[3]?.children[1]?.children[1]?.children[1]?.textContent ?? item?.children[3]?.children[1]?.children[1]?.children[0]?.textContent
+                        let name = frontSideName
+                        if (backSideName) {
+                            name = `${frontSideName} // ${backSideName}`
+                        }
+
+                        return {
+                            quantity: Number(item?.children[0]?.textContent ?? 0),
+                            name,
+                            set: getSetCode(setCode),
+                            cardNumber: item?.children[1]?.textContent?.replace('#', '').trim() ?? '',
+                            price: Number(item?.children[9]?.textContent?.replace('R$', '')?.replace(',', '.') ?? 0),
+                            language: item?.children[5]?.children[0]?.getAttribute('src')?.split('/bandeiras/')[1].split('.')[0],
+                            condition: item?.children[6]?.textContent,
+                            extras: item.children[4].textContent.split(', ').filter(Boolean)
+                        }
+                    })
             })
             cards.push(...cardsOnPage)
             await getPageCards(pageNumber + 1)

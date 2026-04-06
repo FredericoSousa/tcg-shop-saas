@@ -20,14 +20,8 @@ enum Condition {
   D
 }
 
-enum Language {
-  EN
-  PT
-  JP
-}
-
 model Tenant {
-  id         String  @id @default(cuid())
+  id         String  @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
   slug       String  @unique
   name       String
   active     Boolean @default(true)
@@ -38,12 +32,13 @@ model Tenant {
 }
 
 model CardTemplate {
-  id       String  @id @default(cuid())
-  name     String
-  set      String
-  imageUrl String?
-  game     Game
-  metadata Json?
+  id           String  @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
+  name         String
+  set          String
+  imageUrl     String?
+  backImageUrl String?
+  game         Game
+  metadata     Json?
 
   inventory InventoryItem[]
 
@@ -51,13 +46,15 @@ model CardTemplate {
 }
 
 model InventoryItem {
-  id             String    @id @default(cuid())
-  tenantId       String
-  cardTemplateId String
+  id             String    @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
+  tenantId       String    @db.Uuid
+  cardTemplateId String    @db.Uuid
   price          Decimal
   quantity       Int       @default(0)
   condition      Condition
-  language       Language
+  language       String
+  active         Boolean   @default(true)
+  extras         String[]  @default([])
 
   tenant       Tenant       @relation(fields: [tenantId], references: [id])
   cardTemplate CardTemplate @relation(fields: [cardTemplateId], references: [id])
@@ -76,8 +73,8 @@ enum OrderStatus {
 }
 
 model Order {
-  id            String      @id @default(cuid())
-  tenantId      String
+  id            String      @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
+  tenantId      String      @db.Uuid
   customerName  String
   customerEmail String?
   totalAmount   Decimal
@@ -92,9 +89,9 @@ model Order {
 }
 
 model OrderItem {
-  id              String  @id @default(cuid())
-  orderId         String
-  inventoryItemId String
+  id              String  @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
+  orderId         String  @db.Uuid
+  inventoryItemId String  @db.Uuid
   quantity        Int
   priceAtPurchase Decimal
 

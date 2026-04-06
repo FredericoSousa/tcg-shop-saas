@@ -18,7 +18,18 @@ export function SetBadge({
   textClassName
 }: SetBadgeProps) {
   if (!setCode) return null
-  const imgSrc = `https://svgs.scryfall.io/sets/${setCode.toLowerCase()}.svg`
+  let imgSrc = `https://svgs.scryfall.io/sets/${setCode.toLowerCase()}.svg`
+
+  const useStar = setCode === 'SCH' || /PW\d*/g.test(setCode)
+
+  if (setCode === 'PLST') {
+    imgSrc = `https://svgs.scryfall.io/sets/planeswalker.svg`
+  }
+
+  if (useStar) {
+    imgSrc = `https://svgs.scryfall.io/sets/star.svg`
+  }
+
   return (
     <div className={cn("flex items-center gap-1.5", className)}>
       {/* eslint-disable-next-line @next/next/no-img-element */}

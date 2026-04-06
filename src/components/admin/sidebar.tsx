@@ -73,20 +73,6 @@ export function Sidebar({ tenantName }: SidebarProps) {
           })}
         </div>
       </nav>
-
-      <div className="border-t border-border/50 dark:border-slate-800 p-4 space-y-3 mt-auto">
-        <div className="flex items-start gap-3 px-3 py-3 rounded-lg bg-primary/10 dark:bg-primary/30 border border-primary/30 dark:border-primary/50 dark:bg-gradient-to-br dark:from-primary/25 dark:to-primary/15">
-          <Sparkles className="h-4 w-4 text-primary dark:text-primary shrink-0 mt-0.5" />
-          <div>
-            <p className="text-xs font-semibold text-foreground dark:text-white">
-              Pro Tip
-            </p>
-            <p className="text-xs text-muted-foreground dark:text-slate-300 mt-1">
-              Use atalhos de teclado para navegar mais rápido
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

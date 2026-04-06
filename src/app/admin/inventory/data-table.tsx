@@ -35,6 +35,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
   PackageOpen,
   Trash2,
   X,
@@ -66,6 +75,7 @@ export function DataTable<TData, TValue>({
   );
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [isDeleting, setIsDeleting] = React.useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   const uniqueSets = React.useMemo(() => {
     const sets = new Set<string>();
@@ -141,18 +151,12 @@ export function DataTable<TData, TValue>({
     const selectedRows = table.getFilteredSelectedRowModel().rows;
     const ids = selectedRows.map((row) => (row.original as any).id);
 
-    if (
-      !confirm(
-        `Tem certeza de que deseja excluir ${ids.length} item(ns) do estoque?`,
-      )
-    )
-      return;
-
     setIsDeleting(true);
     try {
       await deleteInventoryItems(ids);
       toast.success(`${ids.length} item(ns) removido(s) com sucesso.`);
       setRowSelection({});
+      setIsDeleteDialogOpen(false);
     } catch {
       toast.error("Erro ao excluir itens selecionados.");
     } finally {
@@ -283,25 +287,44 @@ export function DataTable<TData, TValue>({
             {selectedCount}{" "}
             {selectedCount === 1 ? "item selecionado" : "itens selecionados"}
           </span>
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleBulkDelete}
-            disabled={isDeleting}
-            className="ml-auto transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 gap-2"
-          >
-            {isDeleting ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Excluindo...
-              </>
-            ) : (
-              <>
-                <Trash2 className="h-4 w-4" />
-                Excluir Selecionados
-              </>
-            )}
-          </Button>
+          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+            <DialogTrigger
+              render={
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={isDeleting}
+                  className="ml-auto transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 gap-2"
+                />
+              }
+            >
+              <Trash2 className="h-4 w-4" />
+              Excluir Selecionados
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Confirmar Exclusão</DialogTitle>
+                <DialogDescription>
+                  Tem certeza de que deseja excluir {selectedCount} {selectedCount === 1 ? "item" : "itens"} do estoque? Esta ação não pode ser desfeita.
+                </DialogDescription>
+              </DialogHeader>
+              <DialogFooter className="mt-4 gap-2 sm:gap-0">
+                <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isDeleting}>
+                  Cancelar
+                </Button>
+                <Button variant="destructive" onClick={handleBulkDelete} disabled={isDeleting} className="gap-2">
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Excluindo...
+                    </>
+                  ) : (
+                    "Confirmar Exclusão"
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       )}
 

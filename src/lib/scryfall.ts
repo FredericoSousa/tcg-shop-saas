@@ -95,5 +95,45 @@ export const scryfall = {
       console.error(`Erro ao buscar Scryfall card pelo ID (${id}):`, error);
       return null;
     }
+  },
+
+  /**
+   * Busca cards em lote no Scryfall. O endpoint aceita até 75 identificadores.
+   * Divide a busca em chunks para acomodar arrays maiores.
+   */
+  async getCardsCollection(identifiers: Array<{ id?: string, mtgo_id?: number, multiverse_id?: number, oracle_id?: string, illustration_id?: string, name?: string, set?: string, collector_number?: string }>): Promise<Card[]> {
+    if (!identifiers || identifiers.length === 0) return [];
+    
+    const MAX_CHUNK = 75;
+    const results: Card[] = [];
+
+    for (let i = 0; i < identifiers.length; i += MAX_CHUNK) {
+      const chunk = identifiers.slice(i, i + MAX_CHUNK);
+      
+      try {
+        const response = await fetch('https://api.scryfall.com/cards/collection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifiers: chunk })
+        });
+
+        if (!response.ok) {
+          console.error(`Scryfall API error on collection fetch: ${response.status}`);
+        } else {
+          const data = await response.json();
+          if (data.data) {
+            results.push(...data.data);
+          }
+        }
+      } catch (error) {
+        console.error('Erro na busca em lote do Scryfall:', error);
+      }
+      
+      if (i + MAX_CHUNK < identifiers.length) {
+         await new Promise(r => setTimeout(r, 100)); // Rate limit pause
+      }
+    }
+
+    return results;
   }
 };

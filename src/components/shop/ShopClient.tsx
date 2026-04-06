@@ -32,12 +32,11 @@ import {
   ShoppingCart,
   Filter,
   Search,
+  RotateCcw,
 } from "lucide-react";
 import Image from "next/image";
 
 const ITEMS_PER_PAGE = 20;
-
-
 
 type ShopItem = {
   id: string;
@@ -45,10 +44,12 @@ type ShopItem = {
   quantity: number;
   condition: string;
   language: string;
+  extras?: string[];
   cardTemplate: {
     name: string;
     set: string;
     imageUrl: string | null;
+    backImageUrl?: string | null;
     metadata: {
       colors?: string[];
       type_line?: string;
@@ -57,20 +58,26 @@ type ShopItem = {
   } | null;
 };
 
-export function ShopClient({ 
-  tenantId, 
-  initialInventory, 
+export function ShopClient({
+  tenantId,
+  initialInventory,
   availableFilters,
   pageCount,
   totalItems,
-  currentPage 
-}: { 
-  tenantId: string, 
-  initialInventory: any[],
-  availableFilters: { colors: string[], types: string[], sets: string[] },
-  pageCount: number,
-  totalItems: number,
-  currentPage: number
+  currentPage,
+}: {
+  tenantId: string;
+  initialInventory: any[];
+  availableFilters: {
+    colors: string[];
+    types: string[];
+    subtypes: string[];
+    extras: string[];
+    sets: string[];
+  };
+  pageCount: number;
+  totalItems: number;
+  currentPage: number;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -79,6 +86,8 @@ export function ShopClient({
   // Extract selected filters from searchParams
   const selectedColors = searchParams.get("color")?.split(",") || [];
   const selectedTypes = searchParams.get("type")?.split(",") || [];
+  const selectedSubtypes = searchParams.get("subtype")?.split(",") || [];
+  const selectedExtras = searchParams.get("extras")?.split(",") || [];
   const selectedSet = searchParams.get("set");
   const searchQuery = searchParams.get("q") || "";
   const sortOption = searchParams.get("sort") || "name_asc";
@@ -86,7 +95,9 @@ export function ShopClient({
   // Track recently added items for visual feedback
   const [addedItems, setAddedItems] = useState<Record<string, boolean>>({});
   const [setSearch, setSetSearch] = useState("");
+  const [subtypeSearch, setSubtypeSearch] = useState("");
   const [localQuery, setLocalQuery] = useState(searchQuery);
+  const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setLocalQuery(searchQuery);
@@ -109,7 +120,7 @@ export function ShopClient({
     } else {
       let current = params.get("color")?.split(",") || [];
       if (current.includes(c)) {
-        current = current.filter(x => x !== c);
+        current = current.filter((x) => x !== c);
       } else {
         current.push(c);
       }
@@ -130,7 +141,7 @@ export function ShopClient({
     } else {
       let current = params.get("type")?.split(",") || [];
       if (current.includes(t)) {
-        current = current.filter(x => x !== t);
+        current = current.filter((x) => x !== t);
       } else {
         current.push(t);
       }
@@ -144,20 +155,64 @@ export function ShopClient({
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   };
 
+  const toggleSubtype = (st: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (st === null) {
+      params.delete("subtype");
+    } else {
+      let current = params.get("subtype")?.split(",") || [];
+      if (current.includes(st)) {
+        current = current.filter((x) => x !== st);
+      } else {
+        current.push(st);
+      }
+      if (current.length > 0) {
+        params.set("subtype", current.join(","));
+      } else {
+        params.delete("subtype");
+      }
+    }
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const toggleExtras = (ex: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (ex === null) {
+      params.delete("extras");
+    } else {
+      let current = params.get("extras")?.split(",") || [];
+      if (current.includes(ex)) {
+        current = current.filter((x) => x !== ex);
+      } else {
+        current.push(ex);
+      }
+      if (current.length > 0) {
+        params.set("extras", current.join(","));
+      } else {
+        params.delete("extras");
+      }
+    }
+    params.set("page", "1");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
   const clearFilters = () => {
     router.replace(pathname, { scroll: false });
   };
 
-  const handlePageChange = useCallback((page: number) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("page", page.toString());
-    router.replace(`${pathname}?${params.toString()}`, { scroll: true });
-  }, [pathname, router, searchParams]);
+  const handlePageChange = useCallback(
+    (page: number) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("page", page.toString());
+      router.replace(`${pathname}?${params.toString()}`, { scroll: true });
+    },
+    [pathname, router, searchParams],
+  );
 
-  const { colors, types, sets } = availableFilters;
+  const { colors, types, subtypes, extras, sets } = availableFilters;
   const filteredInventory = initialInventory;
   const totalPages = pageCount;
-
 
   const handleAddToCart = (item: ShopItem) => {
     addItem({
@@ -182,7 +237,7 @@ export function ShopClient({
       <aside className="hidden md:block w-full md:w-64 shrink-0 bg-white p-4 rounded-xl border shadow-sm sticky top-6">
         <Accordion
           multiple
-          defaultValue={["color", "type", "set"]}
+          defaultValue={["color", "type", "subtype", "extras", "set"]}
           className="w-full"
         >
           <AccordionItem value="color" className="border-b-0 pb-2">
@@ -203,7 +258,9 @@ export function ShopClient({
                     key={c}
                     title={c}
                     className={`h-8 w-8 rounded-full transition-all flex items-center justify-center overflow-hidden bg-white/20 border border-muted-foreground/20 ${
-                      selectedColors.includes(c) ? "ring-2 ring-primary ring-offset-2 scale-110" : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
+                      selectedColors.includes(c)
+                        ? "ring-2 ring-primary ring-offset-2 scale-110"
+                        : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
                     }`}
                     onClick={() => toggleColor(c)}
                   >
@@ -245,13 +302,79 @@ export function ShopClient({
             </AccordionContent>
           </AccordionItem>
 
+          <AccordionItem value="subtype" className="border-b-0 pb-2">
+            <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">
+              Subtipos
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="flex flex-col gap-1.5 border-l-2 pl-3 mt-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                <Input
+                  placeholder="Buscar subtipo..."
+                  value={subtypeSearch}
+                  onChange={(e) => setSubtypeSearch(e.target.value)}
+                  className="h-8 mb-2 text-xs"
+                />
+
+                {subtypes
+                  .filter((st) =>
+                    st.toLowerCase().includes(subtypeSearch.toLowerCase()),
+                  )
+                  .map((st) => (
+                    <button
+                      key={st}
+                      className={`text-left w-full py-1 px-2 rounded-md transition-colors flex items-center gap-2 hover:bg-muted/50 ${selectedSubtypes.includes(st) ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => toggleSubtype(st)}
+                    >
+                      {selectedSubtypes.includes(st) && (
+                        <Check className="h-3 w-3 shrink-0" />
+                      )}
+                      <span className="text-xs font-medium">{st}</span>
+                    </button>
+                  ))}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+
+          {extras.length > 0 && (
+            <AccordionItem value="extras" className="border-b-0 pb-2">
+              <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">
+                Extras
+              </AccordionTrigger>
+              <AccordionContent>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  <Badge
+                    variant={
+                      selectedExtras.length === 0 ? "default" : "outline"
+                    }
+                    className="cursor-pointer hover:opacity-80 pb-0.5"
+                    onClick={() => toggleExtras(null)}
+                  >
+                    Todos
+                  </Badge>
+                  {extras.map((ex) => (
+                    <Badge
+                      key={ex}
+                      variant={
+                        selectedExtras.includes(ex) ? "default" : "outline"
+                      }
+                      className="cursor-pointer hover:opacity-80 pb-0.5"
+                      onClick={() => toggleExtras(ex)}
+                    >
+                      {ex}
+                    </Badge>
+                  ))}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
           <AccordionItem value="set" className="border-b-0">
             <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">
               Edições
             </AccordionTrigger>
             <AccordionContent>
               <div className="flex flex-col gap-1.5 border-l-2 pl-3 mt-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                <Input 
+                <Input
                   placeholder="Buscar edição..."
                   value={setSearch}
                   onChange={(e) => setSetSearch(e.target.value)}
@@ -261,27 +384,39 @@ export function ShopClient({
                   className={`text-left w-full py-1.5 px-2 rounded-md transition-colors flex items-center hover:bg-muted/50 ${selectedSet === null ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"}`}
                   onClick={() => updateFilters("set", null)}
                 >
-                  <span className="text-xs font-bold uppercase font-mono tracking-wider ml-[1.35rem]">Todas as Edições</span>
+                  <span className="text-xs font-bold uppercase font-mono tracking-wider ml-[1.35rem]">
+                    Todas as Edições
+                  </span>
                 </button>
-                {sets.filter(s => s.toLowerCase().includes(setSearch.toLowerCase())).map((s) => (
-                  <button
-                    key={s}
-                    className={`text-left w-full py-1 px-2 rounded-md transition-colors flex items-center hover:bg-muted/50 ${selectedSet === s ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"}`}
-                    onClick={() => updateFilters("set", s)}
-                  >
-                    <SetBadge 
-                      setCode={s} 
-                      iconClassName="h-4 w-4 drop-shadow-none opacity-80" 
-                      textClassName={selectedSet === s ? "text-primary font-bold" : ""} 
-                    />
-                  </button>
-                ))}
+                {sets
+                  .filter((s) =>
+                    s.toLowerCase().includes(setSearch.toLowerCase()),
+                  )
+                  .map((s) => (
+                    <button
+                      key={s}
+                      className={`text-left w-full py-1 px-2 rounded-md transition-colors flex items-center hover:bg-muted/50 ${selectedSet === s ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                      onClick={() => updateFilters("set", s)}
+                    >
+                      <SetBadge
+                        setCode={s}
+                        iconClassName="h-4 w-4 drop-shadow-none opacity-80"
+                        textClassName={
+                          selectedSet === s ? "text-primary font-bold" : ""
+                        }
+                      />
+                    </button>
+                  ))}
               </div>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
 
-        {(selectedColors.length > 0 || selectedTypes.length > 0 || selectedSet) && (
+        {(selectedColors.length > 0 ||
+          selectedTypes.length > 0 ||
+          selectedSubtypes.length > 0 ||
+          selectedExtras.length > 0 ||
+          selectedSet) && (
           <Button
             variant="ghost"
             size="sm"
@@ -322,15 +457,20 @@ export function ShopClient({
           <div className="flex flex-row justify-between xl:justify-end items-center gap-4 w-full xl:w-auto">
             <Sheet>
               <SheetTrigger className="md:hidden flex items-center justify-center gap-2 font-bold shadow-sm border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 px-4 rounded-md transition-colors text-sm">
-                  <Filter className="w-4 h-4" /> Filtros
+                <Filter className="w-4 h-4" /> Filtros
               </SheetTrigger>
-              <SheetContent side="left" className="w-[85vw] sm:max-w-[350px] overflow-y-auto px-4 py-6">
+              <SheetContent
+                side="left"
+                className="w-[85vw] sm:max-w-[350px] overflow-y-auto px-4 py-6"
+              >
                 <SheetHeader className="mb-6 text-left">
-                  <SheetTitle className="text-2xl font-black">Filtros da Loja</SheetTitle>
+                  <SheetTitle className="text-2xl font-black">
+                    Filtros da Loja
+                  </SheetTitle>
                 </SheetHeader>
                 <Accordion
                   multiple
-                  defaultValue={["color", "type", "set"]}
+                  defaultValue={["color", "type", "subtype", "extras", "set"]}
                   className="w-full"
                 >
                   <AccordionItem value="color" className="border-b-0 pb-2">
@@ -340,7 +480,9 @@ export function ShopClient({
                     <AccordionContent>
                       <div className="flex flex-wrap gap-2 pt-2">
                         <Badge
-                          variant={selectedColors.length === 0 ? "default" : "outline"}
+                          variant={
+                            selectedColors.length === 0 ? "default" : "outline"
+                          }
                           className="cursor-pointer hover:opacity-80 pb-0.5"
                           onClick={() => toggleColor(null)}
                         >
@@ -351,7 +493,9 @@ export function ShopClient({
                             key={c}
                             title={c}
                             className={`h-8 w-8 rounded-full transition-all flex items-center justify-center overflow-hidden bg-white/20 border border-muted-foreground/20 ${
-                              selectedColors.includes(c) ? "ring-2 ring-primary ring-offset-2 scale-110" : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
+                              selectedColors.includes(c)
+                                ? "ring-2 ring-primary ring-offset-2 scale-110"
+                                : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
                             }`}
                             onClick={() => toggleColor(c)}
                           >
@@ -373,7 +517,9 @@ export function ShopClient({
                     <AccordionContent>
                       <div className="flex flex-wrap gap-2 pt-2">
                         <Badge
-                          variant={selectedTypes.length === 0 ? "default" : "outline"}
+                          variant={
+                            selectedTypes.length === 0 ? "default" : "outline"
+                          }
                           className="cursor-pointer hover:opacity-80 pb-0.5"
                           onClick={() => toggleType(null)}
                         >
@@ -382,7 +528,9 @@ export function ShopClient({
                         {types.map((t) => (
                           <Badge
                             key={t}
-                            variant={selectedTypes.includes(t) ? "default" : "outline"}
+                            variant={
+                              selectedTypes.includes(t) ? "default" : "outline"
+                            }
                             className="cursor-pointer hover:opacity-80 pb-0.5"
                             onClick={() => toggleType(t)}
                           >
@@ -393,13 +541,84 @@ export function ShopClient({
                     </AccordionContent>
                   </AccordionItem>
 
+                  <AccordionItem value="subtype" className="border-b-0 pb-2">
+                    <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">
+                      Subtipos
+                    </AccordionTrigger>
+                    <AccordionContent>
+                      <div className="flex flex-col gap-1.5 border-l-2 pl-3 mt-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                        <Input
+                          placeholder="Buscar subtipo..."
+                          value={subtypeSearch}
+                          onChange={(e) => setSubtypeSearch(e.target.value)}
+                          className="h-8 mb-2 text-xs"
+                        />
+                        {subtypes
+                          .filter((st) =>
+                            st
+                              .toLowerCase()
+                              .includes(subtypeSearch.toLowerCase()),
+                          )
+                          .map((st) => (
+                            <button
+                              key={st}
+                              className={`text-left w-full py-1 px-2 rounded-md transition-colors flex items-center gap-2 hover:bg-muted/50 ${selectedSubtypes.includes(st) ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                              onClick={() => toggleSubtype(st)}
+                            >
+                              {selectedSubtypes.includes(st) && (
+                                <Check className="h-3 w-3 shrink-0" />
+                              )}
+                              <span className="text-xs font-medium">{st}</span>
+                            </button>
+                          ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+
+                  {extras.length > 0 && (
+                    <AccordionItem value="extras" className="border-b-0 pb-2">
+                      <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">
+                        Extras
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <div className="flex flex-wrap gap-2 pt-2">
+                          <Badge
+                            variant={
+                              selectedExtras.length === 0
+                                ? "default"
+                                : "outline"
+                            }
+                            className="cursor-pointer hover:opacity-80 pb-0.5"
+                            onClick={() => toggleExtras(null)}
+                          >
+                            Todos
+                          </Badge>
+                          {extras.map((ex) => (
+                            <Badge
+                              key={ex}
+                              variant={
+                                selectedExtras.includes(ex)
+                                  ? "default"
+                                  : "outline"
+                              }
+                              className="cursor-pointer hover:opacity-80 pb-0.5"
+                              onClick={() => toggleExtras(ex)}
+                            >
+                              {ex}
+                            </Badge>
+                          ))}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  )}
+
                   <AccordionItem value="set" className="border-b-0">
                     <AccordionTrigger className="text-lg font-bold hover:no-underline py-2">
                       Edições
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="flex flex-col gap-1.5 border-l-2 pl-3 mt-2 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
-                        <Input 
+                        <Input
                           placeholder="Buscar edição..."
                           value={setSearch}
                           onChange={(e) => setSetSearch(e.target.value)}
@@ -409,27 +628,41 @@ export function ShopClient({
                           className={`text-left w-full py-1.5 px-2 rounded-md transition-colors flex items-center hover:bg-muted/50 ${selectedSet === null ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"}`}
                           onClick={() => updateFilters("set", null)}
                         >
-                          <span className="text-xs font-bold uppercase font-mono tracking-wider ml-[1.35rem]">Todas as Edições</span>
+                          <span className="text-xs font-bold uppercase font-mono tracking-wider ml-[1.35rem]">
+                            Todas as Edições
+                          </span>
                         </button>
-                        {sets.filter(s => s.toLowerCase().includes(setSearch.toLowerCase())).map((s) => (
-                          <button
-                            key={s}
-                            className={`text-left w-full py-1 px-2 rounded-md transition-colors flex items-center hover:bg-muted/50 ${selectedSet === s ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"}`}
-                            onClick={() => updateFilters("set", s)}
-                          >
-                            <SetBadge 
-                              setCode={s} 
-                              iconClassName="h-4 w-4 drop-shadow-none opacity-80" 
-                              textClassName={selectedSet === s ? "text-primary font-bold" : ""} 
-                            />
-                          </button>
-                        ))}
+                        {sets
+                          .filter((s) =>
+                            s.toLowerCase().includes(setSearch.toLowerCase()),
+                          )
+                          .map((s) => (
+                            <button
+                              key={s}
+                              className={`text-left w-full py-1 px-2 rounded-md transition-colors flex items-center hover:bg-muted/50 ${selectedSet === s ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"}`}
+                              onClick={() => updateFilters("set", s)}
+                            >
+                              <SetBadge
+                                setCode={s}
+                                iconClassName="h-4 w-4 drop-shadow-none opacity-80"
+                                textClassName={
+                                  selectedSet === s
+                                    ? "text-primary font-bold"
+                                    : ""
+                                }
+                              />
+                            </button>
+                          ))}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
                 </Accordion>
 
-                {(selectedColors.length > 0 || selectedTypes.length > 0 || selectedSet) && (
+                {(selectedColors.length > 0 ||
+                  selectedTypes.length > 0 ||
+                  selectedSubtypes.length > 0 ||
+                  selectedExtras.length > 0 ||
+                  selectedSet) && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -443,15 +676,14 @@ export function ShopClient({
             </Sheet>
 
             <span className="text-sm font-medium bg-muted px-3 py-1 rounded-full text-muted-foreground">
-              {totalItems}{" "}
-              {totalItems === 1 ? "card" : "cards"}
+              {totalItems} {totalItems === 1 ? "card" : "cards"}
               {totalPages > 1 && (
-              <>
-                {" "}
-                · Página {currentPage} de {totalPages}
-              </>
-            )}
-          </span>
+                <>
+                  {" "}
+                  · Página {currentPage} de {totalPages}
+                </>
+              )}
+            </span>
           </div>
         </div>
 
@@ -464,10 +696,12 @@ export function ShopClient({
             <p className="text-sm mb-6">
               Tente ajustar ou limpar os filtros para ver mais resultados.
             </p>
-            {(selectedColors.length > 0 || selectedTypes.length > 0 || selectedSet) && (
-              <Button onClick={clearFilters}>
-                Limpar Todos os Filtros
-              </Button>
+            {(selectedColors.length > 0 ||
+              selectedTypes.length > 0 ||
+              selectedSubtypes.length > 0 ||
+              selectedExtras.length > 0 ||
+              selectedSet) && (
+              <Button onClick={clearFilters}>Limpar Todos os Filtros</Button>
             )}
           </div>
         ) : (
@@ -489,16 +723,51 @@ export function ShopClient({
                     <div className="aspect-[2/3] w-full bg-muted/30 relative overflow-hidden flex items-center justify-center group-hover:bg-muted/50 transition-colors">
                       {item.cardTemplate?.imageUrl ? (
                         <>
-                          {!imageLoaded[item.id] && <Skeleton className="absolute inset-0 z-0 bg-muted-foreground/10 animate-pulse" />}
+                          {!imageLoaded[item.id] && (
+                            <Skeleton className="absolute inset-0 z-0 bg-muted-foreground/10 animate-pulse" />
+                          )}
                           <Image
-                            src={item.cardTemplate.imageUrl}
+                            src={
+                              flippedCards[item.id] &&
+                              item.cardTemplate.backImageUrl
+                                ? item.cardTemplate.backImageUrl
+                                : item.cardTemplate.imageUrl
+                            }
                             alt={item.cardTemplate.name}
                             fill
                             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                            className={`object-cover w-full h-full transition-opacity duration-300 ${imageLoaded[item.id] ? 'opacity-100 z-10' : 'opacity-0'}`}
+                            className={`object-cover w-full h-full transition-opacity duration-300 ${imageLoaded[item.id] ? "opacity-100 z-10" : "opacity-0"}`}
                             loading="lazy"
-                            onLoad={() => setImageLoaded(prev => ({...prev, [item.id]: true}))}
+                            onLoad={() =>
+                              setImageLoaded((prev) => ({
+                                ...prev,
+                                [item.id]: true,
+                              }))
+                            }
                           />
+                          {item.cardTemplate.backImageUrl && (
+                            <button
+                              onClick={() =>
+                                setFlippedCards((prev) => ({
+                                  ...prev,
+                                  [item.id]: !prev[item.id],
+                                }))
+                              }
+                              className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full transition-all duration-200 z-20 opacity-0 group-hover:opacity-100"
+                              title={
+                                flippedCards[item.id]
+                                  ? "Ver frente"
+                                  : "Ver verso"
+                              }
+                              aria-label={
+                                flippedCards[item.id]
+                                  ? "Ver frente do card"
+                                  : "Ver verso do card"
+                              }
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                            </button>
+                          )}
                         </>
                       ) : (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60 text-xs font-medium space-y-2">
@@ -516,10 +785,23 @@ export function ShopClient({
                     </div>
                     <div className="p-4 flex flex-col gap-1.5 flex-1">
                       <h3
-                        className="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem]"
+                        className="font-bold text-sm leading-tight min-h-[2.5rem]"
                         title={item.cardTemplate?.name}
                       >
-                        {item.cardTemplate?.name}
+                        {item.cardTemplate?.name?.includes(" // ") ? (
+                          <>
+                            <span className="line-clamp-1">
+                              {item.cardTemplate.name.split(" // ")[0]}
+                            </span>
+                            <span className="block text-[10px] font-medium text-muted-foreground mt-0.5 line-clamp-1">
+                              {item.cardTemplate.name.split(" // ")[1]}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="line-clamp-2">
+                            {item.cardTemplate?.name}
+                          </span>
+                        )}
                       </h3>
                       <div className="flex items-center flex-wrap gap-1 mt-auto">
                         <span
@@ -557,6 +839,16 @@ export function ShopClient({
                               ? "🇺🇸 EN"
                               : item.language}
                         </span>
+                        {item.extras &&
+                          item.extras.length > 0 &&
+                          item.extras.map((ex) => (
+                            <span
+                              key={ex}
+                              className="text-[10px] font-bold px-1.5 py-0.5 bg-gradient-to-r from-violet-100 to-purple-100 text-purple-700 rounded border border-purple-200"
+                            >
+                              {ex}
+                            </span>
+                          ))}
                       </div>
                       <div className="mt-2 pt-2 border-t flex flex-col gap-3">
                         <div className="flex flex-col">
@@ -667,7 +959,6 @@ export function ShopClient({
           </>
         )}
       </div>
-
     </div>
   );
 }

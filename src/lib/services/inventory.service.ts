@@ -7,6 +7,7 @@ export async function getInventoryPaginated(tenantId: string, page: number, limi
 
   const where: Prisma.InventoryItemWhereInput = {
     tenantId,
+    active: true,
     ...(search ? {
       cardTemplate: {
         name: {
@@ -46,11 +47,11 @@ export async function getInventoryPaginated(tenantId: string, page: number, limi
 export async function getStorefrontInventory(
   tenantId: string, 
   page: number = 1, 
-  filters?: { color?: string | string[], type?: string | string[], set?: string, search?: string, sort?: string }
+  filters?: { color?: string | string[], type?: string | string[], subtype?: string | string[], set?: string, extras?: string | string[], search?: string, sort?: string }
 ) {
   const limit = 20;
   const skip = (page - 1) * limit;
-  const cacheKey = `storefront-inventory-${tenantId}-p${page}-${filters?.color?.toString() || 'all'}-${filters?.type || 'all'}-${filters?.set || 'all'}-${filters?.search || 'none'}-${filters?.sort || 'def'}`;
+  const cacheKey = `storefront-inventory-${tenantId}-p${page}-${filters?.color?.toString() || 'all'}-${filters?.type || 'all'}-${filters?.subtype || 'all'}-${filters?.set || 'all'}-${filters?.extras || 'all'}-${filters?.search || 'none'}-${filters?.sort || 'def'}`;
 
   return unstable_cache(
     async () => {
@@ -61,6 +62,7 @@ export async function getStorefrontInventory(
       const allItems = await prisma.inventoryItem.findMany({
         where: { 
           tenantId,
+          active: true,
           quantity: { gt: 0 }
         },
         include: {
@@ -77,7 +79,7 @@ export async function getStorefrontInventory(
         const meta = item.cardTemplate.metadata as any;
         if (filters?.color) {
           const expectedColors = Array.isArray(filters.color) ? filters.color : filters.color.split(',');
-          const cardColors = meta?.colors || [];
+          const cardColors = meta?.color_identity || [];
           
           const isColorless = cardColors.length === 0;
           const matchesColorless = isColorless && expectedColors.includes("C");
@@ -92,6 +94,20 @@ export async function getStorefrontInventory(
           if (!matchesType) return false;
         }
         if (filters?.set && item.cardTemplate.set.toUpperCase() !== filters.set.toUpperCase()) return false;
+        if (filters?.subtype) {
+          const expectedSubtypes = Array.isArray(filters.subtype) ? filters.subtype : filters.subtype.split(',');
+          const typeLine = meta?.type_line || '';
+          const subtypePart = typeLine.split('\u2014')[1]?.trim() || '';
+          const cardSubtypes = subtypePart.split(/\s+/).filter(Boolean);
+          const matchesSubtype = expectedSubtypes.some((st: string) => cardSubtypes.some((cs: string) => cs.toLowerCase() === st.toLowerCase()));
+          if (!matchesSubtype) return false;
+        }
+        if (filters?.extras) {
+          const expectedExtras = Array.isArray(filters.extras) ? filters.extras : filters.extras.split(',');
+          const itemExtras = item.extras || [];
+          const matchesExtras = expectedExtras.some(e => itemExtras.includes(e));
+          if (!matchesExtras) return false;
+        }
         return true;
       });
 
@@ -145,31 +161,42 @@ export async function getStorefrontFilters(tenantId: string) {
   return unstable_cache(
     async () => {
       const items = await prisma.inventoryItem.findMany({
-        where: { tenantId, quantity: { gt: 0 } },
-        select: { cardTemplate: { select: { metadata: true, set: true } } }
+        where: { tenantId, active: true, quantity: { gt: 0 } },
+        select: { extras: true, cardTemplate: { select: { metadata: true, set: true } } }
       });
 
       const colorSet = new Set<string>();
       const typeSet = new Set<string>();
+      const subtypeSet = new Set<string>();
+      const extrasSet = new Set<string>();
       const setSet = new Set<string>();
 
       items.forEach((item) => {
         const meta = item.cardTemplate?.metadata as any;
-        if (meta?.colors && Array.isArray(meta.colors)) {
-          meta.colors.forEach((c: string) => colorSet.add(c));
+        if (meta?.color_identity && Array.isArray(meta.color_identity)) {
+          meta.color_identity.forEach((c: string) => colorSet.add(c));
         }
         if (meta?.type_line) {
-          const mainType = meta.type_line.split("—")[0].trim().split(" ")[0];
+          const mainType = meta.type_line.split('\u2014')[0].trim().split(' ')[0];
           if (mainType) typeSet.add(mainType);
+          const subtypePart = meta.type_line.split('\u2014')[1]?.trim();
+          if (subtypePart) {
+            subtypePart.split(/\s+/).filter((st: string) => st && /^[A-Za-z'-]+$/.test(st)).forEach((st: string) => subtypeSet.add(st));
+          }
         }
         if (item.cardTemplate?.set) {
           setSet.add(item.cardTemplate.set.toUpperCase());
+        }
+        if (item.extras && Array.isArray(item.extras)) {
+          item.extras.forEach((e: string) => extrasSet.add(e));
         }
       });
 
       return {
         colors: [...Array.from(colorSet).sort(), "C"],
         types: Array.from(typeSet).sort(),
+        subtypes: Array.from(subtypeSet).sort(),
+        extras: Array.from(extrasSet).sort(),
         sets: Array.from(setSet).sort(),
       };
     },

@@ -2,6 +2,7 @@
 
 import { Menu, Search, Sun, Moon, ChevronDown } from "lucide-react";
 import { useTheme } from "next-themes";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -33,6 +34,11 @@ const sidebarItems = [
 export function Navbar() {
   const pathname = usePathname();
   const { setTheme, theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Find current page name for breadcrumb title
   const currentItem = sidebarItems.find((item) =>
@@ -114,8 +120,10 @@ export function Navbar() {
           className="hover:bg-muted/60 transition-all"
           suppressHydrationWarning
         >
-          <div suppressHydrationWarning>
-            {theme === "dark" ? (
+          <div>
+            {!mounted ? (
+               <div className="h-[18px] w-[18px]" />
+            ) : theme === "dark" ? (
               <Sun className="h-4.5 w-4.5" />
             ) : (
               <Moon className="h-4.5 w-4.5" />
@@ -125,21 +133,23 @@ export function Navbar() {
         </Button>
 
         <DropdownMenu>
-          <DropdownMenuTrigger>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2 hover:bg-muted/60 transition-all px-2"
-            >
-              <Avatar className="h-8 w-8">
-                <AvatarImage src="" alt="Avatar" />
-                <AvatarFallback className="bg-primary/15 text-primary font-bold text-sm">
-                  L
-                </AvatarFallback>
-              </Avatar>
-              <span className="hidden sm:inline text-sm font-medium">Loja</span>
-              <ChevronDown className="h-4 w-4 text-muted-foreground" />
-            </Button>
+          <DropdownMenuTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 hover:bg-muted/60 transition-all px-2"
+              />
+            }
+          >
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="" alt="Avatar" />
+              <AvatarFallback className="bg-primary/15 text-primary font-bold text-sm">
+                L
+              </AvatarFallback>
+            </Avatar>
+            <span className="hidden sm:inline text-sm font-medium">Loja</span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>

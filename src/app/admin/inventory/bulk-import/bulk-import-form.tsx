@@ -3,27 +3,30 @@
 import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
 import { Loader2, Trash2, CheckCircle2, XCircle, Upload, FileText, ArrowRight, Globe, AlertTriangle, RefreshCw } from 'lucide-react'
-import { searchCardByName, addBulkInventoryItems, importLigaMagicCollection } from '@/app/actions/inventory'
+import { searchCardByName, resolveCardsBatch, addBulkInventoryItems, importLigaMagicCollection } from '@/app/actions/inventory'
 import type { BulkItemResult } from '@/app/actions/inventory'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Input } from '@/components/ui/input'
 import { SetBadge } from '@/components/ui/set-badge'
+import { ChipListInput } from '@/components/ui/chip-list-input'
 
 type ParsedLine = {
   quantity: number
   cardName: string
   setCode: string
-  cardNumber?: number
+  cardNumber?: string
   condition: string
   language: string
   price: number
+  extras: string[]
   raw: string
 }
 
 const VALID_CONDITIONS = ['NM', 'SP', 'MP', 'HP', 'D']
 const VALID_LANGUAGES = ['EN', 'PT', 'JP']
+const VALID_EXTRAS = ['FOIL', 'PROMO', 'PRE_RELEASE', 'FNM', 'DCI', 'TEXTLESS', 'SIGNED', 'OVERSIZED', 'ALTERED', 'FOIL_ETCHED', 'MISPRINT', 'MISCUT']
 
 const EXAMPLE_TEXT = `4 Lightning Bolt [M25] #169 NM EN 2.50
 2 Counterspell [TMP] SP PT 5.00
@@ -35,10 +38,10 @@ function parseLine(line: string): ParsedLine | null {
   if (!trimmed || trimmed.startsWith('#') || trimmed.startsWith('//')) return null
 
   // Format: <qty> <card name> [SET] <condition> <language> <price>
-  // [SET] is required, e.g. [M25], [LEA]
+  // [SET] is optional, e.g. [M25], (LEA), M25
   // Price is the last token, language second-to-last, condition third-to-last
   const tokens = trimmed.split(/\s+/)
-  if (tokens.length < 6) return null
+  if (tokens.length < 5) return null
 
   const quantity = parseInt(tokens[0], 10)
   if (isNaN(quantity) || quantity < 1) return null
@@ -52,25 +55,34 @@ function parseLine(line: string): ParsedLine | null {
   if (!VALID_CONDITIONS.includes(condition)) return null
   if (!VALID_LANGUAGES.includes(language)) return null
 
-  // Extract required [SET] code from the card name portion
   const nameTokens = tokens.slice(1, tokens.length - 3)
-  const setTokenIndex = nameTokens.findIndex(t => /^\[.+\]$/.test(t))
-  if (setTokenIndex === -1) return null // [SET] is required
-  const setCode = nameTokens[setTokenIndex].replace(/[\[\]]/g, '').toUpperCase()
-  nameTokens.splice(setTokenIndex, 1)
 
-  // Extract optional #NUMBER (card collector number)
-  let cardNumber: number | undefined
+  let setCode: string | undefined
+  let cardNumber: string | undefined
+
+  // Extract optional #NUMBER
   const numTokenIndex = nameTokens.findIndex(t => /^#\d+$/.test(t))
   if (numTokenIndex !== -1) {
-    cardNumber = parseInt(nameTokens[numTokenIndex].replace('#', ''), 10)
+    cardNumber = nameTokens[numTokenIndex].replace('#', '')
     nameTokens.splice(numTokenIndex, 1)
+  }
+
+  // Extract optional [SET] or (SET)
+  const setTokenIndex = nameTokens.findIndex(t => /^\[.+\]$/.test(t) || /^\(.+\)$/.test(t))
+  if (setTokenIndex !== -1) {
+    setCode = nameTokens[setTokenIndex].replace(/[\[\]\(\)]/g, '').toUpperCase()
+    nameTokens.splice(setTokenIndex, 1)
+  }
+
+  const extras: string[] = []
+  while (nameTokens.length > 0 && VALID_EXTRAS.includes(nameTokens[nameTokens.length - 1].toUpperCase())) {
+    extras.unshift(nameTokens.pop()!.toUpperCase())
   }
 
   const cardName = nameTokens.join(' ')
   if (!cardName) return null
 
-  return { quantity, cardName, setCode, cardNumber, condition, language, price, raw: trimmed }
+  return { quantity, cardName, setCode: setCode || '', cardNumber, condition, language, price, extras, raw: trimmed }
 }
 
 type ImportMode = 'text' | 'ligamagic'
@@ -114,57 +126,39 @@ export function BulkImportForm() {
     }
 
     setIsProcessing(true)
-    setProcessProgress({ current: 0, total: parsed.length })
 
-    const results: (BulkItemResult & { originalLine: string })[] = []
-
-    for (let i = 0; i < parsed.length; i++) {
-      const line = parsed[i]
-      setProcessProgress({ current: i + 1, total: parsed.length })
-
-      try {
-        const found = await searchCardByName(line.cardName, line.setCode, line.cardNumber)
-
-        if (found) {
-          results.push({
-            ...found,
-            quantity: line.quantity,
-            condition: line.condition,
-            language: line.language,
-            price: line.price,
-            cardNumber: line.cardNumber || found.cardNumber,
-            status: 'success',
-            originalLine: line.raw,
-          })
-        } else {
-          results.push({
-            cardName: line.cardName,
-            quantity: line.quantity,
-            condition: line.condition,
-            language: line.language,
-            price: line.price,
-            status: 'error',
-            error: 'Card não encontrado no Scryfall',
-            originalLine: line.raw,
-          })
-        }
-      } catch {
-        results.push({
-          cardName: line.cardName,
-          quantity: line.quantity,
-          condition: line.condition,
-          language: line.language,
-          price: line.price,
-          status: 'error',
-          error: 'Erro na busca',
-          originalLine: line.raw,
-        })
+    // Merge duplicates
+    const mergedParsed = parsed.reduce((acc, curr) => {
+      const key = `${curr.cardName.toLowerCase()}|${curr.setCode}|${curr.cardNumber || ''}|${curr.condition}|${curr.language}|${curr.price}|${curr.extras.join(',')}`;
+      if (acc[key]) {
+        acc[key].quantity += curr.quantity;
+      } else {
+        acc[key] = { ...curr };
       }
+      return acc;
+    }, {} as Record<string, ParsedLine>);
+    const parsedListToResolve = Object.values(mergedParsed);
 
-      // Small delay to respect Scryfall rate limits
-      if (i < parsed.length - 1) {
-        await new Promise(r => setTimeout(r, 100))
-      }
+    setProcessProgress({ current: parsedListToResolve.length, total: parsedListToResolve.length })
+
+    const batchRequest = parsedListToResolve.map(p => ({
+      cardName: p.cardName,
+      setCode: p.setCode || undefined,
+      cardNumber: p.cardNumber,
+      quantity: p.quantity,
+      condition: p.condition,
+      language: p.language,
+      price: p.price,
+      extras: p.extras,
+      originalLine: p.raw
+    }));
+
+    const CHUNK_SIZE = 75;
+    let results: any[] = [];
+    for (let i = 0; i < batchRequest.length; i += CHUNK_SIZE) {
+      const chunk = batchRequest.slice(i, i + CHUNK_SIZE);
+      const chunkResults = await resolveCardsBatch(chunk);
+      results = results.concat(chunkResults);
     }
 
     setItems(results)
@@ -190,63 +184,25 @@ export function BulkImportForm() {
         return
       }
 
-      // Now resolve each card via Scryfall
-      setProcessProgress({ current: 0, total: collectionCards.length })
-      const results: (BulkItemResult & { originalLine: string })[] = []
+      // Now resolve each card via Scryfall in chunks of 75
+      const batchRequest = collectionCards.map(card => ({
+        cardName: card.cardName,
+        setCode: card.setCode || undefined,
+        cardNumber: card.cardNumber,
+        quantity: card.quantity,
+        condition: card.condition,
+        language: card.language,
+        price: card.price,
+        extras: card.extras,
+        originalLine: card.originalLine
+      }));
 
-      for (let i = 0; i < collectionCards.length; i++) {
-        const card = collectionCards[i]
-        setProcessProgress({ current: i + 1, total: collectionCards.length })
-
-        try {
-          // Try with set code + card number first
-          let found = await searchCardByName(card.cardName, card.setCode, card.cardNumber)
-
-          if (found) {
-            results.push({
-              ...found,
-              quantity: card.quantity,
-              condition: card.condition,
-              language: card.language,
-              price: card.price,
-              cardNumber: card.cardNumber || found.cardNumber,
-              status: 'success',
-              originalLine: card.originalLine,
-            })
-          } else {
-            // Fallback: search without set filter or card number
-            found = await searchCardByName(card.cardName)
-            if (found) {
-              results.push({
-                ...found,
-                quantity: card.quantity,
-                condition: card.condition,
-                language: card.language,
-                price: card.price,
-                cardNumber: card.cardNumber || found.cardNumber,
-                status: 'success',
-                error: `Set original [${card.setCode}] não encontrado, usando ${found.setCode}`,
-                originalLine: card.originalLine,
-              })
-            } else {
-              results.push({
-                ...card,
-                status: 'error',
-                error: 'Card não encontrado no Scryfall',
-              })
-            }
-          }
-        } catch {
-          results.push({
-            ...card,
-            status: 'error',
-            error: 'Erro na busca Scryfall',
-          })
-        }
-
-        if (i < collectionCards.length - 1) {
-          await new Promise(r => setTimeout(r, 100))
-        }
+      const CHUNK_SIZE = 75;
+      let results: any[] = [];
+      for (let i = 0; i < batchRequest.length; i += CHUNK_SIZE) {
+        const chunk = batchRequest.slice(i, i + CHUNK_SIZE);
+        const chunkResults = await resolveCardsBatch(chunk);
+        results = results.concat(chunkResults);
       }
 
       setItems(results)
@@ -263,7 +219,7 @@ export function BulkImportForm() {
     setItems(prev => prev.filter((_, i) => i !== index))
   }
 
-  const handleUpdateItem = (index: number, field: string, value: string | number) => {
+  const handleUpdateItem = (index: number, field: string, value: string | number | string[]) => {
     setItems(prev => prev.map((item, i) => {
       if (i !== index) return item
       return { ...item, [field]: value }
@@ -278,26 +234,28 @@ export function BulkImportForm() {
 
     setReResolvingIndex(index)
     try {
-      const found = await searchCardByName(item.cardName, item.setCode || undefined, item.cardNumber || undefined)
-      if (found) {
+      // Use the normal search API directly for re-processing since it supports fuzzy matching via the text search API
+      const found = await searchCardByName(item.cardName, item.setCode, item.cardNumber);
+
+      if (found && found.status === 'success') {
+        const resultItem = {
+          ...item,
+          ...found,
+          quantity: item.quantity,
+          condition: item.condition,
+          language: item.language,
+          price: item.price,
+          status: 'success' as const
+        };
+
         setItems(prev => prev.map((it, i) => {
           if (i !== index) return it
-          return {
-            ...it,
-            ...found,
-            quantity: it.quantity,
-            condition: it.condition,
-            language: it.language,
-            price: it.price,
-            status: 'success',
-            error: undefined,
-            originalLine: it.originalLine,
-          }
+          return resultItem;
         }))
       } else {
         setItems(prev => prev.map((it, i) => {
           if (i !== index) return it
-          return { ...it, status: 'error' as const, error: `Não encontrado com set ${it.setCode || '(vazio)'}`, scryfallId: undefined, imageUrl: undefined }
+          return { ...it, status: 'error' as const, error: `Não encontrado com nome "${it.cardName}" e set "${it.setCode || '(vazio)'}"`, scryfallId: undefined, imageUrl: undefined }
         }))
       }
     } catch {
@@ -319,17 +277,26 @@ export function BulkImportForm() {
           condition: item.condition as 'NM' | 'SP' | 'MP' | 'HP' | 'D',
           language: item.language as 'EN' | 'PT' | 'JP',
           price: item.price,
+          extras: item.extras || [],
         }))
 
-        const results = await addBulkInventoryItems(toAdd)
-        const successes = results.filter(r => r.status === 'success').length
-        const errors = results.filter(r => r.status === 'error').length
+        const CHUNK_SIZE = 50;
+        let totalSuccesses = 0;
+        let totalErrors = 0;
 
-        if (successes > 0) {
-          toast.success(`${successes} card(s) adicionados ao estoque!`)
+        for (let i = 0; i < toAdd.length; i += CHUNK_SIZE) {
+          const chunk = toAdd.slice(i, i + CHUNK_SIZE);
+          const results = await addBulkInventoryItems(chunk);
+
+          totalSuccesses += results.filter(r => r.status === 'success').length;
+          totalErrors += results.filter(r => r.status === 'error').length;
         }
-        if (errors > 0) {
-          toast.error(`${errors} card(s) falharam ao salvar.`)
+
+        if (totalSuccesses > 0) {
+          toast.success(`${totalSuccesses} card(s) adicionados ao estoque!`)
+        }
+        if (totalErrors > 0) {
+          toast.error(`${totalErrors} card(s) falharam ao salvar.`)
         }
 
         router.push('/admin/inventory')
@@ -353,22 +320,20 @@ export function BulkImportForm() {
           <div className="flex border-b">
             <button
               onClick={() => setImportMode('text')}
-              className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
-                importMode === 'text'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+              className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${importMode === 'text'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
             >
               <FileText className="h-4 w-4" />
               Lista de Texto
             </button>
             <button
               onClick={() => setImportMode('ligamagic')}
-              className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${
-                importMode === 'ligamagic'
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-muted-foreground hover:text-foreground'
-              }`}
+              className={`flex items-center gap-2 px-6 py-3 text-sm font-medium transition-colors border-b-2 ${importMode === 'ligamagic'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
+                }`}
             >
               <Globe className="h-4 w-4" />
               Coleção Liga Magic
@@ -432,7 +397,7 @@ export function BulkImportForm() {
                   {isProcessing ? (
                     <>
                       <Loader2 className="h-4 w-4 animate-spin" />
-                      Buscando... ({processProgress.current}/{processProgress.total})
+                      Resolvendo Múltiplos Cards...
                     </>
                   ) : (
                     <>
@@ -477,17 +442,10 @@ export function BulkImportForm() {
                     size="lg"
                   >
                     {isProcessing ? (
-                      processProgress.total > 0 ? (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Buscando Scryfall... ({processProgress.current}/{processProgress.total})
-                        </>
-                      ) : (
-                        <>
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          Importando da Liga Magic...
-                        </>
-                      )
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Importando Coleção...
+                      </>
                     ) : (
                       <>
                         <ArrowRight className="h-4 w-4" />
@@ -555,6 +513,7 @@ export function BulkImportForm() {
                   <th className="py-3 px-4 text-center font-medium">Qtd</th>
                   <th className="py-3 px-4 text-center font-medium">Condição</th>
                   <th className="py-3 px-4 text-center font-medium">Idioma</th>
+                  <th className="py-3 px-4 text-center font-medium">Extras</th>
                   <th className="py-3 px-4 text-right font-medium">Preço (R$)</th>
                   <th className="py-3 px-4 text-center font-medium w-12"></th>
                 </tr>
@@ -576,21 +535,32 @@ export function BulkImportForm() {
                       )}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        {item.imageUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={item.imageUrl}
-                            alt={item.cardName}
-                            className="w-8 h-11 object-cover rounded shrink-0"
+                      {item.status === 'error' ? (
+                        <div className="flex flex-col gap-1">
+                          <Input
+                            value={item.cardName}
+                            onChange={e => handleUpdateItem(index, 'cardName', e.target.value)}
+                            className="h-8 text-sm w-full font-medium"
+                            placeholder="Nome do Card"
                           />
-                        ) : (
-                          <div className="w-8 h-11 bg-muted rounded shrink-0" />
-                        )}
-                        <span className="font-semibold truncate max-w-[200px]" title={item.cardName}>
-                          {item.cardName}
-                        </span>
-                      </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-3">
+                          {item.imageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={item.imageUrl}
+                              alt={item.cardName}
+                              className="w-8 h-11 object-cover rounded shrink-0"
+                            />
+                          ) : (
+                            <div className="w-8 h-11 bg-muted rounded shrink-0" />
+                          )}
+                          <span className="font-semibold truncate max-w-[200px]" title={item.cardName}>
+                            {item.cardName}
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-1.5">
@@ -625,13 +595,11 @@ export function BulkImportForm() {
                     </td>
                     <td className="py-3 px-4 text-center">
                       <Input
-                        type="number"
+                        type="text"
                         value={item.cardNumber || ''}
-                        onChange={e => handleUpdateItem(index, 'cardNumber', parseInt(e.target.value) || 0)}
+                        onChange={e => handleUpdateItem(index, 'cardNumber', e.target.value)}
                         className="w-16 text-center h-8 text-sm mx-auto font-mono"
-                        min={0}
                         placeholder="—"
-                        disabled={item.status === 'error'}
                       />
                     </td>
                     <td className="py-3 px-4 text-center">
@@ -677,6 +645,16 @@ export function BulkImportForm() {
                           <SelectItem value="JP">JP</SelectItem>
                         </SelectContent>
                       </Select>
+                    </td>
+                    <td className="py-3 px-4">
+                      <ChipListInput
+                        values={item.extras || []}
+                        onChange={(v) => handleUpdateItem(index, 'extras', v)}
+                        suggestions={VALID_EXTRAS}
+                        placeholder="Extras"
+                        className="min-w-[120px]"
+                        disabled={item.status === 'error'}
+                      />
                     </td>
                     <td className="py-3 px-4 text-right">
                       <Input

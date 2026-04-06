@@ -27,8 +27,11 @@ export const columns: ColumnDef<InventoryRow>[] = [
       <input
         type="checkbox"
         className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
-        checked={table.getIsAllPageRowsSelected()}
-        onChange={(e) => table.toggleAllPageRowsSelected(!!e.target.checked)}
+        checked={table.getIsAllRowsSelected()}
+        ref={(input) => {
+          if (input) input.indeterminate = table.getIsSomeRowsSelected() && !table.getIsAllRowsSelected()
+        }}
+        onChange={(e) => table.toggleAllRowsSelected(!!e.target.checked)}
         aria-label="Selecionar todos"
       />
     ),
