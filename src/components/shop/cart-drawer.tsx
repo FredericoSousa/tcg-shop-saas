@@ -72,7 +72,7 @@ export function CartDrawer() {
         clearCart()
         setIsOpen(false)
         form.reset()
-        router.push(`/shop/success?orderId=${res.orderId}`)
+        router.push(`/singles/success?orderId=${res.orderId}`)
       } else {
         toast.error(res.error || 'Erro ao processar checkout.')
       }

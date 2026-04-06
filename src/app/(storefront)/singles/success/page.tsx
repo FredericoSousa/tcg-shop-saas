@@ -25,15 +25,15 @@ export default async function SuccessPage({
     return (
       <div className="p-8 text-center pt-24 bg-muted/20 min-h-screen">
         <h1 className="text-2xl font-bold">Pedido não identificado</h1>
-        <Link href="/shop" className="text-primary hover:underline mt-4 inline-block">Voltar para a loja</Link>
+        <Link href="/singles" className="text-primary hover:underline mt-4 inline-block">Voltar para a loja</Link>
       </div>
     )
   }
 
   const order = await prisma.order.findUnique({
-    where: { 
+    where: {
       id: orderId,
-      tenantId 
+      tenantId
     },
     include: {
       items: {
@@ -52,7 +52,7 @@ export default async function SuccessPage({
     return (
       <div className="p-8 text-center pt-24 bg-muted/20 min-h-screen">
         <h1 className="text-2xl font-bold">Pedido não encontrado</h1>
-        <Link href="/shop" className="text-primary hover:underline mt-4 inline-block">Voltar para a loja</Link>
+        <Link href="/singles" className="text-primary hover:underline mt-4 inline-block">Voltar para a loja</Link>
       </div>
     )
   }
@@ -68,12 +68,12 @@ export default async function SuccessPage({
           <div className="mx-auto w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
             <CheckCircle2 className="w-10 h-10" />
           </div>
-          
+
           <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">Pedido Confirmado!</h1>
           <p className="text-gray-500 mb-8 max-w-md mx-auto">
             Agradecemos a sua compra na loja <span className="font-semibold">{tenant?.name || 'TCG Shop'}</span>. Seu pedido foi reservado com sucesso no nosso estoque.
           </p>
-          
+
           <div className="bg-gray-50 rounded-xl p-6 mb-8 text-left border">
             <div className="flex items-center justify-between mb-4 border-b pb-4">
               <div>
@@ -85,7 +85,7 @@ export default async function SuccessPage({
                 <p className="text-sm font-semibold">{order.customerName}</p>
               </div>
             </div>
-            
+
             <div className="space-y-3">
               <h3 className="text-sm font-bold flex items-center gap-2">
                 <Package className="w-4 h-4" /> Resumo dos Itens
@@ -102,7 +102,7 @@ export default async function SuccessPage({
                 </div>
               ))}
             </div>
-            
+
             <div className="border-t mt-4 pt-4 flex justify-between items-center">
               <span className="font-bold">Total do Pedido</span>
               <span className="font-black text-2xl text-primary">
@@ -110,10 +110,10 @@ export default async function SuccessPage({
               </span>
             </div>
           </div>
-          
+
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link 
-              href="/shop" 
+            <Link
+              href="/singles"
               className="px-8 py-3 bg-primary text-primary-foreground font-bold rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
             >
               <ArrowLeft className="w-4 h-4" /> Continuar Comprando

@@ -69,7 +69,7 @@ export default async function HomePage() {
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
-                href="/shop"
+                href="/singles"
                 className="inline-flex items-center justify-center gap-2 bg-white text-zinc-900 font-bold px-8 py-4 rounded-xl hover:bg-zinc-100 transition-all hover:scale-105 active:scale-100 shadow-lg text-lg"
               >
                 <ShoppingBag className="w-5 h-5" />
@@ -116,7 +116,7 @@ export default async function HomePage() {
             {mostExpensiveCards.map((item) => (
               <Link
                 key={item.id}
-                href="/shop"
+                href="/singles"
                 className="group relative bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1 duration-300"
               >
                 <div className="aspect-[2/3] w-full bg-muted/30 relative overflow-hidden flex items-center justify-center">
@@ -158,7 +158,7 @@ export default async function HomePage() {
 
           <div className="text-center mt-10">
             <Link
-              href="/shop"
+              href="/singles"
               className="inline-flex items-center gap-2 text-primary font-bold hover:underline text-lg"
             >
               Ver catálogo completo →
