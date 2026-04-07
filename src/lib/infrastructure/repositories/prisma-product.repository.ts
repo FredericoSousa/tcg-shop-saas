@@ -106,6 +106,25 @@ export class PrismaProductRepository implements IProductRepository {
     };
   }
 
+  async decrementStock(id: string, tenantId: string, quantity: number): Promise<void> {
+    const result = await prisma.product.updateMany({
+      where: {
+        id,
+        tenantId,
+        stock: { gte: quantity },
+        active: true,
+        deletedAt: null,
+      },
+      data: {
+        stock: { decrement: quantity },
+      },
+    });
+
+    if (result.count === 0) {
+      throw new Error(`Produto não encontrado, inativo ou com estoque insuficiente: ${id}`);
+    }
+  }
+
   async findCategories(tenantId: string): Promise<DomainCategory[]> {
     const items = await prisma.productCategory.findMany({
       where: { tenantId, deletedAt: null },

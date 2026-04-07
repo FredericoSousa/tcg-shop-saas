@@ -15,4 +15,6 @@ export interface IOrderRepository {
       customerPhone?: string;
     }
   ): Promise<{ items: Order[]; total: number }>;
+  findPendingPOSOrder(customerId: string, tenantId: string): Promise<Order | null>;
+  appendToOrder(orderId: string, items: { productId: string; quantity: number; priceAtPurchase: number }[], totalAmountIncrement: number): Promise<void>;
 }

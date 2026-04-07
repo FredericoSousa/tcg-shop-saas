@@ -1,27 +1,29 @@
+import { NextRequest } from "next/server";
 import { validateAdminApi } from "@/lib/tenant-server";
-import { getProductsPaginated } from "@/lib/services/product.service";
+import { PrismaProductRepository } from "@/lib/infrastructure/repositories/prisma-product.repository";
+import { ListProductsUseCase } from "@/lib/application/use-cases/list-products.use-case";
+import { logger } from "@/lib/logger";
 
-export async function GET(request: Request) {
+const productRepo = new PrismaProductRepository();
+const listProductsUseCase = new ListProductsUseCase(productRepo);
+
+export async function GET(request: NextRequest) {
   const context = await validateAdminApi();
-  
-  if (!context) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!context) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { tenant } = context;
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("q") || "";
   
-  // We'll use a larger limit for POS search to show more results at once
   const limit = 20;
   const page = 1;
 
   try {
-    const data = await getProductsPaginated(tenant.id, page, limit, search);
-    return Response.json(data.items);
+    const result = await listProductsUseCase.execute({ tenantId: tenant.id, page, limit, search });
+    return Response.json(result.items);
   } catch (error) {
-    console.error("Error in POS search API:", error);
+    logger.error("Error in POS search API", error as Error, { tenantId: tenant.id });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

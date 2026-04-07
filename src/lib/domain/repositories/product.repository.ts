@@ -10,6 +10,7 @@ export interface IProductRepository {
     limit: number,
     filters?: { search?: string; categoryId?: string }
   ): Promise<{ items: Product[]; total: number }>;
+  decrementStock(id: string, tenantId: string, quantity: number): Promise<void>;
   
   // Categories
   findCategories(tenantId: string): Promise<ProductCategory[]>;

@@ -112,8 +112,54 @@ export class PrismaOrderRepository implements IOrderRepository {
     ]);
 
     return {
-      items: items.map(this.mapToDomain),
+      items: items.map(this.mapToDomain.bind(this)),
       total,
     };
+  }
+
+  async findPendingPOSOrder(customerId: string, tenantId: string): Promise<DomainOrder | null> {
+    const item = await prisma.order.findFirst({
+      where: {
+        tenantId,
+        customerId,
+        status: "PENDING",
+        source: "POS",
+      },
+      include: { items: true, customer: true },
+    });
+    return item ? this.mapToDomain(item) : null;
+  }
+
+  async appendToOrder(orderId: string, items: { productId: string; quantity: number; priceAtPurchase: number }[], totalAmountIncrement: number): Promise<void> {
+    await prisma.$transaction(async (tx) => {
+      // 1. Update order total
+      await tx.order.update({
+        where: { id: orderId },
+        data: { totalAmount: { increment: new Prisma.Decimal(totalAmountIncrement) } },
+      });
+
+      // 2. Add/Update items
+      for (const item of items) {
+        const existingItem = await tx.orderItem.findFirst({
+          where: { orderId, productId: item.productId },
+        });
+
+        if (existingItem) {
+          await tx.orderItem.update({
+            where: { id: existingItem.id },
+            data: { quantity: { increment: item.quantity } },
+          });
+        } else {
+          await tx.orderItem.create({
+            data: {
+              orderId,
+              productId: item.productId,
+              quantity: item.quantity,
+              priceAtPurchase: new Prisma.Decimal(item.priceAtPurchase),
+            },
+          });
+        }
+      }
+    });
   }
 }
