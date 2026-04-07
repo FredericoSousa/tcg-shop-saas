@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { PageHeader } from "@/components/admin/page-header";
-import { Package, Plus } from "lucide-react";
+import { ShoppingBag, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "./data-table";
 import { getProductsPaginated, getCategories } from "@/lib/services/product.service";
@@ -36,11 +36,11 @@ export default async function ProductsPage(props: {
   const categories = await getCategories(tenantId);
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
       <PageHeader
         title="Gestão de Produtos"
         description="Gerencie seus produtos não-TCG como acessórios, embalagens e colecionáveis."
-        icon={Package}
+        icon={ShoppingBag}
         actions={
           <div className="flex gap-2">
             <CategoriesDialog categories={categories} />
@@ -54,7 +54,7 @@ export default async function ProductsPage(props: {
         }
       />
 
-      <div className="bg-card rounded-lg shadow-sm border p-3 md:p-4 overflow-hidden">
+      <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden p-0">
         <DataTable data={items} pageCount={pageCount} categories={categories} />
       </div>
     </div>

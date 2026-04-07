@@ -95,7 +95,7 @@ export default async function SuccessPage({
                 <div key={item.id} className="flex justify-between items-center text-sm">
                   <div className="flex items-center gap-2 max-w-[70%]">
                     <span className="font-medium">{item.quantity}x</span>
-                    <span className="truncate">{item.inventoryItem.cardTemplate.name}</span>
+                    <span className="truncate">{item.inventoryItem?.cardTemplate?.name || 'Item não disponível'}</span>
                   </div>
                   <span className="font-semibold text-gray-600">
                     {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(item.priceAtPurchase) * item.quantity)}

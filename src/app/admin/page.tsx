@@ -93,7 +93,7 @@ export default async function AdminDashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
       <PageHeader
         title="Dashboard"
         description="Acompanhe as métricas principais da sua loja em tempo real"
@@ -105,7 +105,7 @@ export default async function AdminDashboardPage() {
         {kpis.map((kpi, idx) => (
           <div
             key={kpi.title}
-            className="group relative overflow-hidden rounded-lg bg-gradient-to-br from-card to-card/50 p-5 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 backdrop-blur-sm"
+            className="group relative overflow-hidden rounded-xl bg-card/40 border shadow-sm backdrop-blur-sm bg-gradient-to-br from-card to-card/50 p-5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
             style={{
               animation: `fadeInUp 0.5s ease-out ${idx * 0.1}s both`,
             }}
@@ -134,14 +134,14 @@ export default async function AdminDashboardPage() {
       </div>
 
       {/* Recent Orders Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1.5">
-            <h2 className="text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-              <ShoppingCart className="h-6 w-6 text-primary" />
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between px-1">
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-primary" />
               Últimas Vendas
             </h2>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground font-medium">
               Pedidos recentes e suas informações
             </p>
           </div>
@@ -149,14 +149,14 @@ export default async function AdminDashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              className="transition-all duration-300 hover:bg-muted/80 hover:shadow-sm"
+              className="transition-all duration-300 hover:bg-muted/80 hover:shadow-sm h-9 px-4"
             >
               Ver Tudo
             </Button>
           </Link>
         </div>
 
-        <div className="overflow-hidden rounded-lg bg-card/40 shadow-sm">
+        <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden">
           {recentOrders.length === 0 ? (
             <div className="text-center py-20 px-4 text-muted-foreground">
               <div className="mb-4 flex justify-center">

@@ -56,7 +56,7 @@ export default async function InventoryPage(props: {
   }));
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
       <PageHeader
         title="Gestão de Singles"
         description={`Gerencie o inventário da loja ${tenant?.name || "sua loja"}`}
@@ -74,7 +74,7 @@ export default async function InventoryPage(props: {
         }
       />
 
-      <div className="bg-card rounded-lg shadow-sm border p-3 md:p-4 overflow-hidden">
+      <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden p-0">
         <DataTable columns={columns} data={inventory} pageCount={pageCount} />
       </div>
     </div>

@@ -2,8 +2,9 @@ import { headers } from 'next/headers'
 import { prisma } from '@/lib/prisma'
 import { BulkImportForm } from './bulk-import-form'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Upload } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { PageHeader } from '@/components/admin/page-header'
 
 export default async function BulkImportPage() {
   const headersList = await headers()
@@ -23,24 +24,24 @@ export default async function BulkImportPage() {
   })
 
   return (
-    <div className="flex flex-col gap-6 max-w-7xl w-full mx-auto">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card p-6 rounded-xl border shadow-sm">
-        <div className="flex items-center gap-4">
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
+      <PageHeader
+        title="Importação em Massa"
+        description={`Adicione múltiplos cards ao estoque de ${tenant?.name || 'sua loja'}`}
+        icon={Upload} // I should check if Upload is imported, yes it is.
+        actions={
           <Link href="/admin/inventory">
-            <Button variant="ghost" size="icon" className="shrink-0">
-              <ArrowLeft className="h-5 w-5" />
+            <Button variant="outline" size="sm" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              Voltar
             </Button>
           </Link>
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary">Importação em Massa</h1>
-            <p className="text-muted-foreground mt-1 text-sm md:text-base">
-              Adicione múltiplos cards ao estoque de <span className="font-semibold text-foreground">{tenant?.name || 'sua loja'}</span>.
-            </p>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
-      <BulkImportForm />
+      <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden p-6">
+        <BulkImportForm />
+      </div>
     </div>
   )
 }

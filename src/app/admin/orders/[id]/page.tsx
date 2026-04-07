@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { ShoppingCart, ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { PageHeader } from "@/components/admin/page-header";
 import { SetBadge } from "@/components/ui/set-badge";
 import { OrderStatusManager } from "@/components/admin/order-status-manager";
 
@@ -56,57 +57,50 @@ export default async function OrderDetailsPage({
   }
 
   return (
-    <div className="flex flex-col gap-4 w-full">
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
       <Link
         href="/admin/orders"
-        className="inline-flex items-center text-sm font-semibold text-muted-foreground hover:text-foreground w-fit transition-colors"
+        className="inline-flex items-center text-sm font-semibold text-muted-foreground hover:text-foreground w-fit transition-colors px-1"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
         Voltar para Pedidos
       </Link>
 
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-card p-5 rounded-lg border shadow-sm">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-primary mb-1">
-            Pedido #{order.id.slice(-8).toUpperCase()}
-          </h1>
-          <div className="text-sm text-muted-foreground font-medium flex flex-wrap items-center gap-2">
-            <span>{new Date(order.createdAt).toLocaleString("pt-BR")}</span>
-            <span className="opacity-50">•</span>
-            <span className="font-bold text-foreground">{order.customer.name}</span>
-            <span className="opacity-50">•</span>
-            <span>{order.customer.phoneNumber}</span>
-            <span className="opacity-50">•</span>
-            <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full border ${
-              order.source === "POS" 
-                ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
-                : "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
-            }`}>
-              {order.source === "POS" ? "PDV" : "E-commerce"}
-            </span>
+      <PageHeader
+        title={`Pedido #${order.id.slice(-8).toUpperCase()}`}
+        description={`${new Date(order.createdAt).toLocaleString("pt-BR")} • ${order.customer.name}`}
+        icon={ShoppingCart}
+        actions={
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-background/50 p-3 rounded-lg border border-border/50 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <span className={`text-[10px] uppercase font-black px-2 py-1 rounded-md border ${
+                order.source === "POS" 
+                  ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
+                  : "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
+              }`}>
+                {order.source === "POS" ? "PDV" : "E-commerce"}
+              </span>
+              <OrderStatusManager
+                orderId={order.id}
+                currentStatus={order.status}
+                variant="select"
+              />
+            </div>
+            <div className="h-8 w-px bg-border/50 hidden sm:block mx-1" />
+            <div className="flex flex-col text-right">
+              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest leading-none mb-1">Total</span>
+              <span className="font-black text-xl text-primary leading-none">
+                {new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(Number(order.totalAmount))}
+              </span>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-4 shrink-0">
-          <OrderStatusManager
-            orderId={order.id}
-            currentStatus={order.status}
-            variant="select"
-          />
-          <div className="text-right">
-            <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-0.5">
-              Total
-            </p>
-            <p className="font-black text-2xl text-primary leading-none">
-              {new Intl.NumberFormat("pt-BR", {
-                style: "currency",
-                currency: "BRL",
-              }).format(Number(order.totalAmount))}
-            </p>
-          </div>
-        </div>
-      </div>
+        }
+      />
 
-      <div className="bg-card rounded-lg shadow-sm border p-4">
+      <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden p-6">
         <h2 className="text-lg font-bold tracking-tight mb-4 flex items-center gap-2">
           <ShoppingCart className="w-5 h-5" />
           Itens da Compra (

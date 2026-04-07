@@ -5,7 +5,7 @@ import { getCustomerOrdersPaginated } from "@/lib/services/customer.service";
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
   const headersList = await headers();

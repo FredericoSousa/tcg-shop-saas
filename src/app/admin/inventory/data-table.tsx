@@ -11,13 +11,11 @@ import {
   ColumnFiltersState,
   RowSelectionState,
   useReactTable,
-  PaginationState,
 } from "@tanstack/react-table";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -50,29 +48,52 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useTableState } from "@/lib/hooks/use-table-state";
+import { DataTablePagination } from "@/components/admin/data-table-pagination";
+import { TableSearch } from "@/components/admin/table-search";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
   pageCount?: number;
+  total?: number;
 }
 
 export function DataTable<TData, TValue>({
   columns,
   data,
-  pageCount,
+  pageCount: serverPageCount,
+  total: serverTotal,
 }: DataTableProps<TData, TValue>) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const {
+    page,
+    limit,
+    search,
+    getFilter,
+    setPage,
+    setLimit,
+    setSearch,
+    setFilter,
+    clearFilters,
+    isPending,
+  } = useTableState();
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
-    [],
-  );
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
+
+  // Sync TanStack column filters with URL
+  const columnFilters = React.useMemo(() => {
+    const filters: ColumnFiltersState = [];
+    // We can iterate over common filter keys or just use the hook's getFilter
+    // In this specific table, we have set, condition, language, extras
+    ["cardTemplate_set", "condition", "language", "extras"].forEach(key => {
+      const val = getFilter(key);
+      if (val) filters.push({ id: key, value: val });
+    });
+    return filters;
+  }, [getFilter]);
 
   const uniqueSets = React.useMemo(() => {
     const sets = new Set<string>();
@@ -110,51 +131,31 @@ export function DataTable<TData, TValue>({
     return Array.from(extras).sort();
   }, [data]);
 
-  const [{ pageIndex, pageSize }, setPagination] = React.useState<PaginationState>({
-    pageIndex: searchParams ? Number(searchParams.get("page") || 1) - 1 : 0,
-    pageSize: searchParams ? Number(searchParams.get("limit") || 10) : 10,
-  });
-
-  const pagination = React.useMemo(
-    () => ({
-      pageIndex,
-      pageSize,
-    }),
-    [pageIndex, pageSize]
-  );
-
-  React.useEffect(() => {
-    const params = new URLSearchParams(searchParams?.toString() || "");
-    params.set("page", (pageIndex + 1).toString());
-    params.set("limit", pageSize.toString());
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [pageIndex, pageSize, pathname, router]);
-
   const table = useReactTable({
     data,
     columns,
-    pageCount: pageCount,
-    manualPagination: pageCount !== undefined,
+    pageCount: serverPageCount,
+    manualPagination: serverPageCount !== undefined,
+    manualFiltering: true, // Filters are handled via URL/Hook
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: setRowSelection,
-    onPaginationChange: setPagination,
     state: {
       sorting,
       columnFilters,
       rowSelection,
-      pagination,
+      pagination: {
+        pageIndex: page - 1,
+        pageSize: limit,
+      },
     },
   });
 
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
-  const hasActiveFilters =
-    columnFilters.length > 0 ||
-    (table.getColumn("cardTemplate_name")?.getFilterValue() as string);
+  const hasActiveFilters = columnFilters.length > 0 || search;
 
   const handleBulkDelete = async () => {
     const selectedRows = table.getFilteredSelectedRowModel().rows;
@@ -181,43 +182,24 @@ export function DataTable<TData, TValue>({
   };
 
   const handleClearFilters = () => {
-    table.resetColumnFilters();
+    clearFilters(["cardTemplate_set", "condition", "language", "extras"]);
   };
 
   return (
     <div className="space-y-4 w-full">
       {/* Filters Section */}
       <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-border/50">
-        <div className="relative w-full sm:max-w-xs">
-          <Input
-            placeholder="Buscar por nome..."
-            value={
-              (table
-                .getColumn("cardTemplate_name")
-                ?.getFilterValue() as string) ?? ""
-            }
-            onChange={(event) =>
-              table
-                .getColumn("cardTemplate_name")
-                ?.setFilterValue(event.target.value)
-            }
-            className="w-full transition-all duration-200 focus-visible:ring-2 pl-9"
-            aria-label="Filtrar tabela por nome do card"
-          />
-          <PackageOpen className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-        </div>
+        <TableSearch 
+          value={search} 
+          onChange={setSearch} 
+          placeholder="Buscar por nome..." 
+          isLoading={isPending}
+        />
 
         <div className="flex flex-wrap items-center gap-2">
           <Select
-            value={
-              (table.getColumn("cardTemplate_set")?.getFilterValue() as string) ??
-              "all"
-            }
-            onValueChange={(value) =>
-              table
-                .getColumn("cardTemplate_set")
-                ?.setFilterValue(value === "all" ? "" : value)
-            }
+            value={getFilter("cardTemplate_set") || "all"}
+            onValueChange={(value) => setFilter("cardTemplate_set", value === "all" ? null : value)}
           >
             <SelectTrigger
               className="w-[140px] h-9 text-xs transition-all duration-200 hover:border-primary/50"
@@ -236,14 +218,8 @@ export function DataTable<TData, TValue>({
           </Select>
 
           <Select
-            value={
-              (table.getColumn("condition")?.getFilterValue() as string) ?? "all"
-            }
-            onValueChange={(value) =>
-              table
-                .getColumn("condition")
-                ?.setFilterValue(value === "all" ? "" : value)
-            }
+            value={getFilter("condition") || "all"}
+            onValueChange={(value) => setFilter("condition", value === "all" ? null : value)}
           >
             <SelectTrigger
               className="w-[130px] h-9 text-xs transition-all duration-200 hover:border-primary/50"
@@ -262,14 +238,8 @@ export function DataTable<TData, TValue>({
           </Select>
 
           <Select
-            value={
-              (table.getColumn("language")?.getFilterValue() as string) ?? "all"
-            }
-            onValueChange={(value) =>
-              table
-                .getColumn("language")
-                ?.setFilterValue(value === "all" ? "" : value)
-            }
+            value={getFilter("language") || "all"}
+            onValueChange={(value) => setFilter("language", value === "all" ? null : value)}
           >
             <SelectTrigger
               className="w-[110px] h-9 text-xs transition-all duration-200 hover:border-primary/50"
@@ -288,14 +258,8 @@ export function DataTable<TData, TValue>({
           </Select>
 
           <Select
-            value={
-              (table.getColumn("extras")?.getFilterValue() as string) ?? "all"
-            }
-            onValueChange={(value) =>
-              table
-                .getColumn("extras")
-                ?.setFilterValue(value === "all" ? "" : value)
-            }
+            value={getFilter("extras") || "all"}
+            onValueChange={(value) => setFilter("extras", value === "all" ? null : value)}
           >
             <SelectTrigger
               className="w-[120px] h-9 text-xs transition-all duration-200 hover:border-primary/50"
@@ -375,7 +339,7 @@ export function DataTable<TData, TValue>({
         </div>
       )}
 
-      <div className="rounded-lg border bg-card shadow-sm overflow-x-auto">
+      <div className={`rounded-lg border bg-card shadow-sm overflow-x-auto ${isPending ? "opacity-50 pointer-events-none" : ""}`}>
         <Table
           role="table"
           aria-label="Tabela de inventário com opções de ordenação e filtro"
@@ -456,70 +420,15 @@ export function DataTable<TData, TValue>({
             )}
           </TableBody>
         </Table>
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 border-t border-border/50 bg-muted/20 rounded-b-lg">
-          <div className="flex items-center space-x-2 order-2 sm:order-1">
-            <p className="text-sm font-medium text-muted-foreground">
-              Linhas por página:
-            </p>
-            <Select
-              value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(value) => {
-                table.setPageSize(Number(value));
-              }}
-            >
-              <SelectTrigger
-                className="h-9 w-16 transition-all duration-200 hover:border-primary/50"
-                aria-label="Selecionar número de linhas por página"
-              >
-                <SelectValue
-                  placeholder={table.getState().pagination.pageSize}
-                />
-              </SelectTrigger>
-              <SelectContent side="top">
-                {[10, 20, 30, 40, 50].map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
-                    {pageSize}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-center space-x-3 order-1 sm:order-2">
-            <div className="text-xs sm:text-sm font-medium text-muted-foreground">
-              Página{" "}
-              <span className="font-bold text-foreground">
-                {table.getState().pagination.pageIndex + 1}
-              </span>{" "}
-              de{" "}
-              <span className="font-bold text-foreground">
-                {table.getPageCount() || 1}
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.previousPage()}
-                disabled={!table.getCanPreviousPage()}
-                className="transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 h-9 px-3"
-                aria-label="Página anterior"
-              >
-                Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => table.nextPage()}
-                disabled={!table.getCanNextPage()}
-                className="transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 h-9 px-3"
-                aria-label="Próxima página"
-              >
-                Próximo
-              </Button>
-            </div>
-          </div>
-        </div>
+        
+        <DataTablePagination 
+          page={page}
+          pageCount={serverPageCount || table.getPageCount() || 1}
+          total={serverTotal || data.length}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+        />
       </div>
     </div>
   );

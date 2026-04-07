@@ -1,16 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { 
-  Plus, 
-  Trash2, 
-  User as UserIcon, 
-  Loader2, 
-  Search, 
-  RefreshCcw, 
-  Edit2, 
+import {
+  Plus,
+  Trash2,
+  Loader2,
+  RefreshCcw,
+  Edit2,
   Users,
   Eye,
   EyeOff
@@ -33,11 +30,12 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { useDebounce } from "@/lib/hooks/use-debounce";
+import { useTableState } from "@/lib/hooks/use-table-state";
+import { DataTablePagination } from "@/components/admin/data-table-pagination";
+import { TableSearch } from "@/components/admin/table-search";
 
 interface Customer {
   id: string;
@@ -50,13 +48,25 @@ interface Customer {
 
 export default function CustomersPage() {
   const router = useRouter();
+  const {
+    page,
+    limit,
+    search,
+    getFilter,
+    setPage,
+    setLimit,
+    setSearch,
+    setFilter,
+    isPending,
+  } = useTableState();
+
+  const includeDeleted = getFilter("includeDeleted") === "true";
+
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [total, setTotal] = useState(0);
+  const [pageCount, setPageCount] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [includeDeleted, setIncludeDeleted] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [formData, setFormData] = useState({
@@ -66,29 +76,28 @@ export default function CustomersPage() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Debounced search
-  const debouncedSearch = useDebounce(searchTerm, 500);
-
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
     try {
       const queryParams = new URLSearchParams({
         page: page.toString(),
-        search: debouncedSearch,
+        limit: limit.toString(),
+        search: search,
         includeDeleted: includeDeleted.toString(),
       });
       const response = await fetch(`/api/admin/customers?${queryParams}`);
       if (!response.ok) throw new Error("Failed to fetch customers");
       const data = await response.json();
       setCustomers(data.items);
-      setTotalPages(data.pageCount);
+      setTotal(data.total);
+      setPageCount(data.pageCount);
     } catch (error) {
       console.error(error);
       toast.error("Erro ao carregar clientes");
     } finally {
       setLoading(false);
     }
-  }, [page, debouncedSearch, includeDeleted]);
+  }, [page, limit, search, includeDeleted]);
 
   useEffect(() => {
     fetchCustomers();
@@ -120,8 +129,8 @@ export default function CustomersPage() {
 
     setIsSubmitting(true);
     try {
-      const url = editingCustomer 
-        ? `/api/admin/customers/${editingCustomer.id}` 
+      const url = editingCustomer
+        ? `/api/admin/customers/${editingCustomer.id}`
         : "/api/admin/customers";
       const method = editingCustomer ? "PUT" : "POST";
 
@@ -181,17 +190,17 @@ export default function CustomersPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
       <PageHeader
-        title="Clientes"
+        title="Gestão de Clientes"
         description="Gerencie o cadastro de clientes da sua loja"
         icon={Users}
         actions={
           <div className="flex items-center gap-3">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
-              onClick={() => setIncludeDeleted(!includeDeleted)}
+              onClick={() => setFilter("includeDeleted", (!includeDeleted).toString())}
               className={includeDeleted ? "border-primary text-primary" : ""}
             >
               {includeDeleted ? <Eye className="mr-2 h-4 w-4" /> : <EyeOff className="mr-2 h-4 w-4" />}
@@ -204,139 +213,121 @@ export default function CustomersPage() {
         }
       />
 
-      <div className="flex items-center gap-4 bg-card/40 p-4 rounded-xl border border-border/50 backdrop-blur-sm">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nome, email ou telefone..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+      <div className="flex items-center gap-4 bg-card/40 p-4 rounded-xl border shadow-sm backdrop-blur-sm">
+        <TableSearch
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por nome, email ou telefone..."
+          isLoading={loading || isPending}
+        />
       </div>
 
-      <div className="overflow-hidden rounded-lg border border-border/50 bg-card/40 shadow-sm backdrop-blur-sm">
-        {loading ? (
-          <div className="flex h-32 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="w-[100px]">Status</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Contato</TableHead>
-                <TableHead>Cliente desde</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+      <div className={`overflow-hidden rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm ${(loading || isPending) ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}`}>
+        <Table>
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead className="w-[100px]">Status</TableHead>
+              <TableHead>Nome</TableHead>
+              <TableHead>Contato</TableHead>
+              <TableHead>Cliente desde</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {customers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="h-48 text-center">
+                  {loading ? (
+                    <div className="flex items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    "Nenhum cliente encontrado."
+                  )}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {customers.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    Nenhum cliente encontrado.
+            ) : (
+              customers.map((customer) => (
+                <TableRow
+                  key={customer.id}
+                  className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                  onClick={() => router.push(`/admin/customers/${customer.id}`)}
+                >
+                  <TableCell>
+                    <StatusBadge status={customer.deletedAt ? "INACTIVE" : "ACTIVE"} />
                   </TableCell>
-                </TableRow>
-              ) : (
-                customers.map((customer) => (
-                  <TableRow 
-                    key={customer.id} 
-                    className="group hover:bg-muted/30 transition-colors cursor-pointer"
-                    onClick={() => router.push(`/admin/customers/${customer.id}`)}
-                  >
-                    <TableCell>
-                      <StatusBadge status={customer.deletedAt ? "INACTIVE" : "ACTIVE"} />
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs uppercase">
-                          {customer.name.substring(0, 2)}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-foreground group-hover:text-primary transition-colors">
-                            {customer.name}
-                          </span>
-                          {customer.email && (
-                            <span className="text-xs text-muted-foreground">{customer.email}</span>
-                          )}
-                        </div>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs uppercase">
+                        {customer.name.substring(0, 2)}
                       </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {customer.phoneNumber}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(customer.createdAt).toLocaleDateString("pt-BR")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2 text-right">
-                        {customer.deletedAt ? (
+                      <div className="flex flex-col">
+                        <span className="font-medium text-foreground group-hover:text-primary transition-colors">
+                          {customer.name}
+                        </span>
+                        {customer.email && (
+                          <span className="text-xs text-muted-foreground">{customer.email}</span>
+                        )}
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {customer.phoneNumber}
+                  </TableCell>
+                  <TableCell className="text-muted-foreground">
+                    {new Date(customer.createdAt).toLocaleDateString("pt-BR")}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2 text-right">
+                      {customer.deletedAt ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-muted-foreground hover:text-primary"
+                          onClick={(e) => handleRestore(customer.id, e)}
+                          title="Restaurar"
+                        >
+                          <RefreshCcw className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <>
                           <Button
                             variant="ghost"
                             size="icon"
                             className="text-muted-foreground hover:text-primary"
-                            onClick={(e) => handleRestore(customer.id, e)}
-                            title="Restaurar"
+                            onClick={(e) => handleOpenEdit(customer, e)}
+                            title="Editar"
                           >
-                            <RefreshCcw className="h-4 w-4" />
+                            <Edit2 className="h-4 w-4" />
                           </Button>
-                        ) : (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-muted-foreground hover:text-primary"
-                              onClick={(e) => handleOpenEdit(customer, e)}
-                              title="Editar"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="text-muted-foreground hover:text-red-500"
-                              onClick={(e) => handleDelete(customer.id, customer.name, e)}
-                              title="Excluir"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground hover:text-red-500"
+                            onClick={(e) => handleDelete(customer.id, customer.name, e)}
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
 
-      {totalPages > 1 && (
-        <div className="flex justify-center gap-2 mt-4">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page === 1}
-            onClick={() => setPage(page - 1)}
-          >
-            Anterior
-          </Button>
-          <span className="flex items-center px-4 text-sm font-medium">
-            Página {page} de {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page === totalPages}
-            onClick={() => setPage(page + 1)}
-          >
-            Próxima
-          </Button>
-        </div>
-      )}
+        <DataTablePagination
+          page={page}
+          pageCount={pageCount}
+          total={total}
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+        />
+      </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
@@ -346,8 +337,8 @@ export default function CustomersPage() {
                 {editingCustomer ? "Editar Cliente" : "Adicionar Novo Cliente"}
               </DialogTitle>
               <DialogDescription>
-                {editingCustomer 
-                  ? "Atualize as informações do cliente abaixo." 
+                {editingCustomer
+                  ? "Atualize as informações do cliente abaixo."
                   : "Preencha as informações para cadastrar um novo cliente."}
               </DialogDescription>
             </DialogHeader>

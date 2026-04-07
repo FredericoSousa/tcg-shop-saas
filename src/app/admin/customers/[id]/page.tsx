@@ -7,12 +7,14 @@ import {
   Calendar, 
   ShoppingBag, 
   User as UserIcon,
-  ChevronRight
+  ChevronRight,
+  Users
 } from "lucide-react";
 import Link from "next/link";
 import { getCustomerWithOrders, getCustomerStats } from "@/lib/services/customer.service";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { CustomerOrdersTable } from "@/components/admin/customer-orders-table";
+import { PageHeader } from "@/components/admin/page-header";
 
 export default async function CustomerDetailsPage({
   params,
@@ -49,14 +51,38 @@ export default async function CustomerDetailsPage({
   const { totalSpent, totalOrders } = stats;
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
       <Link
         href="/admin/customers"
-        className="inline-flex items-center text-sm font-semibold text-muted-foreground hover:text-foreground w-fit transition-colors"
+        className="inline-flex items-center text-sm font-semibold text-muted-foreground hover:text-foreground w-fit transition-colors px-1"
       >
         <ArrowLeft className="w-4 h-4 mr-2" />
         Voltar para Clientes
       </Link>
+
+      <PageHeader
+        title={customer.name}
+        description="Visualize o histórico de compras e informações do cliente"
+        icon={Users}
+        actions={
+          <div className="flex items-center gap-3 bg-background/50 p-2 rounded-lg border border-border/50 backdrop-blur-sm px-4">
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest leading-none mb-1">Pedidos</span>
+              <span className="text-xl font-black text-primary leading-none">{totalOrders}</span>
+            </div>
+            <div className="h-8 w-px bg-border/50 mx-2" />
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest leading-none mb-1">Total Gasto</span>
+              <span className="text-xl font-black text-primary leading-none">
+                {new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(totalSpent)}
+              </span>
+            </div>
+          </div>
+        }
+      />
 
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Profile Card */}

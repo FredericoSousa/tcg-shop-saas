@@ -125,9 +125,9 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
       <PageHeader
-        title="Usuários"
+        title="Gestão de Usuários"
         description="Gerencie quem tem acesso ao seu painel administrativo"
         icon={UserCog}
         actions={
@@ -195,7 +195,7 @@ export default function UsersPage() {
         }
       />
 
-      <div className="overflow-hidden rounded-lg border border-border/50 bg-card/40 shadow-sm backdrop-blur-sm">
+      <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden p-0">
         <div className="p-0">
           {loading ? (
             <div className="flex h-32 items-center justify-center">

@@ -3,7 +3,7 @@
 import { OrderStatusManager } from "@/components/admin/order-status-manager";
 import { OrderStatus } from "@prisma/client";
 import Link from "next/link";
-import { ArrowRight, FilterIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, FilterIcon } from "lucide-react";
 import * as React from "react";
 import {
   Select,
@@ -12,8 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
 import { CustomerSelector } from "@/components/admin/pos/customer-selector";
+import { useTableState } from "@/lib/hooks/use-table-state";
+import { DataTablePagination } from "@/components/admin/data-table-pagination";
+import { TableSearch } from "@/components/admin/table-search";
 
 export type OrderItemType = {
   id: string;
@@ -120,47 +122,44 @@ const OrderList = ({ items }: { items: OrderType[] }) => (
   </div>
 );
 
-export function OrdersClient({ orders }: { orders: OrderType[] }) {
-  const [filter, setFilter] = React.useState("all");
+export function OrdersClient({ 
+  initialOrders, 
+  total, 
+  pageCount 
+}: { 
+  initialOrders: OrderType[];
+  total: number;
+  pageCount: number;
+}) {
+  const {
+    page,
+    limit,
+    search,
+    getFilter,
+    setPage,
+    setLimit,
+    setSearch,
+    setFilter,
+    isPending,
+  } = useTableState({ defaultLimit: 8 });
+
+  const currentSource = getFilter("source");
+  const currentStatus = getFilter("status");
+  const customerPhone = getFilter("customerPhone");
+
   const [selectedCustomer, setSelectedCustomer] = React.useState<any | null>(null);
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 8;
 
-  const ecommerceOrdersList = React.useMemo(() => orders.filter((o) => o.source === "ECOMMERCE"), [orders]);
-  const posOrdersList = React.useMemo(() => orders.filter((o) => o.source === "POS"), [orders]);
-
-  const filteredOrders = React.useMemo(() => {
-    let result = orders;
-    if (filter === "ecommerce") result = ecommerceOrdersList;
-    if (filter === "pos") result = posOrdersList;
-
-    if (selectedCustomer) {
-      // Filter by phone number as it's the unique identifier used across the platform
-      result = result.filter(o => o.customer.phoneNumber === selectedCustomer.phoneNumber);
-    }
-    return result;
-  }, [filter, selectedCustomer, ecommerceOrdersList, posOrdersList, orders]);
-
-  // Pagination logic
-  const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
-  const paginatedOrders = React.useMemo(() => 
-    filteredOrders.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage),
-    [filteredOrders, currentPage, itemsPerPage]
-  );
-
-  // Reset page when filter/customer changes
+  // Sync selectedCustomer state if customerPhone is in URL
   React.useEffect(() => {
-    setCurrentPage(1);
-  }, [filter, selectedCustomer]);
+    if (!customerPhone) {
+      setSelectedCustomer(null);
+    }
+  }, [customerPhone]);
 
-  if (orders.length === 0) {
-    return (
-      <div className="text-center py-20 bg-card rounded-xl border border-dashed text-muted-foreground shadow-sm">
-        <h3 className="text-xl font-bold mb-2">Sem vendas consolidadas</h3>
-        <p>A loja ainda não possui registros transacionais no banco de dados.</p>
-      </div>
-    );
-  }
+  const handleCustomerSelect = (customer: any | null) => {
+    setSelectedCustomer(customer);
+    setFilter("customerPhone", customer?.phoneNumber || null);
+  };
 
   return (
     <div className="space-y-6">
@@ -172,8 +171,15 @@ export function OrdersClient({ orders }: { orders: OrderType[] }) {
           <span className="text-sm font-bold text-muted-foreground whitespace-nowrap hidden sm:inline">Filtrar:</span>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-3 flex-1 overflow-visible">
-          <Select value={filter} onValueChange={(val) => setFilter(val ?? "all")}>
+        <div className="flex flex-col sm:flex-row items-center gap-3 flex-1 overflow-visible">
+          <TableSearch 
+            value={search} 
+            onChange={setSearch} 
+            placeholder="Buscar por ID ou cliente..."
+            isLoading={isPending}
+          />
+
+          <Select value={currentSource || "all"} onValueChange={(val) => setFilter("source", val === "all" ? null : val)}>
             <SelectTrigger className="w-full sm:w-[150px] font-bold">
               <SelectValue placeholder="Origem" />
             </SelectTrigger>
@@ -184,10 +190,24 @@ export function OrdersClient({ orders }: { orders: OrderType[] }) {
             </SelectContent>
           </Select>
 
-          <div className="flex-1 overflow-visible">
+          <Select value={currentStatus || "all"} onValueChange={(val) => setFilter("status", val === "all" ? null : val)}>
+            <SelectTrigger className="w-full sm:w-[150px] font-bold">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos Status</SelectItem>
+              {Object.values(OrderStatus).map(status => (
+                <SelectItem key={status} value={status}>
+                  {status}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex-1 w-full overflow-visible">
             <CustomerSelector 
               selectedCustomer={selectedCustomer} 
-              onSelect={setSelectedCustomer} 
+              onSelect={handleCustomerSelect} 
               hideLabel 
               size="sm" 
             />
@@ -195,63 +215,22 @@ export function OrdersClient({ orders }: { orders: OrderType[] }) {
         </div>
 
         <div className="text-xs text-muted-foreground font-medium bg-muted/30 px-3 py-1.5 rounded-full border self-start lg:self-center">
-          <span className="font-bold text-primary">{filteredOrders.length}</span> resultados
+          <span className="font-bold text-primary">{total}</span> resultados
         </div>
       </div>
 
-      <OrderList items={paginatedOrders} />
+      <div className={isPending ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
+        <OrderList items={initialOrders} />
+      </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between border-t border-muted/50 pt-6">
-          <div className="text-sm text-muted-foreground font-medium">
-            Mostrando <span className="font-bold text-foreground">{Math.min(filteredOrders.length, (currentPage - 1) * itemsPerPage + 1)}-{Math.min(filteredOrders.length, currentPage * itemsPerPage)}</span> de <span className="font-bold text-foreground">{filteredOrders.length}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(prev => prev - 1)}
-              className="h-8 font-bold gap-1"
-            >
-              <ChevronLeft className="w-4 h-4" />
-              Anterior
-            </Button>
-            
-            <div className="flex items-center gap-1">
-               {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-                .map((page, i, arr) => {
-                  const showEllipsis = i > 0 && page - arr[i - 1] > 1;
-                  return (
-                    <React.Fragment key={page}>
-                      {showEllipsis && <span className="px-2 text-muted-foreground">...</span>}
-                      <Button
-                        variant={currentPage === page ? "default" : "ghost"}
-                        size="sm"
-                        onClick={() => setCurrentPage(page)}
-                        className={`h-8 w-8 p-0 font-bold ${currentPage === page ? "shadow-md scale-105" : ""}`}
-                      >
-                        {page}
-                      </Button>
-                    </React.Fragment>
-                  );
-                })}
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => setCurrentPage(prev => prev + 1)}
-              className="h-8 font-bold gap-1"
-            >
-              Próximo
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      <DataTablePagination 
+        page={page}
+        pageCount={pageCount}
+        total={total}
+        limit={limit}
+        onPageChange={setPage}
+        onLimitChange={setLimit}
+      />
     </div>
   );
 }

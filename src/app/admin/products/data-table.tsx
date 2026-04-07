@@ -5,7 +5,6 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
-  PaginationState,
 } from "@tanstack/react-table";
 import { createColumns } from "./columns";
 
@@ -18,11 +17,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import * as React from "react";
-import { useTransition } from "react";
-import { Search, X } from "lucide-react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { X } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -30,97 +26,74 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useTableState } from "@/lib/hooks/use-table-state";
+import { DataTablePagination } from "@/components/admin/data-table-pagination";
+import { TableSearch } from "@/components/admin/table-search";
 
 interface DataTableProps<TData, TValue = unknown> {
   data: TData[];
   pageCount: number;
+  total?: number;
   categories: { id: string; name: string }[];
 }
 
 export function DataTable<TData extends { id: string }, TValue = unknown>({
   data,
-  pageCount,
+  pageCount: serverPageCount,
+  total: serverTotal,
   categories,
 }: DataTableProps<TData, TValue>) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const {
+    page,
+    limit,
+    search,
+    getFilter,
+    setPage,
+    setLimit,
+    setSearch,
+    setFilter,
+    clearFilters,
+    isPending,
+  } = useTableState();
 
-  const [{ pageIndex, pageSize }, setPagination] = React.useState<PaginationState>({
-    pageIndex: searchParams ? Number(searchParams.get("page") || 1) - 1 : 0,
-    pageSize: searchParams ? Number(searchParams.get("limit") || 10) : 10,
-  });
-
-  const pagination = React.useMemo(
-    () => ({
-      pageIndex,
-      pageSize,
-    }),
-    [pageIndex, pageSize]
-  );
-
-  React.useEffect(() => {
-    const params = new URLSearchParams(searchParams?.toString() || "");
-    params.set("page", (pageIndex + 1).toString());
-    params.set("limit", pageSize.toString());
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-  }, [pageIndex, pageSize, pathname, router]);
+  const currentCategory = getFilter("category") || "all";
 
   const columns = React.useMemo(() => createColumns(categories) as ColumnDef<TData, any>[], [categories]);
 
   const table = useReactTable({
     data,
     columns,
-    pageCount: pageCount,
+    pageCount: serverPageCount,
     manualPagination: true,
     getCoreRowModel: getCoreRowModel(),
-    onPaginationChange: setPagination,
     state: {
-      pagination,
+      pagination: {
+        pageIndex: page - 1,
+        pageSize: limit,
+      },
     },
   });
 
-  const search = searchParams.get("search") || "";
-  const currentCategory = searchParams.get("category") || "all";
-
-  const handleSearch = (term: string) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("search", term);
-    params.set("page", "1");
-    startTransition(() => {
-      router.push(`${pathname}?${params.toString()}`);
-    });
-  };
-
-  const handleCategoryChange = (value: string | null) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (!value || value === "all") {
-      params.delete("category");
-    } else {
-      params.set("category", value);
-    }
-    params.set("page", "1");
-    startTransition(() => {
-      router.push(`${pathname}?${params.toString()}`);
-    });
+  const handleClearFilters = () => {
+    clearFilters(["category"]);
   };
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-        <div className="relative flex-1 w-full max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar produtos..."
-            defaultValue={search}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
+        <TableSearch 
+          value={search} 
+          onChange={setSearch} 
+          placeholder="Buscar produtos..." 
+          isLoading={isPending}
+        />
+        
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <Select value={currentCategory} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-full sm:w-[200px]">
+          <Select 
+            value={currentCategory} 
+            onValueChange={(val) => setFilter("category", val === "all" ? null : val)}
+          >
+            <SelectTrigger className="w-full sm:w-[200px] font-bold">
               <SelectValue placeholder="Todas categorias">
                 {currentCategory === "all" 
                   ? "Todas categorias" 
@@ -136,14 +109,13 @@ export function DataTable<TData extends { id: string }, TValue = unknown>({
               ))}
             </SelectContent>
           </Select>
+
           {(search || currentCategory !== "all") && (
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => {
-                router.push(pathname);
-              }}
-              className="h-9 px-2 text-muted-foreground"
+              onClick={handleClearFilters}
+              className="h-9 px-2 text-muted-foreground hover:text-destructive transition-colors"
             >
               <X className="h-4 w-4 mr-1" />
               Limpar
@@ -151,7 +123,8 @@ export function DataTable<TData extends { id: string }, TValue = unknown>({
           )}
         </div>
       </div>
-      <div className="rounded-md border bg-card">
+
+      <div className={`rounded-md border bg-card ${isPending ? "opacity-50 pointer-events-none" : ""}`}>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -200,31 +173,15 @@ export function DataTable<TData extends { id: string }, TValue = unknown>({
             )}
           </TableBody>
         </Table>
-      </div>
-      <div className="flex items-center justify-end space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setPagination((prev: PaginationState) => ({ ...prev, pageIndex: prev.pageIndex - 1 }));
-          }}
-          disabled={pageIndex <= 0 || isPending}
-        >
-          Anterior
-        </Button>
-        <div className="text-sm font-medium">
-          Página {pageIndex + 1} de {pageCount}
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setPagination((prev: PaginationState) => ({ ...prev, pageIndex: prev.pageIndex + 1 }));
-          }}
-          disabled={pageIndex + 1 >= pageCount || isPending}
-        >
-          Próximo
-        </Button>
+
+        <DataTablePagination 
+          page={page}
+          pageCount={serverPageCount}
+          total={serverTotal || (data.length > 0 ? page * limit : 0)} // fallback if total not provided
+          limit={limit}
+          onPageChange={setPage}
+          onLimitChange={setLimit}
+        />
       </div>
     </div>
   );

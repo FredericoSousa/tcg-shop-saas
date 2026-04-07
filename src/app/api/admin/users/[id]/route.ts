@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const session = await getSession();
   const headersList = await headers();
@@ -15,7 +15,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id } = params;
+  const { id } = await params;
 
   // Prevent admin from deleting themselves
   if (session.userId === id) {

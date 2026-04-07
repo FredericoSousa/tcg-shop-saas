@@ -1,12 +1,25 @@
 import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/admin/page-header";
 import { ShoppingCart } from "lucide-react";
 import { OrdersClient } from "./orders-client";
+import { getOrdersPaginated } from "@/lib/services/order.service";
+import { OrderStatus } from "@prisma/client";
 
-export default async function OrdersPage() {
+export default async function OrdersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{
+    page?: string;
+    limit?: string;
+    search?: string;
+    source?: string;
+    status?: string;
+    customerPhone?: string;
+  }>;
+}) {
   const headersList = await headers();
   const tenantId = headersList.get("x-tenant-id");
+  const params = await searchParams;
 
   if (!tenantId) {
     return (
@@ -22,61 +35,39 @@ export default async function OrdersPage() {
     );
   }
 
-  const orders = await prisma.order.findMany({
-    where: { tenantId },
-    orderBy: { createdAt: "desc" },
-    include: {
-      customer: true,
-      items: {
-        include: {
-          inventoryItem: {
-            include: {
-              cardTemplate: true,
-            },
-          },
-          product: {
-            include: {
-              category: true,
-            },
-          },
-        },
-      },
-    },
-  });
+  const page = Number(params.page) || 1;
+  const limit = Number(params.limit) || 8;
+  const search = params.search;
+  const source = params.source as "POS" | "ECOMMERCE" | "all";
+  const status = params.status as OrderStatus | "all";
+  const customerPhone = params.customerPhone;
 
-  // Format Decimal fields strictly for JSON Client Boundary transmission
-  const formattedOrders = orders.map((order) => ({
-    ...order,
-    totalAmount: Number(order.totalAmount),
-    source: order.source,
-    customer: {
-      name: order.customer.name,
-      phoneNumber: order.customer.phoneNumber,
-    },
-    items: order.items.map((item) => ({
-      ...item,
-      priceAtPurchase: Number(item.priceAtPurchase),
-      inventoryItem: item.inventoryItem ? {
-        ...item.inventoryItem,
-        price: Number(item.inventoryItem.price),
-      } : null,
-      product: item.product ? {
-        ...item.product,
-        price: Number(item.product.price),
-      } : null,
-    })),
-  }));
+  const { items, total, pageCount } = await getOrdersPaginated(
+    tenantId,
+    page,
+    limit,
+    {
+      search,
+      source,
+      status,
+      customerPhone,
+    }
+  );
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
       <PageHeader
-        title="Registro de Vendas"
+        title="Gestão de Vendas"
         description="Acompanhe e gerencie as compras realizadas na sua loja"
         icon={ShoppingCart}
       />
 
-      <div className="bg-card rounded-lg shadow-sm border p-3 md:p-4">
-        <OrdersClient orders={formattedOrders as any} />
+      <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden p-0">
+        <OrdersClient
+          initialOrders={items as any}
+          total={total}
+          pageCount={pageCount}
+        />
       </div>
     </div>
   );
