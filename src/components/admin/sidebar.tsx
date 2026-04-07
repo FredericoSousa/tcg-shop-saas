@@ -9,6 +9,7 @@ import {
   Settings,
   Users,
 } from "lucide-react";
+import { Tenant } from "@prisma/client";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
@@ -19,10 +20,10 @@ const sidebarItems = [
 ];
 
 interface SidebarProps {
-  tenantName?: string | null;
+  tenant: Tenant;
 }
 
-export function Sidebar({ tenantName }: SidebarProps) {
+export function Sidebar({ tenant }: SidebarProps) {
   const pathname = usePathname();
 
   return (
@@ -32,17 +33,20 @@ export function Sidebar({ tenantName }: SidebarProps) {
           href="/admin"
           className="flex items-center gap-3 font-bold text-lg tracking-tight group"
         >
-          <div className="p-2 rounded-lg bg-gradient-to-br from-primary to-primary/80 shadow-sm group-hover:shadow-md transition-all">
-            <Package className="h-5 w-5 text-white" />
-          </div>
-          <div className="flex flex-col gap-0.5">
-            <span className="text-foreground dark:text-white font-semibold">
-              {tenantName || "TCG Admin"}
-            </span>
-            <span className="text-xs text-muted-foreground dark:text-slate-300 font-normal">
-              Painel de Controle
-            </span>
-          </div>
+          {tenant.logoUrl ? <div className="flex flex-col gap-0.5">
+            <img
+              src={tenant.logoUrl}
+              alt={tenant.name}
+            />
+          </div> :
+            <div className="flex flex-col gap-0.5">
+              <span className="text-foreground dark:text-white font-semibold">
+                {tenant.name || "TCG Admin"}
+              </span>
+              <span className="text-xs text-muted-foreground dark:text-slate-300 font-normal">
+                Painel de Controle
+              </span>
+            </div>}
         </Link>
       </div>
 
