@@ -46,6 +46,7 @@ export default async function AdminDashboardPage() {
           items: {
             include: {
               inventoryItem: { include: { cardTemplate: true } },
+              product: true,
             },
           },
         },
@@ -179,21 +180,24 @@ export default async function AdminDashboardPage() {
                   >
                     <div className="flex items-center gap-4 min-w-0 flex-1">
                       <div className="hidden sm:flex -space-x-1">
-                        {order.items.slice(0, 3).map((item) => (
-                          <div
-                            key={item.id}
-                            className="h-10 w-7 rounded-md border-2 border-background bg-card shadow-sm overflow-hidden shrink-0 ring-1 ring-border/30"
-                          >
-                            {item.inventoryItem.cardTemplate?.imageUrl && (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
-                                src={item.inventoryItem.cardTemplate.imageUrl}
-                                className="h-full w-full object-cover"
-                                alt=""
-                              />
-                            )}
-                          </div>
-                        ))}
+                        {order.items.slice(0, 3).map((item) => {
+                          const imageUrl = item.inventoryItem?.cardTemplate?.imageUrl || item.product?.imageUrl;
+                          return (
+                            <div
+                              key={item.id}
+                              className="h-10 w-7 rounded-md border-2 border-background bg-card shadow-sm overflow-hidden shrink-0 ring-1 ring-border/30"
+                            >
+                              {imageUrl && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={imageUrl}
+                                  className="h-full w-full object-cover"
+                                  alt=""
+                                />
+                              )}
+                            </div>
+                          );
+                        })}
                         {order.items.length > 3 && (
                           <div className="h-10 w-7 rounded-md border-2 border-background bg-muted shadow-sm flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0 ring-1 ring-border/30">
                             +{order.items.length - 3}

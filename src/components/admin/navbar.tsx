@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, Sun, Moon, ChevronDown } from "lucide-react";
+import { Menu, Sun, Moon, ChevronDown, UserCog, DollarSign, Cuboid, Settings } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -27,9 +27,13 @@ import { LayoutDashboard, Package, ShoppingCart, Users } from "lucide-react";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "Singles", href: "/admin/inventory", icon: Package },
-  { name: "Vendas", href: "/admin/orders", icon: ShoppingCart },
-  { name: "Usuários", href: "/admin/users", icon: Users },
+  { name: "Singles", href: "/admin/inventory", icon: Cuboid },
+  { name: "Vendas", href: "/admin/orders", icon: DollarSign },
+  { name: "Usuários", href: "/admin/users", icon: UserCog },
+  { name: "Produtos", href: "/admin/products", icon: Package },
+  { name: "Clientes", href: "/admin/customers", icon: Users },
+  { name: "PDV", href: "/admin/pos", icon: ShoppingCart },
+  { name: "Configurações", href: "/admin/settings", icon: Settings },
 ];
 
 interface NavbarProps {
@@ -93,8 +97,8 @@ export function Navbar({ username }: NavbarProps) {
                   key={item.href}
                   href={item.href}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${isStrictActive
-                      ? "bg-primary/10 text-primary font-semibold"
-                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                    ? "bg-primary/10 text-primary font-semibold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
                     }`}
                 >
                   <item.icon className="h-5 w-5" />
