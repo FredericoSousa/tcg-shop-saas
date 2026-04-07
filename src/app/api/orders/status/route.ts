@@ -72,6 +72,8 @@ export async function PATCH(request: NextRequest) {
 
     revalidatePath("/admin/orders");
     revalidatePath("/admin/inventory");
+    revalidatePath("/singles");
+    revalidatePath("/");
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
     const error = err as Error;

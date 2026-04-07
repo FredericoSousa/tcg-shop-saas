@@ -26,6 +26,7 @@ export default async function OrdersPage() {
     where: { tenantId },
     orderBy: { createdAt: "desc" },
     include: {
+      customer: true,
       items: {
         include: {
           inventoryItem: {
@@ -42,6 +43,10 @@ export default async function OrdersPage() {
   const formattedOrders = orders.map((order) => ({
     ...order,
     totalAmount: Number(order.totalAmount),
+    customer: {
+      name: order.customer.name,
+      phoneNumber: order.customer.phoneNumber,
+    },
     items: order.items.map((item) => ({
       ...item,
       priceAtPurchase: Number(item.priceAtPurchase),

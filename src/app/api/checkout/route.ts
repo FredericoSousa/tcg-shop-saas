@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 export type CheckoutItem = {
   inventoryId: string;
@@ -9,8 +10,9 @@ export type CheckoutItem = {
 };
 
 export type CustomerData = {
-  name: string;
+  name?: string;
   email?: string;
+  phoneNumber: string;
 };
 
 export async function POST(request: NextRequest) {
@@ -69,12 +71,29 @@ export async function POST(request: NextRequest) {
         0,
       );
 
+      // Upsert Customer
+      const customer = await tx.customer.upsert({
+        where: {
+          phoneNumber_tenantId: {
+            phoneNumber: customerData.phoneNumber,
+            tenantId,
+          },
+        },
+        update: {
+          name: customerData.name || undefined,
+        },
+        create: {
+          name: customerData.name || "",
+          phoneNumber: customerData.phoneNumber,
+          tenantId,
+        },
+      });
+
       // Criar registro de Order e OrderItems
       const newOrder = await tx.order.create({
         data: {
           tenantId,
-          customerName: customerData.name,
-          customerEmail: customerData.email,
+          customerId: customer.id,
           totalAmount,
           items: {
             create: items.map((item) => ({
@@ -88,6 +107,12 @@ export async function POST(request: NextRequest) {
 
       return newOrder;
     });
+
+    // Revalidar rotas críticas de estoque e pedidos
+    revalidatePath("/");
+    revalidatePath("/singles");
+    revalidatePath("/admin/orders");
+    revalidatePath("/admin/inventory");
 
     // Retornar ID pro Front
     return NextResponse.json({ success: true, orderId: order.id });

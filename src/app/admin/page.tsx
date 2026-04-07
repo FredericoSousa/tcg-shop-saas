@@ -42,6 +42,7 @@ export default async function AdminDashboardPage() {
         orderBy: { createdAt: "desc" },
         take: 5,
         include: {
+          customer: true,
           items: {
             include: {
               inventoryItem: { include: { cardTemplate: true } },
@@ -201,7 +202,7 @@ export default async function AdminDashboardPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                          {order.customerName}
+                          {order.customer.name}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {new Date(order.createdAt).toLocaleDateString(

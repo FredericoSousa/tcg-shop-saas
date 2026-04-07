@@ -22,8 +22,10 @@ export type OrderItemType = {
 
 export type OrderType = {
   id: string;
-  customerName: string;
-  customerEmail: string | null;
+  customer: {
+    name: string;
+    phoneNumber: string;
+  };
   totalAmount: number;
   status: OrderStatus;
   createdAt: Date | string;
@@ -53,11 +55,11 @@ export function OrdersClient({ orders }: { orders: OrderType[] }) {
             <div>
               <div className="flex items-center gap-3 mb-1.5">
                 <h3 className="font-extrabold text-lg tracking-tight">
-                  {order.customerName}
+                  {order.customer.name}
                 </h3>
               </div>
               <div className="text-sm text-muted-foreground font-medium flex flex-wrap items-center gap-2">
-                <span>{order.customerEmail || "Contato Desconhecido"}</span>
+                <span>{order.customer.phoneNumber}</span>
                 <span className="opacity-50">•</span>
                 <span>{new Date(order.createdAt).toLocaleString("pt-BR")}</span>
                 <span className="opacity-50">•</span>

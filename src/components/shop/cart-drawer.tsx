@@ -16,10 +16,11 @@ import { Input } from '@/components/ui/input'
 import { ShoppingCart, Plus, Minus, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import { formatPhone } from '@/lib/utils'
 
 const checkoutSchema = z.object({
+  phoneNumber: z.string().min(8, 'Telefone inválido'),
   name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres'),
-  email: z.string().email('Insira um e-mail válido').or(z.literal('')),
 })
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>
@@ -28,6 +29,7 @@ export function CartDrawer() {
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCart()
   const [isOpen, setIsOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [customerExists, setCustomerExists] = useState<boolean | null>(null)
   const router = useRouter()
   // Try to get tenantId from URL if using dynamic route, or rely on headers/cookie.
   // Since we might be just at /shop, we don't necessarily need tenantId for pushing,
@@ -38,10 +40,38 @@ export function CartDrawer() {
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
     defaultValues: {
+      phoneNumber: '',
       name: '',
-      email: '',
     }
   })
+
+  // Watch phone number to fetch name
+  const phoneNumber = form.watch('phoneNumber')
+  const [isCheckingPhone, setIsCheckingPhone] = useState(false)
+
+  const handlePhoneBlur = async () => {
+    if (phoneNumber.length < 8) {
+      setCustomerExists(null)
+      return
+    }
+    
+    setIsCheckingPhone(true)
+      try {
+        const response = await fetch(`/api/customers/${phoneNumber}`)
+        const data = await response.json()
+        setCustomerExists(data.exists)
+        if (data.exists) {
+          form.setValue('name', 'Cliente Cadastrado') // Satisfy Zod, backend handles correctly
+          toast.success(`Bem-vindo de volta!`)
+        } else {
+          form.setValue('name', '')
+        }
+      } catch (error) {
+        console.error('Error fetching customer', error)
+      } finally {
+        setIsCheckingPhone(false)
+      }
+    }
 
   const onSubmit = async (data: CheckoutFormValues) => {
     if (items.length === 0) {
@@ -61,7 +91,10 @@ export function CartDrawer() {
             quantity: item.quantity,
             price: item.price
           })),
-          customerData: { name: data.name, email: data.email || undefined }
+          customerData: { 
+            name: customerExists ? undefined : data.name, 
+            phoneNumber: data.phoneNumber
+          }
         }),
       })
 
@@ -197,30 +230,37 @@ export function CartDrawer() {
 
               <div className="space-y-1">
                 <Input
-                  id="name"
-                  placeholder="Nome completo *"
-                  {...form.register("name")}
+                  id="phoneNumber"
+                  placeholder="Telefone/WhatsApp *"
+                  {...form.register("phoneNumber")}
+                  onChange={(e) => {
+                    const masked = formatPhone(e.target.value)
+                    form.setValue('phoneNumber', masked)
+                    if (customerExists !== null) setCustomerExists(null)
+                  }}
+                  onBlur={handlePhoneBlur}
                   disabled={items.length === 0 || isProcessing}
-                  className={`h-10 text-sm transition-all focus-visible:ring-primary ${form.formState.errors.name ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                  className={`h-10 text-sm transition-all focus-visible:ring-primary ${form.formState.errors.phoneNumber ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                 />
-                {form.formState.errors.name && (
-                  <span className="text-[10px] text-destructive font-medium pl-1">{form.formState.errors.name.message}</span>
+                {form.formState.errors.phoneNumber && (
+                  <span className="text-[10px] text-destructive font-medium pl-1">{form.formState.errors.phoneNumber.message}</span>
                 )}
               </div>
 
-              <div className="space-y-1">
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="E-mail (opcional)"
-                  {...form.register("email")}
-                  disabled={items.length === 0 || isProcessing}
-                  className={`h-10 text-sm transition-all focus-visible:ring-primary ${form.formState.errors.email ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                />
-                {form.formState.errors.email && (
-                  <span className="text-[10px] text-destructive font-medium pl-1">{form.formState.errors.email.message}</span>
-                )}
-              </div>
+              {!customerExists && (
+                <div className="space-y-1 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <Input
+                    id="name"
+                    placeholder="Nome completo *"
+                    {...form.register("name")}
+                    disabled={items.length === 0 || isProcessing || isCheckingPhone}
+                    className={`h-10 text-sm transition-all focus-visible:ring-primary ${form.formState.errors.name ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                  />
+                  {form.formState.errors.name && (
+                    <span className="text-[10px] text-destructive font-medium pl-1">{form.formState.errors.name.message}</span>
+                  )}
+                </div>
+              )}
 
               <Button
                 type="submit"

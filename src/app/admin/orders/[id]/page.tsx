@@ -33,6 +33,7 @@ export default async function OrderDetailsPage({
   const order = await prisma.order.findFirst({
     where: { id, tenantId },
     include: {
+      customer: true,
       items: {
         include: {
           inventoryItem: {
@@ -67,13 +68,9 @@ export default async function OrderDetailsPage({
           <div className="text-sm text-muted-foreground font-medium flex flex-wrap items-center gap-2">
             <span>{new Date(order.createdAt).toLocaleString("pt-BR")}</span>
             <span className="opacity-50">•</span>
-            <span>{order.customerName}</span>
-            {order.customerEmail && (
-              <>
-                <span className="opacity-50">•</span>
-                <span>{order.customerEmail}</span>
-              </>
-            )}
+            <span className="font-bold text-foreground">{order.customer.name}</span>
+            <span className="opacity-50">•</span>
+            <span>{order.customer.phoneNumber}</span>
           </div>
         </div>
         <div className="flex items-center gap-4 shrink-0">

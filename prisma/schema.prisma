@@ -21,25 +21,28 @@ enum Condition {
 }
 
 model Tenant {
-  id           String  @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
-  slug         String  @unique
-  name         String
-  active       Boolean @default(true)
-  brandColor   String?
-  logoUrl      String?
-  faviconUrl   String?
-  description  String?
-  address      String?
-  phone        String?
-  email        String?
-  instagram    String?
-  whatsapp     String?
-  facebook     String?
-  twitter      String?
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug        String  @unique
+  name        String
+  active      Boolean @default(true)
+  brandColor  String?
+  logoUrl     String?
+  faviconUrl  String?
+  description String?
+  address     String?
+  phone       String?
+  email       String?
+  instagram   String?
+  whatsapp    String?
+  facebook    String?
+  twitter     String?
 
   inventory InventoryItem[]
   orders    Order[]
   users     User[]
+  customers Customer[]
+
+  @@map("tenants")
 }
 
 enum UserRole {
@@ -48,7 +51,7 @@ enum UserRole {
 }
 
 model User {
-  id           String   @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   username     String
   passwordHash String
   role         UserRole @default(USER)
@@ -60,10 +63,11 @@ model User {
 
   @@unique([username, tenantId])
   @@index([tenantId])
+  @@map("users")
 }
 
 model CardTemplate {
-  id           String  @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
+  id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name         String
   set          String
   imageUrl     String?
@@ -74,10 +78,11 @@ model CardTemplate {
   inventory InventoryItem[]
 
   @@index([name])
+  @@map("card_templates")
 }
 
 model InventoryItem {
-  id             String    @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
+  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenantId       String    @db.Uuid
   cardTemplateId String    @db.Uuid
   price          Decimal
@@ -94,6 +99,7 @@ model InventoryItem {
   @@index([tenantId])
   @@index([tenantId, quantity])
   @@index([cardTemplateId])
+  @@map("inventory_items")
 }
 
 enum OrderStatus {
@@ -104,23 +110,24 @@ enum OrderStatus {
 }
 
 model Order {
-  id            String      @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
-  tenantId      String      @db.Uuid
-  customerName  String
-  customerEmail String?
-  totalAmount   Decimal
-  status        OrderStatus @default(PENDING)
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String      @db.Uuid
+  customerId  String      @db.Uuid
+  totalAmount Decimal
+  status      OrderStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime?   @updatedAt
 
-  tenant Tenant      @relation(fields: [tenantId], references: [id])
-  items  OrderItem[]
+  tenant   Tenant      @relation(fields: [tenantId], references: [id])
+  customer Customer    @relation(fields: [customerId], references: [id])
+  items    OrderItem[]
 
   @@index([tenantId])
+  @@map("orders")
 }
 
 model OrderItem {
-  id              String  @id @default(dbgenerated("uuid_generate_v7()")) @db.Uuid
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   orderId         String  @db.Uuid
   inventoryItemId String  @db.Uuid
   quantity        Int
@@ -128,4 +135,22 @@ model OrderItem {
 
   order         Order         @relation(fields: [orderId], references: [id])
   inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+
+  @@map("order_items")
+}
+
+model Customer {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  phoneNumber String
+  tenantId    String   @db.Uuid
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id])
+  orders Order[]
+
+  @@unique([phoneNumber, tenantId])
+  @@index([tenantId])
+  @@map("customers")
 }

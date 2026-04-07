@@ -36,6 +36,7 @@ export default async function SuccessPage({
       tenantId
     },
     include: {
+      customer: true,
       items: {
         include: {
           inventoryItem: {
@@ -82,7 +83,7 @@ export default async function SuccessPage({
               </div>
               <div className="text-right">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Cliente</p>
-                <p className="text-sm font-semibold">{order.customerName}</p>
+                <p className="text-sm font-semibold">{order.customer.name}</p>
               </div>
             </div>
 
