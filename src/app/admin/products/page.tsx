@@ -14,6 +14,7 @@ export default async function ProductsPage(props: {
   const page = Number(searchParams?.page) || 1;
   const limit = Number(searchParams?.limit) || 10;
   const search = typeof searchParams?.search === "string" ? searchParams.search : undefined;
+  const categoryId = typeof searchParams?.category === "string" ? searchParams.category : undefined;
 
   const headersList = await headers();
   const tenantId = headersList.get("x-tenant-id");
@@ -31,7 +32,7 @@ export default async function ProductsPage(props: {
     );
   }
 
-  const { items, pageCount } = await getProductsPaginated(tenantId, page, limit, search);
+  const { items, pageCount } = await getProductsPaginated(tenantId, page, limit, search, categoryId);
   const categories = await getCategories(tenantId);
 
   return (

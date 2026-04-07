@@ -21,8 +21,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import * as React from "react";
 import { useTransition } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface DataTableProps<TData, TValue = unknown> {
   data: TData[];
@@ -75,6 +82,7 @@ export function DataTable<TData extends { id: string }, TValue = unknown>({
   });
 
   const search = searchParams.get("search") || "";
+  const currentCategory = searchParams.get("category") || "all";
 
   const handleSearch = (term: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -85,10 +93,23 @@ export function DataTable<TData extends { id: string }, TValue = unknown>({
     });
   };
 
+  const handleCategoryChange = (value: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (!value || value === "all") {
+      params.delete("category");
+    } else {
+      params.set("category", value);
+    }
+    params.set("page", "1");
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+        <div className="relative flex-1 w-full max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar produtos..."
@@ -96,6 +117,38 @@ export function DataTable<TData extends { id: string }, TValue = unknown>({
             onChange={(e) => handleSearch(e.target.value)}
             className="pl-9"
           />
+        </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Select value={currentCategory} onValueChange={handleCategoryChange}>
+            <SelectTrigger className="w-full sm:w-[200px]">
+              <SelectValue placeholder="Todas categorias">
+                {currentCategory === "all" 
+                  ? "Todas categorias" 
+                  : categories.find(c => c.id === currentCategory)?.name}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas categorias</SelectItem>
+              {categories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.id}>
+                  {cat.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {(search || currentCategory !== "all") && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                router.push(pathname);
+              }}
+              className="h-9 px-2 text-muted-foreground"
+            >
+              <X className="h-4 w-4 mr-1" />
+              Limpar
+            </Button>
+          )}
         </div>
       </div>
       <div className="rounded-md border bg-card">
