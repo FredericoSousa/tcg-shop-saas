@@ -1,16 +1,11 @@
 import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { validateAdminApi } from "@/lib/tenant-server";
-import { PrismaOrderRepository } from "@/lib/infrastructure/repositories/prisma-order.repository";
-import { PrismaProductRepository } from "@/lib/infrastructure/repositories/prisma-product.repository";
-import { PrismaCustomerRepository } from "@/lib/infrastructure/repositories/prisma-customer.repository";
+import { container } from "@/lib/infrastructure/container";
 import { POSCheckoutUseCase } from "@/lib/application/use-cases/pos-checkout.use-case";
 import { logger } from "@/lib/logger";
 
-const orderRepo = new PrismaOrderRepository();
-const productRepo = new PrismaProductRepository();
-const customerRepo = new PrismaCustomerRepository();
-const posCheckoutUseCase = new POSCheckoutUseCase(orderRepo, productRepo, customerRepo);
+const posCheckoutUseCase = container.resolve(POSCheckoutUseCase);
 
 export type POSCheckoutItem = {
   productId: string;

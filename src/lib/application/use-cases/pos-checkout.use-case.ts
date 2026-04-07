@@ -1,7 +1,9 @@
-import { IOrderRepository } from "@/lib/domain/repositories/order.repository";
-import { IProductRepository } from "@/lib/domain/repositories/product.repository";
-import { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
-import { Order, OrderStatus, OrderSource } from "@/lib/domain/entities/order";
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "../../infrastructure/container";
+import type { IOrderRepository } from "@/lib/domain/repositories/order.repository";
+import type { IProductRepository } from "@/lib/domain/repositories/product.repository";
+import type { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
+import { Order } from "@/lib/domain/entities/order";
 import { prisma } from "@/lib/prisma";
 
 interface POSCheckoutRequest {
@@ -18,17 +20,19 @@ interface POSCheckoutRequest {
   };
 }
 
+@injectable()
 export class POSCheckoutUseCase {
   constructor(
-    private orderRepo: IOrderRepository,
-    private productRepo: IProductRepository,
-    private customerRepo: ICustomerRepository
+    @inject(TOKENS.OrderRepository) private orderRepo: IOrderRepository,
+    @inject(TOKENS.ProductRepository) private productRepo: IProductRepository,
+    @inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository
   ) {}
 
   async execute(request: POSCheckoutRequest): Promise<{ orderId: string }> {
     const { tenantId, items, customerData } = request;
 
-    const orderId = await prisma.$transaction(async (tx) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const orderId = await prisma.$transaction(async (_tx) => {
       // 1. Decrement stock for products
       for (const item of items) {
         await this.productRepo.decrementStock(item.productId, tenantId, item.quantity);

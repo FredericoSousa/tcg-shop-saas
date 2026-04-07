@@ -1,8 +1,14 @@
-import { Order, OrderStatus, OrderSource } from "../entities/order";
+import { Order, OrderStatus, OrderSource, OrderItem } from "../entities/order";
+import { Customer } from "../entities/customer";
+
+export type OrderRelation = Order & {
+  items?: OrderItem[];
+  customer?: Customer | null;
+};
 
 export interface IOrderRepository {
   findById(id: string, tenantId: string): Promise<Order | null>;
-  save(order: Order, items: Omit<any, "id" | "orderId">[]): Promise<Order>;
+  save(order: Order, items: Omit<OrderItem, "id" | "orderId">[]): Promise<Order>;
   updateStatus(id: string, tenantId: string, status: OrderStatus): Promise<void>;
   findPaginated(
     tenantId: string,

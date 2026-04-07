@@ -1,11 +1,10 @@
 import { NextRequest } from "next/server";
 import { getTenant } from "@/lib/tenant-server";
-import { PrismaCustomerRepository } from "@/lib/infrastructure/repositories/prisma-customer.repository";
+import { container } from "@/lib/infrastructure/container";
 import { LookupCustomerUseCase } from "@/lib/application/use-cases/lookup-customer.use-case";
 import { logger } from "@/lib/logger";
 
-const customerRepo = new PrismaCustomerRepository();
-const lookupCustomerUseCase = new LookupCustomerUseCase(customerRepo);
+const lookupCustomerUseCase = container.resolve(LookupCustomerUseCase);
 
 export async function GET(
   request: NextRequest,

@@ -1,11 +1,10 @@
 import { NextRequest } from "next/server";
 import { validateAdminApi } from "@/lib/tenant-server";
-import { PrismaProductRepository } from "@/lib/infrastructure/repositories/prisma-product.repository";
+import { container } from "@/lib/infrastructure/container";
 import { ListProductsUseCase } from "@/lib/application/use-cases/list-products.use-case";
 import { logger } from "@/lib/logger";
 
-const productRepo = new PrismaProductRepository();
-const listProductsUseCase = new ListProductsUseCase(productRepo);
+const listProductsUseCase = container.resolve(ListProductsUseCase);
 
 export async function GET(request: NextRequest) {
   const context = await validateAdminApi();

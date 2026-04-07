@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
 import { validateAdminApi } from "@/lib/tenant-server";
-import { PrismaUserRepository } from "@/lib/infrastructure/repositories/prisma-tenant.repository";
+import { container, TOKENS } from "@/lib/infrastructure/container";
+import type { IUserRepository } from "@/lib/domain/repositories/tenant.repository";
 import { logger } from "@/lib/logger";
 
-const userRepo = new PrismaUserRepository();
+const userRepo = container.resolve<IUserRepository>(TOKENS.UserRepository);
 
 export async function DELETE(
   _request: NextRequest,

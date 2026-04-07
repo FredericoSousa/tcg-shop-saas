@@ -1,10 +1,12 @@
+import { injectable } from "tsyringe";
 import { prisma } from "../../prisma";
 import { IProductRepository } from "@/lib/domain/repositories/product.repository";
 import { Product as DomainProduct, ProductCategory as DomainCategory } from "@/lib/domain/entities/product";
-import { Prisma } from "@prisma/client";
+import { Prisma, Product as PrismaProduct, ProductCategory as PrismaCategory } from "@prisma/client";
 
+@injectable()
 export class PrismaProductRepository implements IProductRepository {
-  private mapToDomain(item: any): DomainProduct {
+  private mapToDomain(item: PrismaProduct & { category?: PrismaCategory | null }): DomainProduct {
     return {
       id: item.id,
       name: item.name,
@@ -22,7 +24,7 @@ export class PrismaProductRepository implements IProductRepository {
     };
   }
 
-  private mapCategoryToDomain(item: any): DomainCategory {
+  private mapCategoryToDomain(item: PrismaCategory): DomainCategory {
     return {
       id: item.id,
       name: item.name,

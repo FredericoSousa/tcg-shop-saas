@@ -1,13 +1,12 @@
 import { NextRequest } from "next/server";
 import { validateAdminApi } from "@/lib/tenant-server";
-import { PrismaCustomerRepository } from "@/lib/infrastructure/repositories/prisma-customer.repository";
+import { container } from "@/lib/infrastructure/container";
 import { ListCustomersUseCase } from "@/lib/application/use-cases/list-customers.use-case";
 import { CreateCustomerUseCase } from "@/lib/application/use-cases/create-customer.use-case";
 import { logger } from "@/lib/logger";
 
-const customerRepo = new PrismaCustomerRepository();
-const listCustomersUseCase = new ListCustomersUseCase(customerRepo);
-const createCustomerUseCase = new CreateCustomerUseCase(customerRepo);
+const listCustomersUseCase = container.resolve(ListCustomersUseCase);
+const createCustomerUseCase = container.resolve(CreateCustomerUseCase);
 
 export async function GET(request: NextRequest) {
   const context = await validateAdminApi();

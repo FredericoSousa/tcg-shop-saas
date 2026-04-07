@@ -1,4 +1,6 @@
-import { IProductRepository } from "@/lib/domain/repositories/product.repository";
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "../../infrastructure/container";
+import type { IProductRepository } from "@/lib/domain/repositories/product.repository";
 import { ProductCategory } from "@/lib/domain/entities/product";
 
 interface SaveCategoryRequest {
@@ -9,8 +11,9 @@ interface SaveCategoryRequest {
   showOnEcommerce?: boolean;
 }
 
+@injectable()
 export class SaveCategoryUseCase {
-  constructor(private productRepo: IProductRepository) {}
+  constructor(@inject(TOKENS.ProductRepository) private productRepo: IProductRepository) {}
 
   async execute(request: SaveCategoryRequest): Promise<ProductCategory> {
     if (request.id) {

@@ -1,9 +1,14 @@
+import { injectable } from "tsyringe";
 import { prisma } from "../../prisma";
-import { ICardTemplateRepository } from "@/lib/domain/repositories/inventory.repository";
+import { Prisma } from "@prisma/client";
+import type { ICardTemplateRepository } from "@/lib/domain/repositories/inventory.repository";
 import { CardTemplate as DomainCardTemplate } from "@/lib/domain/entities/inventory";
+import { CardTemplate as PrismaCardTemplate, Game as PrismaGame } from "@prisma/client";
+import type { ScryfallCard } from "@/lib/types/scryfall";
 
+@injectable()
 export class PrismaCardTemplateRepository implements ICardTemplateRepository {
-  private mapToDomain(item: any): DomainCardTemplate {
+  private mapToDomain(item: PrismaCardTemplate): DomainCardTemplate {
     return {
       id: item.id,
       name: item.name,
@@ -11,7 +16,19 @@ export class PrismaCardTemplateRepository implements ICardTemplateRepository {
       imageUrl: item.imageUrl,
       backImageUrl: item.backImageUrl,
       game: item.game,
-      metadata: item.metadata as Record<string, any> | null,
+      metadata: item.metadata as Record<string, unknown> | null,
+    };
+  }
+
+  private mapScryfallToDomain(card: ScryfallCard): DomainCardTemplate {
+    return {
+      id: "",
+      name: card.name,
+      set: card.set,
+      imageUrl: (card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal) ?? null,
+      backImageUrl: card.card_faces?.[1]?.image_uris?.normal ?? null,
+      game: "MAGIC",
+      metadata: card as unknown as Record<string, unknown>,
     };
   }
 
@@ -26,21 +43,20 @@ export class PrismaCardTemplateRepository implements ICardTemplateRepository {
     const saved = await prisma.cardTemplate.upsert({
       where: { id: template.id },
       create: {
-        id: template.id,
         name: template.name,
         set: template.set,
-        imageUrl: template.imageUrl,
-        backImageUrl: template.backImageUrl,
-        game: template.game as any,
-        metadata: template.metadata as any,
+        imageUrl: template.imageUrl ?? null,
+        backImageUrl: template.backImageUrl ?? null,
+        game: template.game as PrismaGame,
+        metadata: template.metadata as Prisma.InputJsonValue,
       },
       update: {
         name: template.name,
         set: template.set,
-        imageUrl: template.imageUrl,
-        backImageUrl: template.backImageUrl,
-        game: template.game as any,
-        metadata: template.metadata as any,
+        imageUrl: template.imageUrl ?? null,
+        backImageUrl: template.backImageUrl ?? null,
+        game: template.game as PrismaGame,
+        metadata: template.metadata as Prisma.InputJsonValue,
       },
     });
 

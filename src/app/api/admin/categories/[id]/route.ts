@@ -1,11 +1,12 @@
 import { NextRequest } from "next/server";
 import { validateAdminApi } from "@/lib/tenant-server";
-import { PrismaProductRepository } from "@/lib/infrastructure/repositories/prisma-product.repository";
+import { container, TOKENS } from "@/lib/infrastructure/container";
 import { SaveCategoryUseCase } from "@/lib/application/use-cases/save-category.use-case";
+import type { IProductRepository } from "@/lib/domain/repositories/product.repository";
 import { logger } from "@/lib/logger";
 
-const productRepo = new PrismaProductRepository();
-const saveCategoryUseCase = new SaveCategoryUseCase(productRepo);
+const saveCategoryUseCase = container.resolve(SaveCategoryUseCase);
+const productRepo = container.resolve<IProductRepository>(TOKENS.ProductRepository);
 
 export async function PUT(
   request: NextRequest,

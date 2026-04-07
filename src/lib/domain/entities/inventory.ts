@@ -5,7 +5,7 @@ export interface CardTemplate {
   imageUrl: string | null;
   backImageUrl: string | null;
   game: string;
-  metadata: Record<string, any> | null;
+  metadata: Record<string, unknown> | null;
 }
 
 export interface InventoryItem {

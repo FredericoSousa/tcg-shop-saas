@@ -1,9 +1,7 @@
 import { PageHeader } from "@/components/admin/page-header";
 import { ShoppingCart } from "lucide-react";
 import { OrdersClient, OrderType } from "./orders-client";
-import { getOrdersPaginated } from "@/lib/services/order.service";
 import { OrderStatus } from "@prisma/client";
-import { getAdminContext } from "@/lib/tenant-server";
 
 export default async function OrdersPage({
   searchParams,
@@ -17,7 +15,6 @@ export default async function OrdersPage({
     customerPhone?: string;
   }>;
 }) {
-  const { tenant } = await getAdminContext();
   const params = await searchParams;
 
   const page = Number(params.page) || 1;

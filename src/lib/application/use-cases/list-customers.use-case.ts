@@ -1,4 +1,6 @@
-import { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "../../infrastructure/container";
+import type { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
 import { Customer } from "@/lib/domain/entities/customer";
 
 interface ListCustomersRequest {
@@ -9,8 +11,9 @@ interface ListCustomersRequest {
   includeDeleted?: boolean;
 }
 
+@injectable()
 export class ListCustomersUseCase {
-  constructor(private customerRepo: ICustomerRepository) {}
+  constructor(@inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository) {}
 
   async execute(request: ListCustomersRequest): Promise<{ items: Customer[]; total: number; pageCount: number }> {
     const { tenantId, page, limit, search, includeDeleted } = request;

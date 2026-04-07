@@ -1,20 +1,26 @@
+import { injectable } from "tsyringe";
 import { prisma } from "../../prisma";
-import { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
-import { InventoryItem as DomainInventoryItem } from "@/lib/domain/entities/inventory";
-import { Prisma } from "@prisma/client";
+import type { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
+import type { InventoryItem as DomainInventoryItem } from "@/lib/domain/entities/inventory";
+import { InventoryItem as PrismaInventoryItem, CardTemplate as PrismaCardTemplate, Prisma, Condition as PrismaCondition } from "@prisma/client";
 
+type PrismaInventoryWithTemplate = PrismaInventoryItem & {
+  cardTemplate?: PrismaCardTemplate | null;
+};
+
+@injectable()
 export class PrismaInventoryRepository implements IInventoryRepository {
-  private mapToDomain(item: any): DomainInventoryItem {
+  private mapToDomain(item: PrismaInventoryWithTemplate): DomainInventoryItem {
     return {
       id: item.id,
       tenantId: item.tenantId,
       cardTemplateId: item.cardTemplateId,
       price: Number(item.price),
       quantity: item.quantity,
-      condition: item.condition,
       language: item.language,
       active: item.active,
       extras: item.extras,
+      condition: item.condition as string,
       cardTemplate: item.cardTemplate ? {
         id: item.cardTemplate.id,
         name: item.cardTemplate.name,
@@ -22,7 +28,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         imageUrl: item.cardTemplate.imageUrl,
         backImageUrl: item.cardTemplate.backImageUrl,
         game: item.cardTemplate.game,
-        metadata: item.cardTemplate.metadata as Record<string, any> | null,
+        metadata: item.cardTemplate.metadata as Record<string, unknown> | null,
       } : undefined,
     };
   }
@@ -45,7 +51,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
         tenantId,
         cardTemplateId: templateId,
         price: filters.price ? new Prisma.Decimal(filters.price) : undefined,
-        condition: filters.condition as any,
+        condition: filters.condition as Prisma.EnumConditionFilter,
         language: filters.language,
         extras: filters.extras ? { equals: filters.extras } : undefined,
       },
@@ -60,7 +66,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
       cardTemplateId: item.cardTemplateId,
       price: new Prisma.Decimal(item.price),
       quantity: item.quantity,
-      condition: item.condition as any,
+      condition: item.condition as PrismaCondition,
       language: item.language,
       active: item.active,
       extras: item.extras,

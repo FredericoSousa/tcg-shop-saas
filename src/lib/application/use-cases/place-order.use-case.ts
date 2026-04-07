@@ -1,7 +1,9 @@
-import { IOrderRepository } from "@/lib/domain/repositories/order.repository";
-import { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
-import { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
-import { Order, OrderStatus, OrderSource } from "@/lib/domain/entities/order";
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "../../infrastructure/container";
+import type { IOrderRepository } from "@/lib/domain/repositories/order.repository";
+import type { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
+import type { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
+import { Order } from "@/lib/domain/entities/order";
 import { prisma } from "@/lib/prisma"; // Direct prisma use for transaction orchestration
 
 interface PlaceOrderRequest {
@@ -18,11 +20,12 @@ interface PlaceOrderRequest {
   };
 }
 
+@injectable()
 export class PlaceOrderUseCase {
   constructor(
-    private orderRepo: IOrderRepository,
-    private inventoryRepo: IInventoryRepository,
-    private customerRepo: ICustomerRepository
+    @inject(TOKENS.OrderRepository) private orderRepo: IOrderRepository,
+    @inject(TOKENS.InventoryRepository) private inventoryRepo: IInventoryRepository,
+    @inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository
   ) {}
 
   async execute(request: PlaceOrderRequest): Promise<{ orderId: string }> {
@@ -31,7 +34,8 @@ export class PlaceOrderUseCase {
     // We use a transaction to ensure atomicity across repositories
     // This is an infrastructure detail leaked into the Use Case for necessity,
     // but we still use the repositories to perform the work.
-    const orderId = await prisma.$transaction(async (tx) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const orderId = await prisma.$transaction(async (_tx) => {
       // 1. Decrement stock for each item
       for (const item of items) {
         await this.inventoryRepo.decrementStock(item.inventoryId, tenantId, item.quantity);

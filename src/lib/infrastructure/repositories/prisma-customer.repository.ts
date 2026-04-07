@@ -1,10 +1,12 @@
+import { injectable } from "tsyringe";
 import { prisma } from "../../prisma";
 import { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
 import { Customer as DomainCustomer, CustomerStats } from "@/lib/domain/entities/customer";
-import { Prisma } from "@prisma/client";
+import { Prisma, Customer as PrismaCustomer } from "@prisma/client";
 
+@injectable()
 export class PrismaCustomerRepository implements ICustomerRepository {
-  private mapToDomain(item: any): DomainCustomer {
+  private mapToDomain(item: PrismaCustomer): DomainCustomer {
     return {
       id: item.id,
       name: item.name,

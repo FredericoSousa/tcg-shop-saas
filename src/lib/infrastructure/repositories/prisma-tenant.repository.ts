@@ -1,9 +1,12 @@
+import { injectable } from "tsyringe";
 import { prisma } from "../../prisma";
 import { ITenantRepository, IUserRepository } from "@/lib/domain/repositories/tenant.repository";
 import { Tenant as DomainTenant, User as DomainUser, UserRole } from "@/lib/domain/entities/tenant";
+import { Tenant as PrismaTenant, User as PrismaUser } from "@prisma/client";
 
+@injectable()
 export class PrismaTenantRepository implements ITenantRepository {
-  private mapToDomain(item: any): DomainTenant {
+  private mapToDomain(item: PrismaTenant): DomainTenant {
     return { ...item };
   }
 
@@ -26,8 +29,9 @@ export class PrismaTenantRepository implements ITenantRepository {
   }
 }
 
+@injectable()
 export class PrismaUserRepository implements IUserRepository {
-  private mapToDomain(item: any): DomainUser {
+  private mapToDomain(item: PrismaUser): DomainUser {
     return { 
       ...item,
       role: item.role as UserRole

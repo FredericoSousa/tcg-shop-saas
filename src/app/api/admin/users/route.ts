@@ -1,12 +1,11 @@
 import { NextRequest } from "next/server";
 import { validateAdminApi } from "@/lib/tenant-server";
-import { PrismaUserRepository } from "@/lib/infrastructure/repositories/prisma-tenant.repository";
+import { container } from "@/lib/infrastructure/container";
 import { ListUsersUseCase, SaveUserUseCase } from "@/lib/application/use-cases/settings-users.use-case";
 import { logger } from "@/lib/logger";
 
-const userRepo = new PrismaUserRepository();
-const listUsersUseCase = new ListUsersUseCase(userRepo);
-const saveUserUseCase = new SaveUserUseCase(userRepo);
+const listUsersUseCase = container.resolve(ListUsersUseCase);
+const saveUserUseCase = container.resolve(SaveUserUseCase);
 
 export async function GET() {
   const context = await validateAdminApi();
@@ -33,8 +32,8 @@ export async function POST(request: NextRequest) {
     const { username, password, role } = await request.json();
     const user = await saveUserUseCase.execute({ username, password, role, tenantId: tenant.id });
     return Response.json(user);
-  } catch (error: any) {
-    logger.error("Error creating user", error, { tenantId: tenant.id });
-    return Response.json({ error: error.message || "Internal server error" }, { status: 400 });
+  } catch (error) {
+    logger.error("Error in save user API", error as Error, { tenantId: tenant.id });
+    return Response.json({ error: (error as Error).message || "Internal server error" }, { status: 400 });
   }
 }

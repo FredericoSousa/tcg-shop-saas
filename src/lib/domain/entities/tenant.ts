@@ -12,8 +12,6 @@ export interface Tenant {
   whatsapp: string | null;
   facebook: string | null;
   twitter: string | null;
-  createdAt: Date;
-  updatedAt: Date;
 }
 
 export type UserRole = "ADMIN" | "USER";

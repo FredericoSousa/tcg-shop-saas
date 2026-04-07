@@ -1,10 +1,11 @@
-import { 
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "../../infrastructure/container";
+import type { 
   IInventoryRepository, 
   ICardTemplateRepository 
 } from "@/lib/domain/repositories/inventory.repository";
-import { InventoryItem, CardTemplate } from "@/lib/domain/entities/inventory";
 import { scryfall } from "@/lib/scryfall";
-import { ScryfallCard } from "@/lib/types/scryfall";
+import type { ScryfallCard } from "@/lib/types/scryfall";
 
 interface AddInventoryRequest {
   tenantId: string;
@@ -16,10 +17,11 @@ interface AddInventoryRequest {
   extras?: string[];
 }
 
+@injectable()
 export class AddInventoryUseCase {
   constructor(
-    private inventoryRepo: IInventoryRepository,
-    private templateRepo: ICardTemplateRepository
+    @inject(TOKENS.InventoryRepository) private inventoryRepo: IInventoryRepository,
+    @inject(TOKENS.CardTemplateRepository) private templateRepo: ICardTemplateRepository
   ) {}
 
   async execute(request: AddInventoryRequest): Promise<{ success: boolean }> {
@@ -58,7 +60,7 @@ export class AddInventoryUseCase {
         backImageUrl:
           scryfallObj.card_faces?.[1]?.image_uris?.normal || null,
         game: "MAGIC",
-        metadata: scryfallData as any,
+        metadata: scryfallData as unknown as Record<string, unknown>,
       });
     }
 

@@ -1,4 +1,6 @@
-import { IProductRepository } from "@/lib/domain/repositories/product.repository";
+import { injectable, inject } from "tsyringe";
+import { TOKENS } from "../../infrastructure/container";
+import type { IProductRepository } from "@/lib/domain/repositories/product.repository";
 import { Product } from "@/lib/domain/entities/product";
 
 interface ListProductsRequest {
@@ -9,8 +11,9 @@ interface ListProductsRequest {
   categoryId?: string;
 }
 
+@injectable()
 export class ListProductsUseCase {
-  constructor(private productRepo: IProductRepository) {}
+  constructor(@inject(TOKENS.ProductRepository) private productRepo: IProductRepository) {}
 
   async execute(request: ListProductsRequest): Promise<{ items: Product[]; total: number; pageCount: number }> {
     const { tenantId, page, limit, search, categoryId } = request;

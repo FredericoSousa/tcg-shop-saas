@@ -1,19 +1,15 @@
 import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { validateAdminApi } from "@/lib/tenant-server";
-import { PrismaInventoryRepository } from "@/lib/infrastructure/repositories/prisma-inventory.repository";
-import { PrismaCardTemplateRepository } from "@/lib/infrastructure/repositories/prisma-card-template.repository";
+import { container } from "@/lib/infrastructure/container";
 import { AddInventoryUseCase } from "@/lib/application/use-cases/add-inventory.use-case";
 import { UpdateInventoryUseCase } from "@/lib/application/use-cases/update-inventory.use-case";
 import { DeleteInventoryUseCase } from "@/lib/application/use-cases/delete-inventory.use-case";
 import { logger } from "@/lib/logger";
 
-const inventoryRepo = new PrismaInventoryRepository();
-const templateRepo = new PrismaCardTemplateRepository();
-
-const addInventoryUseCase = new AddInventoryUseCase(inventoryRepo, templateRepo);
-const updateInventoryUseCase = new UpdateInventoryUseCase(inventoryRepo);
-const deleteInventoryUseCase = new DeleteInventoryUseCase(inventoryRepo);
+const addInventoryUseCase = container.resolve(AddInventoryUseCase);
+const updateInventoryUseCase = container.resolve(UpdateInventoryUseCase);
+const deleteInventoryUseCase = container.resolve(DeleteInventoryUseCase);
 
 export async function POST(request: NextRequest) {
   const context = await validateAdminApi();

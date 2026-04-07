@@ -1,10 +1,17 @@
+import { injectable } from "tsyringe";
 import { prisma } from "../../prisma";
 import { IOrderRepository } from "@/lib/domain/repositories/order.repository";
-import { Order as DomainOrder, OrderStatus, OrderSource } from "@/lib/domain/entities/order";
-import { Prisma } from "@prisma/client";
+import { Order as DomainOrder, OrderStatus, OrderSource, OrderItem as DomainOrderItem } from "@/lib/domain/entities/order";
+import { Prisma, Order as PrismaOrder, OrderItem as PrismaOrderItem, Customer as PrismaCustomer } from "@prisma/client";
 
+type PrismaOrderWithRelations = PrismaOrder & {
+  items?: PrismaOrderItem[];
+  customer?: PrismaCustomer | null;
+};
+
+@injectable()
 export class PrismaOrderRepository implements IOrderRepository {
-  private mapToDomain(item: any): DomainOrder {
+  private mapToDomain(item: PrismaOrderWithRelations): DomainOrder {
     return {
       id: item.id,
       tenantId: item.tenantId,
@@ -18,7 +25,7 @@ export class PrismaOrderRepository implements IOrderRepository {
         name: item.customer.name,
         phoneNumber: item.customer.phoneNumber,
       } : undefined,
-      items: item.items?.map((oi: any) => ({
+      items: item.items?.map((oi: PrismaOrderItem) => ({
         id: oi.id,
         orderId: oi.orderId,
         inventoryItemId: oi.inventoryItemId,
@@ -45,7 +52,7 @@ export class PrismaOrderRepository implements IOrderRepository {
     return item ? this.mapToDomain(item) : null;
   }
 
-  async save(order: DomainOrder, items: any[]): Promise<DomainOrder> {
+  async save(order: DomainOrder, items: Omit<DomainOrderItem, "id" | "orderId">[]): Promise<DomainOrder> {
     const saved = await prisma.order.create({
       data: {
         tenantId: order.tenantId,
@@ -54,7 +61,7 @@ export class PrismaOrderRepository implements IOrderRepository {
         status: order.status,
         source: order.source,
         items: {
-          create: items.map(item => ({
+          create: items.map((item) => ({
             inventoryItemId: item.inventoryItemId,
             productId: item.productId,
             quantity: item.quantity,
@@ -89,8 +96,8 @@ export class PrismaOrderRepository implements IOrderRepository {
     const skip = (page - 1) * limit;
     const where: Prisma.OrderWhereInput = {
       tenantId,
-      ...(filters?.status && filters.status !== "all" ? { status: filters.status as any } : {}),
-      ...(filters?.source && filters.source !== "all" ? { source: filters.source as any } : {}),
+      ...(filters?.status && filters.status !== "all" ? { status: filters.status as OrderStatus } : {}),
+      ...(filters?.source && filters.source !== "all" ? { source: filters.source as OrderSource } : {}),
       ...(filters?.customerPhone ? { customer: { phoneNumber: filters.customerPhone } } : {}),
       ...(filters?.search ? {
         OR: [
