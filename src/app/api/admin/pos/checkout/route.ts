@@ -98,18 +98,18 @@ export async function POST(request: NextRequest) {
         throw new Error("Cliente ou Telefone é obrigatório.");
       }
 
-      // Check for existing PENDING order for this customer and tenant
+      // Check for existing PENDING order for this customer and tenant from POS
       const existingOrder = await tx.order.findFirst({
         where: {
           tenantId,
           customerId,
           status: "PENDING",
+          source: "POS",
         },
         include: {
           items: true,
         }
       });
-
       if (existingOrder) {
         // Appending to existing order
         await tx.order.update({
@@ -154,6 +154,7 @@ export async function POST(request: NextRequest) {
             customerId,
             totalAmount,
             status: "PENDING",
+            source: "POS",
             items: {
               create: items.map((item) => ({
                 productId: item.productId,
@@ -163,6 +164,7 @@ export async function POST(request: NextRequest) {
             },
           },
         });
+
         return newOrder;
       }
     });

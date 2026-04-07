@@ -48,6 +48,7 @@ export default async function OrdersPage() {
   const formattedOrders = orders.map((order) => ({
     ...order,
     totalAmount: Number(order.totalAmount),
+    source: order.source,
     customer: {
       name: order.customer.name,
       phoneNumber: order.customer.phoneNumber,

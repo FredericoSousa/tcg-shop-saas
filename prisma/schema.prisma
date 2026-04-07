@@ -153,12 +153,18 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum OrderSource {
+  POS
+  ECOMMERCE
+}
+
 model Order {
   id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   tenantId    String      @map("tenant_id") @db.Uuid
   customerId  String      @map("customer_id") @db.Uuid
   totalAmount Decimal     @map("total_amount")
   status      OrderStatus @default(PENDING)
+  source      OrderSource @default(ECOMMERCE)
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime?   @updatedAt @map("updated_at")
 

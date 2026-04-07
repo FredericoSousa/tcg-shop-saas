@@ -76,6 +76,14 @@ export default async function OrderDetailsPage({
             <span className="font-bold text-foreground">{order.customer.name}</span>
             <span className="opacity-50">•</span>
             <span>{order.customer.phoneNumber}</span>
+            <span className="opacity-50">•</span>
+            <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full border ${
+              order.source === "POS" 
+                ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
+                : "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
+            }`}>
+              {order.source === "POS" ? "PDV" : "E-commerce"}
+            </span>
           </div>
         </div>
         <div className="flex items-center gap-4 shrink-0">

@@ -8,9 +8,16 @@ import { cn } from "@/lib/utils";
 interface CustomerSelectorProps {
   onSelect: (customer: any) => void;
   selectedCustomer: any | null;
+  hideLabel?: boolean;
+  size?: "sm" | "default";
 }
 
-export function CustomerSelector({ onSelect, selectedCustomer }: CustomerSelectorProps) {
+export function CustomerSelector({ 
+  onSelect, 
+  selectedCustomer,
+  hideLabel = false,
+  size = "default" 
+}: CustomerSelectorProps) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -57,12 +64,17 @@ export function CustomerSelector({ onSelect, selectedCustomer }: CustomerSelecto
 
   return (
     <div className="relative" ref={containerRef}>
-      <label className="text-xs font-bold uppercase text-muted-foreground mb-1.5 flex items-center gap-2">
-        <User className="h-3 w-3" /> Cliente
-      </label>
+      {!hideLabel && (
+        <label className="text-xs font-bold uppercase text-muted-foreground mb-1.5 flex items-center gap-2">
+          <User className="h-3 w-3" /> Cliente
+        </label>
+      )}
       
       {selectedCustomer ? (
-        <div className="flex items-center justify-between p-3 rounded-lg border bg-primary/5 border-primary/20">
+        <div className={cn(
+          "flex items-center justify-between rounded-lg border bg-primary/5 border-primary/20",
+          size === "sm" ? "p-2 h-9" : "p-3 h-11"
+        )}>
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
               <User className="h-4 w-4 text-primary" />
@@ -93,7 +105,7 @@ export function CustomerSelector({ onSelect, selectedCustomer }: CustomerSelecto
             }}
             onFocus={() => setIsOpen(true)}
             placeholder="Buscar por nome ou telefone..."
-            className="pl-9 h-11"
+            className={cn("pl-9", size === "sm" ? "h-9" : "h-11")}
           />
           
           {isOpen && (
