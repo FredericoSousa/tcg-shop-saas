@@ -1,7 +1,16 @@
 import { NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 import { getTenant } from "@/lib/tenant-server";
+import { PrismaOrderRepository } from "@/lib/infrastructure/repositories/prisma-order.repository";
+import { PrismaInventoryRepository } from "@/lib/infrastructure/repositories/prisma-inventory.repository";
+import { PrismaCustomerRepository } from "@/lib/infrastructure/repositories/prisma-customer.repository";
+import { PlaceOrderUseCase } from "@/lib/application/use-cases/place-order.use-case";
+import { logger } from "@/lib/logger";
+
+const orderRepo = new PrismaOrderRepository();
+const inventoryRepo = new PrismaInventoryRepository();
+const customerRepo = new PrismaCustomerRepository();
+const placeOrderUseCase = new PlaceOrderUseCase(orderRepo, inventoryRepo, customerRepo);
 
 export type CheckoutItem = {
   inventoryId: string;
@@ -38,73 +47,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Iniciar uma prisma.$transaction
-    const order = await prisma.$transaction(async (tx) => {
-      // Optimistic Update por item
-      for (const item of items) {
-        const updateResult = await tx.inventoryItem.updateMany({
-          where: {
-            id: item.inventoryId,
-            tenantId: tenant.id, // Garante que a loja correta está sendo alterada
-            quantity: {
-              gte: item.quantity, // Impede vendas abaixo de zero
-            },
-          },
-          data: {
-            quantity: {
-              decrement: item.quantity,
-            },
-          },
-        });
-
-        // Se count === 0, força rollback subindo o Erro
-        if (updateResult.count === 0) {
-          throw new Error(
-            "Item esgotado ou quantidade insuficiente no estoque.",
-          );
-        }
-      }
-
-      const totalAmount = items.reduce(
-        (acc, item) => acc + item.price * item.quantity,
-        0,
-      );
-
-      // Upsert Customer
-      const customer = await tx.customer.upsert({
-        where: {
-          phoneNumber_tenantId: {
-            phoneNumber: customerData.phoneNumber,
-            tenantId: tenant.id,
-          },
-        },
-        update: {
-          name: customerData.name || undefined,
-        },
-        create: {
-          name: customerData.name || "",
-          phoneNumber: customerData.phoneNumber,
-          tenantId: tenant.id,
-        },
-      });
-
-      // Criar registro de Order e OrderItems
-      const newOrder = await tx.order.create({
-        data: {
-          tenantId: tenant.id,
-          customerId: customer.id,
-          totalAmount,
-          items: {
-            create: items.map((item) => ({
-              inventoryItemId: item.inventoryId,
-              quantity: item.quantity,
-              priceAtPurchase: item.price,
-            })),
-          },
-        },
-      });
-
-      return newOrder;
+    const { orderId } = await placeOrderUseCase.execute({
+      tenantId: tenant.id,
+      items,
+      customerData,
     });
 
     // Revalidar rotas críticas de estoque e pedidos
@@ -113,17 +59,15 @@ export async function POST(request: NextRequest) {
     revalidatePath("/admin/orders");
     revalidatePath("/admin/inventory");
 
-    // Retornar ID pro Front
-    return Response.json({ success: true, orderId: order.id });
+    return Response.json({ success: true, orderId });
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("[Checkout Error]", err.message);
+    logger.error("Checkout Error", err, { tenantId: tenant.id });
+    
     return Response.json(
       {
         success: false,
-        error:
-          err.message ||
-          "Erro catastrófico no processamento do checkout.",
+        error: err.message || "Erro catastrófico no processamento do checkout.",
       },
       { status: 500 },
     );

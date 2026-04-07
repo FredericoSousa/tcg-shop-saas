@@ -1,8 +1,14 @@
+import { NextRequest } from "next/server";
 import { getTenant } from "@/lib/tenant-server";
-import { prisma } from "@/lib/prisma";
+import { PrismaCustomerRepository } from "@/lib/infrastructure/repositories/prisma-customer.repository";
+import { LookupCustomerUseCase } from "@/lib/application/use-cases/lookup-customer.use-case";
+import { logger } from "@/lib/logger";
+
+const customerRepo = new PrismaCustomerRepository();
+const lookupCustomerUseCase = new LookupCustomerUseCase(customerRepo);
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ phone: string }> }
 ) {
   const tenant = await getTenant();
@@ -17,25 +23,15 @@ export async function GET(
   const { phone } = await params;
 
   try {
-    const customer = await prisma.customer.findUnique({
-      where: {
-        phoneNumber_tenantId: {
-          phoneNumber: phone,
-          tenantId: tenant.id,
-        },
-      },
-      select: {
-        id: true,
-      },
-    });
+    const customer = await lookupCustomerUseCase.execute(phone, tenant.id);
 
     if (customer) {
-      return Response.json({ exists: true });
+      return Response.json({ exists: true, id: customer.id });
     }
 
     return Response.json({ exists: false });
   } catch (error) {
-    console.error("[Customer Lookup Error]", error);
+    logger.error("Customer Lookup Error", error as Error, { tenantId: tenant.id, phone });
     return Response.json(
       { success: false, error: "Erro ao buscar cliente" },
       { status: 500 }

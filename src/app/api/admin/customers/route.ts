@@ -1,15 +1,17 @@
+import { NextRequest } from "next/server";
 import { validateAdminApi } from "@/lib/tenant-server";
-import {
-  getCustomersPaginated,
-  createCustomer,
-} from "@/lib/services/customer.service";
+import { PrismaCustomerRepository } from "@/lib/infrastructure/repositories/prisma-customer.repository";
+import { ListCustomersUseCase } from "@/lib/application/use-cases/list-customers.use-case";
+import { CreateCustomerUseCase } from "@/lib/application/use-cases/create-customer.use-case";
+import { logger } from "@/lib/logger";
 
-export async function GET(request: Request) {
+const customerRepo = new PrismaCustomerRepository();
+const listCustomersUseCase = new ListCustomersUseCase(customerRepo);
+const createCustomerUseCase = new CreateCustomerUseCase(customerRepo);
+
+export async function GET(request: NextRequest) {
   const context = await validateAdminApi();
-
-  if (!context) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!context) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { tenant } = context;
 
@@ -20,20 +22,17 @@ export async function GET(request: Request) {
     const search = searchParams.get("search") || undefined;
     const includeDeleted = searchParams.get("includeDeleted") === "true";
 
-    const result = await getCustomersPaginated(tenant.id, page, limit, search, includeDeleted);
+    const result = await listCustomersUseCase.execute({ tenantId: tenant.id, page, limit, search, includeDeleted });
     return Response.json(result);
   } catch (error) {
-    console.error("Error fetching customers:", error);
+    logger.error("Error fetching customers", error as Error, { tenantId: tenant.id });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const context = await validateAdminApi();
-
-  if (!context) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!context) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { tenant } = context;
 
@@ -44,10 +43,10 @@ export async function POST(request: Request) {
       return Response.json({ error: "Nome e Telefone são obrigatórios" }, { status: 400 });
     }
 
-    const customer = await createCustomer(tenant.id, { name, email, phoneNumber });
+    const customer = await createCustomerUseCase.execute({ tenantId: tenant.id, name, email, phoneNumber });
     return Response.json(customer);
   } catch (error) {
-    console.error("Error creating customer:", error);
+    logger.error("Error creating customer", error as Error, { tenantId: tenant.id });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

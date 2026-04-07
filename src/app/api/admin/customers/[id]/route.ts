@@ -1,101 +1,95 @@
+import { NextRequest } from "next/server";
 import { validateAdminApi } from "@/lib/tenant-server";
-import {
-  updateCustomer,
-  softDeleteCustomer,
-  restoreCustomer,
-  getCustomerWithOrders,
-} from "@/lib/services/customer.service";
+import { PrismaCustomerRepository } from "@/lib/infrastructure/repositories/prisma-customer.repository";
+import { GetCustomerUseCase } from "@/lib/application/use-cases/get-customer.use-case";
+import { UpdateCustomerUseCase } from "@/lib/application/use-cases/update-customer.use-case";
+import { logger } from "@/lib/logger";
+
+const customerRepo = new PrismaCustomerRepository();
+const getCustomerUseCase = new GetCustomerUseCase(customerRepo);
+const updateCustomerUseCase = new UpdateCustomerUseCase(customerRepo);
 
 export async function GET(
-  _request: Request,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const context = await validateAdminApi();
   const { id } = await params;
 
-  if (!context) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!context) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { tenant } = context;
 
   try {
-    const customer = await getCustomerWithOrders(tenant.id, id);
-    if (!customer) {
-      return Response.json({ error: "Customer not found" }, { status: 404 });
-    }
-    return Response.json(customer);
+    const result = await getCustomerUseCase.execute(id, tenant.id);
+    if (!result) return Response.json({ error: "Customer not found" }, { status: 404 });
+    
+    // Maintain backward compatibility with the expected shape if necessary, 
+    // though Clean Arch suggests returning the entity + stats.
+    return Response.json({ ...result.customer, stats: result.stats });
   } catch (error) {
-    console.error("Error fetching customer details:", error);
+    logger.error("Error fetching customer details", error as Error, { tenantId: tenant.id, customerId: id });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 export async function PUT(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const context = await validateAdminApi();
   const { id } = await params;
 
-  if (!context) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!context) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { tenant } = context;
 
   try {
     const { name, email, phoneNumber } = await request.json();
-
-    const customer = await updateCustomer(tenant.id, id, { name, email, phoneNumber });
+    const customer = await updateCustomerUseCase.execute({ id, tenantId: tenant.id, name, email, phoneNumber });
     return Response.json(customer);
   } catch (error) {
-    console.error("Error updating customer:", error);
+    logger.error("Error updating customer", error as Error, { tenantId: tenant.id, customerId: id });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 export async function DELETE(
-  _request: Request,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const context = await validateAdminApi();
   const { id } = await params;
 
-  if (!context) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!context) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { tenant } = context;
 
   try {
-    await softDeleteCustomer(tenant.id, id);
+    await updateCustomerUseCase.execute({ id, tenantId: tenant.id, deletedAt: new Date() });
     return Response.json({ success: true });
   } catch (error) {
-    console.error("Error deleting customer:", error);
+    logger.error("Error deleting customer", error as Error, { tenantId: tenant.id, customerId: id });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 export async function PATCH(
-  _request: Request,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const context = await validateAdminApi();
   const { id } = await params;
 
-  if (!context) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  if (!context) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
   const { tenant } = context;
 
   try {
-    // Treat PATCH as restore for now, or could handle partial updates
-    await restoreCustomer(tenant.id, id);
+    await updateCustomerUseCase.execute({ id, tenantId: tenant.id, deletedAt: null });
     return Response.json({ success: true });
   } catch (error) {
-    console.error("Error restoring customer:", error);
+    logger.error("Error restoring customer", error as Error, { tenantId: tenant.id, customerId: id });
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

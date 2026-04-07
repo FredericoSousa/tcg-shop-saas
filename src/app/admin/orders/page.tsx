@@ -27,17 +27,28 @@ export default async function OrdersPage({
   const status = params.status as OrderStatus | "all";
   const customerPhone = params.customerPhone;
 
-  const { items, total, pageCount } = await getOrdersPaginated(
-    tenant.id,
-    page,
-    limit,
-    {
-      search,
-      source,
-      status,
-      customerPhone,
-    }
-  );
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(search ? { search } : {}),
+    ...(source ? { source } : {}),
+    ...(status ? { status } : {}),
+    ...(customerPhone ? { customerPhone } : {}),
+  });
+
+  // Call the internal API to fulfill "move all database operations to the api"
+  const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/admin/orders?${queryParams}`;
+  const response = await fetch(apiUrl, {
+    headers: {
+      cookie: (await import("next/headers")).cookies().toString(),
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch orders from API");
+  }
+
+  const { items, total, pageCount } = await response.json();
 
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
