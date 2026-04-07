@@ -40,10 +40,14 @@ interface NavbarProps {
   username?: string;
 }
 
+import { PanelLeft } from "lucide-react";
+import { useSidebar } from "./sidebar-provider";
+
 export function Navbar({ username }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { setTheme, theme } = useTheme();
+  const { toggleSidebar, isCollapsed } = useSidebar();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -60,55 +64,68 @@ export function Navbar({ username }: NavbarProps) {
 
   return (
     <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b border-border/50 bg-gradient-to-r from-background to-background/95 backdrop-blur-md px-4 lg:h-[70px] lg:px-6 shadow-sm">
-      <Sheet>
-        <SheetTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon"
-              className="shrink-0 md:hidden hover:bg-muted/60"
-            />
-          }
-        >
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Toggle navigation menu</span>
-        </SheetTrigger>
-        <SheetContent side="left" className="flex flex-col p-0">
-          <SheetHeader className="border-b border-border/30 px-6 py-5">
-            <SheetTitle className="text-left">Menu</SheetTitle>
-          </SheetHeader>
-          <nav className="grid gap-1 text-sm font-medium p-4 flex-1">
-            <Link
-              href="/admin"
-              className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-muted/60 transition-colors"
-            >
-              <Package className="h-5 w-5 text-primary" />
-              <span className="font-semibold">Admin Panel</span>
-            </Link>
-            <div className="my-2 border-t border-border/30"></div>
-            {sidebarItems.map((item) => {
-              const isActive =
-                pathname === item.href || pathname.startsWith(item.href + "/");
-              const isStrictActive =
-                item.href === "/admin" ? pathname === "/admin" : isActive;
+      <div className="flex items-center gap-4">
+        <Sheet>
+          <SheetTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="shrink-0 md:hidden hover:bg-muted/60"
+              />
+            }
+          >
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle navigation menu</span>
+          </SheetTrigger>
+          <SheetContent side="left" className="flex flex-col p-0">
+            <SheetHeader className="border-b border-border/30 px-6 py-5">
+              <SheetTitle className="text-left">Menu</SheetTitle>
+            </SheetHeader>
+            <nav className="grid gap-1 text-sm font-medium p-4 flex-1">
+              <Link
+                href="/admin"
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-muted/60 transition-colors"
+              >
+                <Package className="h-5 w-5 text-primary" />
+                <span className="font-semibold">Admin Panel</span>
+              </Link>
+              <div className="my-2 border-t border-border/30"></div>
+              {sidebarItems.map((item) => {
+                const isActive =
+                  pathname === item.href || pathname.startsWith(item.href + "/");
+                const isStrictActive =
+                  item.href === "/admin" ? pathname === "/admin" : isActive;
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${isStrictActive
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                    }`}
-                >
-                  <item.icon className="h-5 w-5" />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </nav>
-        </SheetContent>
-      </Sheet>
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${isStrictActive
+                      ? "bg-primary/10 text-primary font-semibold"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                      }`}
+                  >
+                    <item.icon className="h-5 w-5" />
+                    {item.name}
+                  </Link>
+                );
+              })}
+            </nav>
+          </SheetContent>
+        </Sheet>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          className="hidden md:flex hover:bg-muted/60 transition-all text-muted-foreground hover:text-foreground"
+          title={isCollapsed ? "Expandir Sidebar" : "Recolher Sidebar"}
+        >
+          <PanelLeft className={`h-5 w-5 transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`} />
+          <span className="sr-only">Toggle Sidebar</span>
+        </Button>
+      </div>
 
       <div className="flex-1">
         <div className="flex items-center gap-2">
