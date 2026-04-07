@@ -1,57 +1,31 @@
-import { NextResponse } from "next/server";
+import { validateAdminApi } from "@/lib/tenant-server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
-import { headers } from "next/headers";
 
 export async function GET() {
-  const session = await getSession();
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const context = await validateAdminApi();
 
-  if (!session || session.role !== "ADMIN" || session.tenantId !== tenantId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!context) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { tenant } = context;
+
   try {
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: tenantId },
-      select: {
-        id: true,
-        slug: true,
-        name: true,
-        active: true,
-        logoUrl: true,
-        faviconUrl: true,
-        description: true,
-        address: true,
-        phone: true,
-        email: true,
-        instagram: true,
-        whatsapp: true,
-        facebook: true,
-        twitter: true,
-      },
-    });
-
-    if (!tenant) {
-      return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
-    }
-
-    return NextResponse.json(tenant);
+    return Response.json(tenant);
   } catch (error) {
     console.error("Error fetching tenant settings:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 export async function PATCH(request: Request) {
-  const session = await getSession();
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const context = await validateAdminApi();
 
-  if (!session || session.role !== "ADMIN" || session.tenantId !== tenantId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!context) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { tenant } = context;
 
   try {
     const data = await request.json();
@@ -71,21 +45,21 @@ export async function PATCH(request: Request) {
       "twitter",
     ];
 
-    const updateData: any = {};
+    const updateData: Record<string, string | null> = {};
     for (const field of allowedFields) {
       if (data[field] !== undefined) {
         updateData[field] = data[field];
       }
     }
 
-    const tenant = await prisma.tenant.update({
-      where: { id: tenantId },
+    const updatedTenant = await prisma.tenant.update({
+      where: { id: tenant.id },
       data: updateData,
     });
 
-    return NextResponse.json(tenant);
+    return Response.json(updatedTenant);
   } catch (error) {
     console.error("Error updating tenant settings:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

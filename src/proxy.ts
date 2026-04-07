@@ -28,7 +28,7 @@ export async function proxy(request: NextRequest) {
 
     try {
       await jwtVerify(token, JWT_SECRET);
-    } catch (err) {
+    } catch {
       return NextResponse.redirect(new URL("/login", request.url));
     }
   }
@@ -38,7 +38,7 @@ export async function proxy(request: NextRequest) {
     try {
       await jwtVerify(token, JWT_SECRET);
       return NextResponse.redirect(new URL("/admin", request.url));
-    } catch (err) {
+    } catch {
       // Token is invalid, allow access to login page
     }
   }

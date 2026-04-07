@@ -148,8 +148,9 @@ export default function CustomersPage() {
       toast.success(editingCustomer ? "Cliente atualizado" : "Cliente criado");
       setIsDialogOpen(false);
       fetchCustomers();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro desconhecido";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -168,8 +169,9 @@ export default function CustomersPage() {
 
       toast.success("Cliente excluído com sucesso");
       fetchCustomers();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao excluir cliente";
+      toast.error(message);
     }
   };
 
@@ -184,8 +186,9 @@ export default function CustomersPage() {
 
       toast.success("Cliente restaurado com sucesso");
       fetchCustomers();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao restaurar cliente";
+      toast.error(message);
     }
   };
 

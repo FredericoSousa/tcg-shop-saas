@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ProductSearch } from "./product-search";
 import { CartPanel } from "./cart-panel";
+import { CustomerType } from "./customer-selector";
 import { toast } from "sonner";
 
 export type CartItem = {
@@ -15,10 +16,10 @@ export type CartItem = {
 
 export function POSClient() {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<any | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const addToCart = (product: any) => {
+  const addToCart = (product: Omit<CartItem, "quantity">) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {

@@ -1,19 +1,17 @@
-import { NextResponse } from 'next/server'
+import { getTenant } from '@/lib/tenant-server'
 import { prisma } from '@/lib/prisma'
-import { headers } from 'next/headers'
 
 export async function GET() {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
+  const tenant = await getTenant()
 
-  if (!tenantId) {
-    return NextResponse.json({ error: 'Tenant not found' }, { status: 401 })
+  if (!tenant) {
+    return Response.json({ error: 'Tenant not found' }, { status: 401 })
   }
 
   try {
     const rawInventory = await prisma.inventoryItem.findMany({
       where: {
-        tenantId,
+        tenantId: tenant.id,
         active: true,
         quantity: { gt: 0 } // Only active stock on the storefront
       },
@@ -31,9 +29,9 @@ export async function GET() {
       price: Number(item.price),
     }))
 
-    return NextResponse.json(inventory)
+    return Response.json(inventory)
   } catch (error) {
     console.error('Error fetching inventory:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return Response.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

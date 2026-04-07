@@ -1,18 +1,9 @@
-import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
+import { getTenant } from "@/lib/tenant-server";
 import { Navbar } from "@/components/storefront/navbar";
 import { Footer } from "@/components/storefront/footer";
 
 export async function generateMetadata() {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
-
-  if (!tenantId) return {};
-
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: tenantId },
-    select: { name: true, description: true },
-  });
+  const tenant = await getTenant();
 
   return {
     title: tenant?.name || "TCG Shop",
@@ -25,27 +16,7 @@ export default async function StorefrontLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
-
-  let tenant = null;
-  if (tenantId) {
-    tenant = await prisma.tenant.findUnique({
-      where: { id: tenantId },
-      select: {
-        name: true,
-        description: true,
-        logoUrl: true,
-        email: true,
-        phone: true,
-        address: true,
-        instagram: true,
-        facebook: true,
-        twitter: true,
-        whatsapp: true
-      },
-    });
-  }
+  const tenant = await getTenant();
 
   return (
     <div className="flex flex-col min-h-screen bg-background">

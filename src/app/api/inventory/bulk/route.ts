@@ -1,5 +1,3 @@
-import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { scryfall } from "@/lib/scryfall";
 import { revalidatePath } from "next/cache";
@@ -7,18 +5,20 @@ import { Condition, Game, Prisma } from "@prisma/client";
 import { logger, createTimer } from "@/lib/logger";
 import { cardCache, generateCardCacheKey } from "@/lib/cache/card-cache";
 import { ScryfallCard } from "@/lib/types/scryfall";
+import { validateAdminApi } from "@/lib/tenant-server";
 
-export async function POST(request: NextRequest) {
+export async function POST(request: Request) {
   const timer = createTimer("addBulkInventoryItems");
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const context = await validateAdminApi();
 
-  if (!tenantId) {
-    return NextResponse.json(
-      { error: "Unauthorized: Tenant ID missing" },
+  if (!context) {
+    return Response.json(
+      { error: "Unauthorized" },
       { status: 401 },
     );
   }
+
+  const { tenant } = context;
 
   try {
     const items: {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }[] = await request.json();
 
     if (!Array.isArray(items) || !items.length) {
-      return NextResponse.json(
+      return Response.json(
         { error: "No items to add" },
         { status: 400 },
       );
@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
 
           const existing = await tx.inventoryItem.findFirst({
             where: {
-              tenantId,
+              tenantId: tenant.id,
               cardTemplateId: item.scryfallId,
               price: item.price,
               condition: item.condition,
@@ -151,7 +151,7 @@ export async function POST(request: NextRequest) {
           } else {
             await tx.inventoryItem.create({
               data: {
-                tenantId,
+                tenantId: tenant.id,
                 cardTemplateId: item.scryfallId,
                 price: item.price,
                 quantity: item.quantity,
@@ -177,7 +177,7 @@ export async function POST(request: NextRequest) {
       itemsCount: items.length,
       successCount: results.filter((r) => r.status === "success").length,
     });
-    return NextResponse.json(results);
+    return Response.json(results);
   } catch (error) {
     logger.error(
       "Error adding bulk inventory items",
@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
         action: "add_bulk_inventory",
       },
     );
-    return NextResponse.json(
+    return Response.json(
       { error: "Internal server error" },
       { status: 500 },
     );

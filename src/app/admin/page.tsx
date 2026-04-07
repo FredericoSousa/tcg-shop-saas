@@ -1,44 +1,28 @@
-"use server";
-
-import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { LayoutDashboard, Package, ShoppingCart, DollarSign, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { getAdminContext } from "@/lib/tenant-server";
 
 export default async function AdminDashboardPage() {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
-
-  if (!tenantId) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 bg-card rounded-xl border border-dashed text-center">
-        <h1 className="text-2xl font-bold text-destructive mb-2">
-          Autenticação Necessária
-        </h1>
-        <p className="text-muted-foreground">
-          Você precisa estar em um subdomínio válido para acessar o painel.
-        </p>
-      </div>
-    );
-  }
+  const { tenant } = await getAdminContext();
 
   const [inventoryCount, inventoryAgg, ordersCount, revenueAgg, recentOrders] =
     await Promise.all([
-      prisma.inventoryItem.count({ where: { tenantId } }),
+      prisma.inventoryItem.count({ where: { tenantId: tenant.id } }),
       prisma.inventoryItem.aggregate({
-        where: { tenantId },
+        where: { tenantId: tenant.id },
         _sum: { price: true },
       }),
-      prisma.order.count({ where: { tenantId } }),
+      prisma.order.count({ where: { tenantId: tenant.id } }),
       prisma.order.aggregate({
-        where: { tenantId, status: { not: "CANCELLED" } },
+        where: { tenantId: tenant.id, status: { not: "CANCELLED" } },
         _sum: { totalAmount: true },
       }),
       prisma.order.findMany({
-        where: { tenantId },
+        where: { tenantId: tenant.id },
         orderBy: { createdAt: "desc" },
         take: 5,
         include: {

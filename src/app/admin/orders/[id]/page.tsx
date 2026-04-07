@@ -1,4 +1,3 @@
-import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { notFound } from "next/navigation";
 import { ShoppingCart, ArrowLeft } from "lucide-react";
@@ -6,33 +5,18 @@ import Link from "next/link";
 import { PageHeader } from "@/components/admin/page-header";
 import { SetBadge } from "@/components/ui/set-badge";
 import { OrderStatusManager } from "@/components/admin/order-status-manager";
+import { getAdminContext } from "@/lib/tenant-server";
 
 export default async function OrderDetailsPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
-
-  if (!tenantId) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 bg-card rounded-xl border border-dashed text-center">
-        <h1 className="text-2xl font-bold text-destructive mb-2">
-          Falha de Autorização
-        </h1>
-        <p className="text-muted-foreground">
-          Esta página requer identificação de Lojista vinculada ao subdomínio ou
-          sessão ativa.
-        </p>
-      </div>
-    );
-  }
-
+  const { tenant } = await getAdminContext();
   const { id } = await params;
 
   const order = await prisma.order.findFirst({
-    where: { id, tenantId },
+    where: { id, tenantId: tenant.id },
     include: {
       customer: true,
       items: {

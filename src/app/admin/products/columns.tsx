@@ -1,5 +1,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { ProductActions } from "./product-actions";
+import Image from "next/image";
 
 export type ProductColumn = {
   id: string;
@@ -15,7 +16,7 @@ export type ProductColumn = {
   };
 };
 
-export const createColumns = (categories: { id: string; name: string }[]): ColumnDef<ProductColumn, any>[] => [
+export const createColumns = (categories: { id: string; name: string }[]): ColumnDef<ProductColumn, unknown>[] => [
   {
     accessorKey: "name",
     header: "Nome",
@@ -24,9 +25,11 @@ export const createColumns = (categories: { id: string; name: string }[]): Colum
       return (
         <div className="flex items-center gap-3">
           {product.imageUrl && (
-            <img
+            <Image
               src={product.imageUrl}
               alt={product.name}
+              width={40}
+              height={40}
               className="h-10 w-10 rounded-md object-cover border"
             />
           )}

@@ -1,28 +1,28 @@
-import { NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { updateProduct, deleteProduct, getProductById } from "@/lib/services/product.service";
+import { validateAdminApi } from "@/lib/tenant-server";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const context = await validateAdminApi();
   const { id } = await params;
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
 
-  if (!tenantId) {
-    return NextResponse.json({ error: "Tenant not found" }, { status: 401 });
+  if (!context) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { tenant } = context;
+
   try {
-    const product = await getProductById(tenantId, id);
+    const product = await getProductById(tenant.id, id);
     if (!product) {
-      return NextResponse.json({ error: "Product not found" }, { status: 404 });
+      return Response.json({ error: "Product not found" }, { status: 404 });
     }
-    return NextResponse.json(product);
+    return Response.json(product);
   } catch (error) {
     console.error("Error fetching product:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -30,21 +30,22 @@ export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const context = await validateAdminApi();
   const { id } = await params;
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
 
-  if (!tenantId) {
-    return NextResponse.json({ error: "Tenant not found" }, { status: 401 });
+  if (!context) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { tenant } = context;
 
   try {
     const body = await request.json();
-    await updateProduct(tenantId, id, body);
-    return NextResponse.json({ success: true });
+    await updateProduct(tenant.id, id, body);
+    return Response.json({ success: true });
   } catch (error) {
     console.error("Error updating product:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -52,19 +53,20 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const context = await validateAdminApi();
   const { id } = await params;
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
 
-  if (!tenantId) {
-    return NextResponse.json({ error: "Tenant not found" }, { status: 401 });
+  if (!context) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { tenant } = context;
+
   try {
-    await deleteProduct(tenantId, id);
-    return NextResponse.json({ success: true });
+    await deleteProduct(tenant.id, id);
+    return Response.json({ success: true });
   } catch (error) {
     console.error("Error deleting product:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

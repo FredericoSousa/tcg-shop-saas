@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { getTenant } from "@/lib/tenant-server";
 
 export type CheckoutItem = {
   inventoryId: string;
@@ -16,11 +16,10 @@ export type CustomerData = {
 };
 
 export async function POST(request: NextRequest) {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const tenant = await getTenant();
 
-  if (!tenantId) {
-    return NextResponse.json(
+  if (!tenant) {
+    return Response.json(
       { success: false, error: "Tenant ID não identificado" },
       { status: 401 },
     );
@@ -33,7 +32,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (!items || items.length === 0) {
-      return NextResponse.json(
+      return Response.json(
         { success: false, error: "O carrinho está vazio" },
         { status: 400 },
       );
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest) {
         const updateResult = await tx.inventoryItem.updateMany({
           where: {
             id: item.inventoryId,
-            tenantId, // Garante que a loja correta está sendo alterada
+            tenantId: tenant.id, // Garante que a loja correta está sendo alterada
             quantity: {
               gte: item.quantity, // Impede vendas abaixo de zero
             },
@@ -76,7 +75,7 @@ export async function POST(request: NextRequest) {
         where: {
           phoneNumber_tenantId: {
             phoneNumber: customerData.phoneNumber,
-            tenantId,
+            tenantId: tenant.id,
           },
         },
         update: {
@@ -85,14 +84,14 @@ export async function POST(request: NextRequest) {
         create: {
           name: customerData.name || "",
           phoneNumber: customerData.phoneNumber,
-          tenantId,
+          tenantId: tenant.id,
         },
       });
 
       // Criar registro de Order e OrderItems
       const newOrder = await tx.order.create({
         data: {
-          tenantId,
+          tenantId: tenant.id,
           customerId: customer.id,
           totalAmount,
           items: {
@@ -115,11 +114,11 @@ export async function POST(request: NextRequest) {
     revalidatePath("/admin/inventory");
 
     // Retornar ID pro Front
-    return NextResponse.json({ success: true, orderId: order.id });
+    return Response.json({ success: true, orderId: order.id });
   } catch (error: unknown) {
     const err = error as Error;
     console.error("[Checkout Error]", err.message);
-    return NextResponse.json(
+    return Response.json(
       {
         success: false,
         error:

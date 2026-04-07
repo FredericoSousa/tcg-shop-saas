@@ -1,4 +1,4 @@
-import { headers } from 'next/headers'
+import { getTenant } from '@/lib/tenant-server'
 import { prisma } from '@/lib/prisma'
 import { CheckCircle2, Package, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -8,16 +8,17 @@ export default async function SuccessPage({
 }: {
   searchParams: Promise<{ orderId?: string }>
 }) {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
+  const tenant = await getTenant();
 
-  if (!tenantId) {
+  if (!tenant) {
     return (
       <div className="p-8 text-center pt-24 bg-muted/20 min-h-screen">
         <h1 className="text-2xl font-bold">Loja não encontrada</h1>
       </div>
     )
   }
+
+  const tenantId = tenant.id;
 
   const { orderId } = await searchParams
 
@@ -58,9 +59,6 @@ export default async function SuccessPage({
     )
   }
 
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: tenantId }
-  })
 
   return (
     <main className="flex-1 bg-muted/20 min-h-screen flex flex-col">

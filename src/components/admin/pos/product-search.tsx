@@ -4,14 +4,20 @@ import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { CartItem } from "./pos-client";
+
+type ProductType = Omit<CartItem, "quantity"> & {
+  category?: { name: string } | null;
+};
 
 interface ProductSearchProps {
-  onSelect: (product: any) => void;
+  onSelect: (product: Omit<CartItem, "quantity">) => void;
 }
 
 export function ProductSearch({ onSelect }: ProductSearchProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,9 +83,11 @@ export function ProductSearch({ onSelect }: ProductSearchProps) {
               >
                 <div className="h-14 w-14 rounded-md bg-muted flex-shrink-0 overflow-hidden border">
                   {product.imageUrl ? (
-                    <img
+                    <Image
                       src={product.imageUrl}
                       alt={product.name}
+                      width={56}
+                      height={56}
                       className="h-full w-full object-cover"
                     />
                   ) : (

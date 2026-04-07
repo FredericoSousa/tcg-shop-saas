@@ -1,13 +1,10 @@
-import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { 
   ArrowLeft, 
   Mail, 
   Phone, 
   Calendar, 
-  ShoppingBag, 
   User as UserIcon,
-  ChevronRight,
   Users
 } from "lucide-react";
 import Link from "next/link";
@@ -15,33 +12,19 @@ import { getCustomerWithOrders, getCustomerStats } from "@/lib/services/customer
 import { StatusBadge } from "@/components/admin/status-badge";
 import { CustomerOrdersTable } from "@/components/admin/customer-orders-table";
 import { PageHeader } from "@/components/admin/page-header";
+import { getAdminContext } from "@/lib/tenant-server";
 
 export default async function CustomerDetailsPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
-
-  if (!tenantId) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 bg-card rounded-xl border border-dashed text-center">
-        <h1 className="text-2xl font-bold text-destructive mb-2">
-          Falha de Autorização
-        </h1>
-        <p className="text-muted-foreground">
-          Esta página requer identificação de Lojista vinculada ao subdomínio ou
-          sessão ativa.
-        </p>
-      </div>
-    );
-  }
-
+  const { tenant } = await getAdminContext();
   const { id } = await params;
+  
   const [customer, stats] = await Promise.all([
-    getCustomerWithOrders(tenantId, id),
-    getCustomerStats(tenantId, id)
+    getCustomerWithOrders(tenant.id, id),
+    getCustomerStats(tenant.id, id)
   ]);
 
   if (!customer) {

@@ -1,36 +1,21 @@
-import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { getTenant } from "@/lib/tenant-server";
 
 export async function GET() {
   try {
-    const headersList = await headers();
-    const tenantId = headersList.get("x-tenant-id");
-
-    if (!tenantId) {
-      return NextResponse.json(
-        { error: "No tenant ID found" },
-        { status: 404 },
-      );
-    }
-
-    const tenant = await prisma.tenant.findUnique({
-      where: { id: tenantId },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-      },
-    });
+    const tenant = await getTenant();
 
     if (!tenant) {
-      return NextResponse.json({ error: "Tenant not found" }, { status: 404 });
+      return Response.json({ error: "Tenant not found" }, { status: 404 });
     }
 
-    return NextResponse.json(tenant);
+    return Response.json({
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+    });
   } catch (error) {
     console.error("Error fetching current tenant:", error);
-    return NextResponse.json(
+    return Response.json(
       { error: "Internal server error" },
       { status: 500 },
     );

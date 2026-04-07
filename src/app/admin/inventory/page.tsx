@@ -1,5 +1,4 @@
-import { headers } from "next/headers";
-import { prisma } from "@/lib/prisma";
+import { getAdminContext } from "@/lib/tenant-server";
 import { PageHeader } from "@/components/admin/page-header";
 import { Package, Upload } from "lucide-react";
 import Link from "next/link";
@@ -17,26 +16,8 @@ export default async function InventoryPage(props: {
   const limit = Number(searchParams?.limit) || 10;
   const search = typeof searchParams?.search === "string" ? searchParams.search : undefined;
 
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
-
-  if (!tenantId) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 bg-card rounded-xl border border-dashed text-center">
-        <h1 className="text-2xl font-bold text-destructive mb-2">
-          Autenticação Necessária
-        </h1>
-        <p className="text-muted-foreground">
-          Você precisa estar em um subdomínio válido de lojista ou logado para
-          acessar esta página.
-        </p>
-      </div>
-    );
-  }
-
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: tenantId },
-  });
+  const { tenant } = await getAdminContext();
+  const tenantId = tenant.id;
 
   const { items: rawInventory, pageCount } = await getInventoryPaginated(tenantId, page, limit, search);
 

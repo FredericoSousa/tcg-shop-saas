@@ -5,9 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Search, User, Check, Loader2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+export interface CustomerType {
+  id: string;
+  name: string;
+  phoneNumber: string;
+  email?: string | null;
+}
+
 interface CustomerSelectorProps {
-  onSelect: (customer: any) => void;
-  selectedCustomer: any | null;
+  onSelect: (customer: CustomerType | null) => void;
+  selectedCustomer: CustomerType | null;
   hideLabel?: boolean;
   size?: "sm" | "default";
 }
@@ -19,7 +26,7 @@ export function CustomerSelector({
   size = "default" 
 }: CustomerSelectorProps) {
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<CustomerType[]>([]);
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

@@ -1,16 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { getTenant } from "@/lib/tenant-server";
 import { prisma } from "@/lib/prisma";
 
 export async function GET(
-  request: NextRequest,
+  request: Request,
   { params }: { params: Promise<{ phone: string }> }
 ) {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const tenant = await getTenant();
 
-  if (!tenantId) {
-    return NextResponse.json(
+  if (!tenant) {
+    return Response.json(
       { success: false, error: "Tenant ID não identificado" },
       { status: 401 }
     );
@@ -23,7 +21,7 @@ export async function GET(
       where: {
         phoneNumber_tenantId: {
           phoneNumber: phone,
-          tenantId,
+          tenantId: tenant.id,
         },
       },
       select: {
@@ -32,13 +30,13 @@ export async function GET(
     });
 
     if (customer) {
-      return NextResponse.json({ exists: true });
+      return Response.json({ exists: true });
     }
 
-    return NextResponse.json({ exists: false });
+    return Response.json({ exists: false });
   } catch (error) {
     console.error("[Customer Lookup Error]", error);
-    return NextResponse.json(
+    return Response.json(
       { success: false, error: "Erro ao buscar cliente" },
       { status: 500 }
     );

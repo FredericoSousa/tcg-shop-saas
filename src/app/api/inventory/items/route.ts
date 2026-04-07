@@ -1,21 +1,22 @@
-import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { scryfall } from "@/lib/scryfall";
 import { revalidatePath } from "next/cache";
 import { Game, Prisma } from "@prisma/client";
 import { ScryfallCard } from "@/lib/types/scryfall";
+import { validateAdminApi } from "@/lib/tenant-server";
 
 export async function POST(request: NextRequest) {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const context = await validateAdminApi();
 
-  if (!tenantId) {
-    return NextResponse.json(
-      { error: "Unauthorized: Tenant ID missing" },
+  if (!context) {
+    return Response.json(
+      { error: "Unauthorized" },
       { status: 401 },
     );
   }
+
+  const { tenant } = context;
 
   try {
     const body = await request.json();
@@ -28,7 +29,7 @@ export async function POST(request: NextRequest) {
       !condition ||
       !language
     ) {
-      return NextResponse.json(
+      return Response.json(
         { error: "Invalid data" },
         { status: 400 },
       );
@@ -41,7 +42,7 @@ export async function POST(request: NextRequest) {
     if (!cardTemplate) {
       const scryfallData = await scryfall.getCardById(scryfallId);
       if (!scryfallData) {
-        return NextResponse.json(
+        return Response.json(
           { error: "Card not found in Scryfall" },
           { status: 404 },
         );
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
 
     const existing = await prisma.inventoryItem.findFirst({
       where: {
-        tenantId,
+        tenantId: tenant.id,
         cardTemplateId: cardTemplate.id,
         price,
         condition,
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
     } else {
       await prisma.inventoryItem.create({
         data: {
-          tenantId,
+          tenantId: tenant.id,
           cardTemplateId: cardTemplate.id,
           price,
           quantity,
@@ -103,10 +104,10 @@ export async function POST(request: NextRequest) {
     }
 
     revalidatePath("/admin/inventory");
-    return NextResponse.json({ success: true });
+    return Response.json({ success: true });
   } catch (error) {
     console.error("Error adding inventory item:", error);
-    return NextResponse.json(
+    return Response.json(
       { error: "Internal server error" },
       { status: 500 },
     );
@@ -114,21 +115,22 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const context = await validateAdminApi();
 
-  if (!tenantId) {
-    return NextResponse.json(
-      { error: "Unauthorized: Tenant ID missing" },
+  if (!context) {
+    return Response.json(
+      { error: "Unauthorized" },
       { status: 401 },
     );
   }
+
+  const { tenant } = context;
 
   try {
     const { ids } = await request.json();
 
     if (!Array.isArray(ids) || !ids.length) {
-      return NextResponse.json(
+      return Response.json(
         { error: "No items selected" },
         { status: 400 },
       );
@@ -137,16 +139,16 @@ export async function DELETE(request: NextRequest) {
     await prisma.inventoryItem.updateMany({
       where: {
         id: { in: ids },
-        tenantId, // Ensure tenant isolation
+        tenantId: tenant.id, // Ensure tenant isolation
       },
       data: { active: false },
     });
 
     revalidatePath("/admin/inventory");
-    return NextResponse.json({ success: true });
+    return Response.json({ success: true });
   } catch (error) {
     console.error("Error deleting inventory items:", error);
-    return NextResponse.json(
+    return Response.json(
       { error: "Internal server error" },
       { status: 500 },
     );
@@ -154,21 +156,22 @@ export async function DELETE(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const context = await validateAdminApi();
 
-  if (!tenantId) {
-    return NextResponse.json(
-      { error: "Unauthorized: Tenant ID missing" },
+  if (!context) {
+    return Response.json(
+      { error: "Unauthorized" },
       { status: 401 },
     );
   }
+
+  const { tenant } = context;
 
   try {
     const { id, price, quantity } = await request.json();
 
     if (!id || (price === undefined && quantity === undefined)) {
-      return NextResponse.json(
+      return Response.json(
         { error: "Invalid data" },
         { status: 400 },
       );
@@ -181,16 +184,16 @@ export async function PATCH(request: NextRequest) {
     await prisma.inventoryItem.update({
       where: {
         id,
-        tenantId, // Ensure tenant isolation
+        tenantId: tenant.id, // Ensure tenant isolation
       },
       data,
     });
 
     revalidatePath("/admin/inventory");
-    return NextResponse.json({ success: true });
+    return Response.json({ success: true });
   } catch (error) {
     console.error("Error updating inventory item:", error);
-    return NextResponse.json(
+    return Response.json(
       { error: "Internal server error" },
       { status: 500 },
     );

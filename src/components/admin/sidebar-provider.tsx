@@ -16,10 +16,12 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const saved = localStorage.getItem("sidebar-collapsed");
-    if (saved !== null) {
-      setIsCollapsed(saved === "true");
-    }
-    setIsMounted(true);
+    queueMicrotask(() => {
+      if (saved !== null) {
+        setIsCollapsed(saved === "true");
+      }
+      setIsMounted(true);
+    });
   }, []);
 
   useEffect(() => {

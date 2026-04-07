@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { validateAdminApi } from "@/lib/tenant-server";
 
 export type POSCheckoutItem = {
   productId: string;
@@ -16,15 +16,16 @@ export type POSCustomerData = {
 };
 
 export async function POST(request: NextRequest) {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const context = await validateAdminApi();
 
-  if (!tenantId) {
-    return NextResponse.json(
-      { success: false, error: "Tenant ID não identificado" },
+  if (!context) {
+    return Response.json(
+      { success: false, error: "Unauthorized" },
       { status: 401 },
     );
   }
+
+  const { tenant } = context;
 
   try {
     const { items, customerData } = (await request.json()) as {
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (!items || items.length === 0) {
-      return NextResponse.json(
+      return Response.json(
         { success: false, error: "O carrinho está vazio" },
         { status: 400 },
       );
@@ -46,7 +47,7 @@ export async function POST(request: NextRequest) {
         const product = await tx.product.findFirst({
           where: {
             id: item.productId,
-            tenantId,
+            tenantId: tenant.id,
             active: true,
             deletedAt: null,
           }
@@ -81,7 +82,7 @@ export async function POST(request: NextRequest) {
           where: {
             phoneNumber_tenantId: {
               phoneNumber: customerData.phoneNumber,
-              tenantId,
+              tenantId: tenant.id,
             },
           },
           update: {
@@ -90,7 +91,7 @@ export async function POST(request: NextRequest) {
           create: {
             name: customerData.name || "Consumidor Final",
             phoneNumber: customerData.phoneNumber,
-            tenantId,
+            tenantId: tenant.id,
           },
         });
         customerId = customer.id;
@@ -101,7 +102,7 @@ export async function POST(request: NextRequest) {
       // Check for existing PENDING order for this customer and tenant from POS
       const existingOrder = await tx.order.findFirst({
         where: {
-          tenantId,
+          tenantId: tenant.id,
           customerId,
           status: "PENDING",
           source: "POS",
@@ -150,7 +151,7 @@ export async function POST(request: NextRequest) {
         // Creating a new order
         const newOrder = await tx.order.create({
           data: {
-            tenantId,
+            tenantId: tenant.id,
             customerId,
             totalAmount,
             status: "PENDING",
@@ -173,11 +174,11 @@ export async function POST(request: NextRequest) {
     revalidatePath("/admin/orders");
     revalidatePath("/admin/products");
 
-    return NextResponse.json({ success: true, orderId: order.id });
+    return Response.json({ success: true, orderId: order.id });
   } catch (error: unknown) {
     const err = error as Error;
     console.error("[POS Checkout Error]", err.message);
-    return NextResponse.json(
+    return Response.json(
       {
         success: false,
         error: err.message || "Erro no processamento do PDV.",

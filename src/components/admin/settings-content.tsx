@@ -7,7 +7,6 @@ import {
   Palette, 
   Globe, 
   MessageSquare, 
-  Layout, 
   Mail, 
   Phone, 
   MapPin, 

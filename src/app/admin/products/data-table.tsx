@@ -30,19 +30,19 @@ import { useTableState } from "@/lib/hooks/use-table-state";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { TableSearch } from "@/components/admin/table-search";
 
-interface DataTableProps<TData, TValue = unknown> {
+interface DataTableProps<TData> {
   data: TData[];
   pageCount: number;
   total?: number;
   categories: { id: string; name: string }[];
 }
 
-export function DataTable<TData extends { id: string }, TValue = unknown>({
+export function DataTable<TData extends { id: string }>({
   data,
   pageCount: serverPageCount,
   total: serverTotal,
   categories,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps<TData>) {
   const {
     page,
     limit,
@@ -58,8 +58,9 @@ export function DataTable<TData extends { id: string }, TValue = unknown>({
 
   const currentCategory = getFilter("category") || "all";
 
-  const columns = React.useMemo(() => createColumns(categories) as ColumnDef<TData, any>[], [categories]);
+  const columns = React.useMemo(() => createColumns(categories) as ColumnDef<TData, unknown>[], [categories]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

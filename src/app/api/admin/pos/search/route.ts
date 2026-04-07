@@ -1,14 +1,14 @@
-import { NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { validateAdminApi } from "@/lib/tenant-server";
 import { getProductsPaginated } from "@/lib/services/product.service";
 
 export async function GET(request: Request) {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const context = await validateAdminApi();
   
-  if (!tenantId) {
-    return NextResponse.json({ error: "Tenant not found" }, { status: 401 });
+  if (!context) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { tenant } = context;
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("q") || "";
@@ -18,10 +18,10 @@ export async function GET(request: Request) {
   const page = 1;
 
   try {
-    const data = await getProductsPaginated(tenantId, page, limit, search);
-    return NextResponse.json(data.items);
+    const data = await getProductsPaginated(tenant.id, page, limit, search);
+    return Response.json(data.items);
   } catch (error) {
     console.error("Error in POS search API:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

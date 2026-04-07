@@ -1,8 +1,5 @@
 import Link from "next/link";
 import {
-  Camera,
-  MessageSquare,
-  Send,
   Mail,
   Phone,
   MapPin

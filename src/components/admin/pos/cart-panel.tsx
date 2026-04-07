@@ -2,17 +2,17 @@
 
 import { CartItem } from "./pos-client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Trash2, Minus, Plus, CreditCard, User } from "lucide-react";
+import { Trash2, Minus, Plus } from "lucide-react";
+import Image from "next/image";
 
-import { CustomerSelector } from "./customer-selector";
+import { CustomerSelector, CustomerType } from "./customer-selector";
 
 interface CartPanelProps {
   items: CartItem[];
   onUpdateQuantity: (id: string, delta: number) => void;
   onRemove: (id: string) => void;
-  selectedCustomer: any | null;
-  onSelectCustomer: (data: any) => void;
+  selectedCustomer: CustomerType | null;
+  onSelectCustomer: (customer: CustomerType | null) => void;
   onCheckout: () => void;
   isSubmitting: boolean;
 }
@@ -48,7 +48,15 @@ export function CartPanel({
             items.map((item) => (
               <div key={item.id} className="flex gap-3 p-2 rounded-md bg-background border shadow-sm">
                 <div className="h-10 w-10 rounded bg-muted overflow-hidden flex-shrink-0 border">
-                  {item.imageUrl && <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />}
+                  {item.imageUrl && (
+                    <Image 
+                      src={item.imageUrl} 
+                      alt={item.name} 
+                      width={40}
+                      height={40}
+                      className="h-full w-full object-cover" 
+                    />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="text-xs font-semibold truncate uppercase">{item.name}</h4>

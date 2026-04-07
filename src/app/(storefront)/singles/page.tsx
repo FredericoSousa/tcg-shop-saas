@@ -1,7 +1,7 @@
-import { headers } from "next/headers";
 import { ShopClient } from "@/components/shop/shop-client";
 import { Sparkles } from "lucide-react";
 import { getStorefrontInventory, getStorefrontFilters } from "@/lib/services/inventory.service";
+import { getTenant } from "@/lib/tenant-server";
 
 export default async function ShopPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -19,10 +19,9 @@ export default async function ShopPage(props: {
     sort: typeof searchParams?.sort === "string" ? searchParams.sort : undefined,
   };
 
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const tenant = await getTenant();
 
-  if (!tenantId) {
+  if (!tenant) {
     return (
       <div className="p-8 text-center pt-24 min-h-screen flex items-center justify-center bg-muted/20">
         <div className="bg-white p-12 rounded-2xl shadow-sm border max-w-md w-full space-y-4">
@@ -38,8 +37,8 @@ export default async function ShopPage(props: {
     );
   }
 
-  const { items: inventory, total, pageCount } = await getStorefrontInventory(tenantId, page, filters);
-  const storefrontFilters = await getStorefrontFilters(tenantId);
+  const { items: inventory, total, pageCount } = await getStorefrontInventory(tenant.id, page, filters);
+  const storefrontFilters = await getStorefrontFilters(tenant.id);
 
   return (
     <main className="flex-1">
@@ -50,7 +49,7 @@ export default async function ShopPage(props: {
         </header>
 
         <ShopClient
-          tenantId={tenantId}
+          tenantId={tenant.id}
           initialInventory={inventory}
           availableFilters={storefrontFilters}
           pageCount={pageCount}

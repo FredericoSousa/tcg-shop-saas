@@ -1,15 +1,14 @@
-import { headers } from 'next/headers'
+import { getTenant } from '@/lib/tenant-server'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { ShoppingBag, Sparkles, Shield, Truck } from 'lucide-react'
 import { SetBadge } from '@/components/ui/set-badge'
 
 export default async function HomePage() {
-  const headersList = await headers()
-  const tenantId = headersList.get('x-tenant-id')
+  const tenant = await getTenant();
 
   // If no tenant subdomain, show a generic landing
-  if (!tenantId) {
+  if (!tenant) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white">
         <div className="text-center max-w-lg px-6">
@@ -17,12 +16,10 @@ export default async function HomePage() {
           <p className="text-zinc-400 text-lg mb-8">Plataforma multi-loja para venda de cards. Acesse pelo subdomínio da sua loja.</p>
         </div>
       </div>
-    )
+    );
   }
 
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: tenantId }
-  })
+  const tenantId = tenant.id;
 
   // Fetch some stats
   const [totalCards, totalSets, mostExpensiveCards] = await Promise.all([
@@ -38,10 +35,10 @@ export default async function HomePage() {
       orderBy: { price: 'desc' },
       take: 5,
     }),
-  ])
+  ]);
 
-  const uniqueSets = new Set(totalSets.map(i => i.cardTemplate.set)).size
-  const shopName = tenant?.name || 'TCG Shop'
+  const uniqueSets = new Set(totalSets.map(i => i.cardTemplate.set)).size;
+  const shopName = tenant.name;
 
   return (
     <main className="min-h-screen bg-zinc-50">

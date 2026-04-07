@@ -1,23 +1,17 @@
-import { NextResponse } from "next/server";
-import { getSession } from "@/lib/auth";
-import { headers } from "next/headers";
+import { validateAdminApi } from "@/lib/tenant-server";
 import {
   getCustomersPaginated,
   createCustomer,
 } from "@/lib/services/customer.service";
 
 export async function GET(request: Request) {
-  const session = await getSession();
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const context = await validateAdminApi();
 
-  if (!session || session.role !== "ADMIN" || session.tenantId !== tenantId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!context) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!tenantId) {
-    return NextResponse.json({ error: "Tenant ID is required" }, { status: 400 });
-  }
+  const { tenant } = context;
 
   try {
     const { searchParams } = new URL(request.url);
@@ -26,38 +20,34 @@ export async function GET(request: Request) {
     const search = searchParams.get("search") || undefined;
     const includeDeleted = searchParams.get("includeDeleted") === "true";
 
-    const result = await getCustomersPaginated(tenantId, page, limit, search, includeDeleted);
-    return NextResponse.json(result);
+    const result = await getCustomersPaginated(tenant.id, page, limit, search, includeDeleted);
+    return Response.json(result);
   } catch (error) {
     console.error("Error fetching customers:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
 export async function POST(request: Request) {
-  const session = await getSession();
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const context = await validateAdminApi();
 
-  if (!session || session.role !== "ADMIN" || session.tenantId !== tenantId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!context) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  if (!tenantId) {
-    return NextResponse.json({ error: "Tenant ID is required" }, { status: 400 });
-  }
+  const { tenant } = context;
 
   try {
     const { name, email, phoneNumber } = await request.json();
 
     if (!name || !phoneNumber) {
-      return NextResponse.json({ error: "Nome e Telefone são obrigatórios" }, { status: 400 });
+      return Response.json({ error: "Nome e Telefone são obrigatórios" }, { status: 400 });
     }
 
-    const customer = await createCustomer(tenantId, { name, email, phoneNumber });
-    return NextResponse.json(customer);
+    const customer = await createCustomer(tenant.id, { name, email, phoneNumber });
+    return Response.json(customer);
   } catch (error) {
     console.error("Error creating customer:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

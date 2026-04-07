@@ -1,26 +1,26 @@
-import { NextResponse } from "next/server";
-import { headers } from "next/headers";
+import { validateAdminApi } from "@/lib/tenant-server";
 import { updateCategory, deleteCategory } from "@/lib/services/product.service";
 
 export async function PUT(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const context = await validateAdminApi();
   const { id } = await params;
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
 
-  if (!tenantId) {
-    return NextResponse.json({ error: "Tenant not found" }, { status: 401 });
+  if (!context) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const { tenant } = context;
 
   try {
     const body = await request.json();
-    await updateCategory(tenantId, id, body);
-    return NextResponse.json({ success: true });
+    await updateCategory(tenant.id, id, body);
+    return Response.json({ success: true });
   } catch (error) {
     console.error("Error updating category:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }
 
@@ -28,19 +28,20 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const context = await validateAdminApi();
   const { id } = await params;
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
 
-  if (!tenantId) {
-    return NextResponse.json({ error: "Tenant not found" }, { status: 401 });
+  if (!context) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { tenant } = context;
+
   try {
-    await deleteCategory(tenantId, id);
-    return NextResponse.json({ success: true });
+    await deleteCategory(tenant.id, id);
+    return Response.json({ success: true });
   } catch (error) {
     console.error("Error deleting category:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

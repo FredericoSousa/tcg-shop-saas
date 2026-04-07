@@ -12,7 +12,6 @@ import {
   RowSelectionState,
   useReactTable,
 } from "@tanstack/react-table";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import * as React from "react";
 
 import { Button } from "@/components/ui/button";

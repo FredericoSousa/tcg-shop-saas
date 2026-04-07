@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
         controller.enqueue(new TextEncoder().encode(finalData));
 
         controller.close();
-      } catch (error) {
+      } catch {
         const errorProgress: ImportProgress = {
           currentPage: 0,
           totalPages: 0,

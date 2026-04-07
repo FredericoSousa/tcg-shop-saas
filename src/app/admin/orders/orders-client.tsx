@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CustomerSelector } from "@/components/admin/pos/customer-selector";
+import { CustomerSelector, CustomerType } from "@/components/admin/pos/customer-selector";
 import { useTableState } from "@/lib/hooks/use-table-state";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { TableSearch } from "@/components/admin/table-search";
@@ -147,7 +147,7 @@ export function OrdersClient({
   const currentStatus = getFilter("status");
   const customerPhone = getFilter("customerPhone");
 
-  const [selectedCustomer, setSelectedCustomer] = React.useState<any | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = React.useState<CustomerType | null>(null);
 
   // Sync selectedCustomer state if customerPhone is in URL
   React.useEffect(() => {
@@ -156,7 +156,7 @@ export function OrdersClient({
     }
   }, [customerPhone]);
 
-  const handleCustomerSelect = (customer: any | null) => {
+  const handleCustomerSelect = (customer: CustomerType | null) => {
     setSelectedCustomer(customer);
     setFilter("customerPhone", customer?.phoneNumber || null);
   };

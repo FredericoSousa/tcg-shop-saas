@@ -1,19 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { OrderStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
+import { validateAdminApi } from "@/lib/tenant-server";
 
-export async function PATCH(request: NextRequest) {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+export async function PATCH(request: Request) {
+  const context = await validateAdminApi();
 
-  if (!tenantId) {
-    return NextResponse.json(
+  if (!context) {
+    return Response.json(
       { success: false, error: "Ação não autorizada. Escopo restrito do Lojista." },
       { status: 401 },
     );
   }
+
+  const { tenant } = context;
 
   try {
     const { orderId, status } = (await request.json()) as {
@@ -22,7 +22,7 @@ export async function PATCH(request: NextRequest) {
     };
 
     if (!orderId || !status) {
-      return NextResponse.json(
+      return Response.json(
         { success: false, error: "orderId e status são obrigatórios" },
         { status: 400 },
       );
@@ -31,19 +31,19 @@ export async function PATCH(request: NextRequest) {
     // If cancelling, restore inventory quantities in a transaction
     if (status === "CANCELLED") {
       const order = await prisma.order.findUnique({
-        where: { id: orderId, tenantId },
+        where: { id: orderId, tenantId: tenant.id },
         include: { items: true },
       });
 
       if (!order) {
-        return NextResponse.json(
+        return Response.json(
           { success: false, error: "Pedido não encontrado." },
           { status: 404 },
         );
       }
 
       if (order.status === "CANCELLED") {
-        return NextResponse.json(
+        return Response.json(
           { success: false, error: "Pedido já está cancelado." },
           { status: 400 },
         );
@@ -64,13 +64,13 @@ export async function PATCH(request: NextRequest) {
           }
         }
         await tx.order.update({
-          where: { id: orderId, tenantId },
+          where: { id: orderId, tenantId: tenant.id },
           data: { status },
         });
       });
     } else {
       await prisma.order.update({
-        where: { id: orderId, tenantId },
+        where: { id: orderId, tenantId: tenant.id },
         data: { status },
       });
     }
@@ -79,11 +79,11 @@ export async function PATCH(request: NextRequest) {
     revalidatePath("/admin/inventory");
     revalidatePath("/singles");
     revalidatePath("/");
-    return NextResponse.json({ success: true });
+    return Response.json({ success: true });
   } catch (err: unknown) {
     const error = err as Error;
     console.error("[Orders API]", error.message);
-    return NextResponse.json(
+    return Response.json(
       { success: false, error: "Falha ao processar atualização de status do pedido." },
       { status: 500 },
     );

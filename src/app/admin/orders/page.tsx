@@ -1,9 +1,9 @@
-import { headers } from "next/headers";
 import { PageHeader } from "@/components/admin/page-header";
 import { ShoppingCart } from "lucide-react";
-import { OrdersClient } from "./orders-client";
+import { OrdersClient, OrderType } from "./orders-client";
 import { getOrdersPaginated } from "@/lib/services/order.service";
 import { OrderStatus } from "@prisma/client";
+import { getAdminContext } from "@/lib/tenant-server";
 
 export default async function OrdersPage({
   searchParams,
@@ -17,23 +17,8 @@ export default async function OrdersPage({
     customerPhone?: string;
   }>;
 }) {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const { tenant } = await getAdminContext();
   const params = await searchParams;
-
-  if (!tenantId) {
-    return (
-      <div className="flex flex-col items-center justify-center p-12 bg-card rounded-xl border border-dashed text-center">
-        <h1 className="text-2xl font-bold text-destructive mb-2">
-          Falha de Autorização
-        </h1>
-        <p className="text-muted-foreground">
-          Esta página requer identificação de Lojista vinculada ao subdomínio ou
-          sessão ativa.
-        </p>
-      </div>
-    );
-  }
 
   const page = Number(params.page) || 1;
   const limit = Number(params.limit) || 8;
@@ -43,7 +28,7 @@ export default async function OrdersPage({
   const customerPhone = params.customerPhone;
 
   const { items, total, pageCount } = await getOrdersPaginated(
-    tenantId,
+    tenant.id,
     page,
     limit,
     {
@@ -64,7 +49,7 @@ export default async function OrdersPage({
 
       <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden p-0">
         <OrdersClient
-          initialOrders={items as any}
+          initialOrders={items as unknown as OrderType[]}
           total={total}
           pageCount={pageCount}
         />

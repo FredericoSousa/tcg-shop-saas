@@ -1,37 +1,34 @@
-import { NextResponse } from "next/server";
+import { validateAdminApi } from "@/lib/tenant-server";
 import { prisma } from "@/lib/prisma";
-import { getSession } from "@/lib/auth";
-import { headers } from "next/headers";
 
 export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await getSession();
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  const context = await validateAdminApi();
 
-  if (!session || session.role !== "ADMIN" || session.tenantId !== tenantId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (!context) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const { session, tenant } = context;
   const { id } = await params;
 
   // Prevent admin from deleting themselves
   if (session.userId === id) {
-    return NextResponse.json({ error: "Cannot delete yourself" }, { status: 400 });
+    return Response.json({ error: "Cannot delete yourself" }, { status: 400 });
   }
 
   try {
     const user = await prisma.user.findFirst({
       where: {
         id,
-        tenantId,
+        tenantId: tenant.id,
       },
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return Response.json({ error: "User not found" }, { status: 404 });
     }
 
     await prisma.user.delete({
@@ -40,9 +37,9 @@ export async function DELETE(
       },
     });
 
-    return NextResponse.json({ success: true });
+    return Response.json({ success: true });
   } catch (error) {
     console.error("Error deleting user:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

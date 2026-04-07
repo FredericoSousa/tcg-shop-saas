@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
 import {
   LayoutDashboard,
   Package,
@@ -48,10 +49,12 @@ export function Sidebar({ tenant }: SidebarProps) {
         >
           {tenant.logoUrl ? (
             <div className="flex flex-col gap-0.5 shrink-0">
-              <img
+              <Image
                 src={tenant.logoUrl}
                 alt={tenant.name}
-                className={isCollapsed ? "h-8 w-8 object-contain" : "h-auto w-auto"}
+                width={isCollapsed ? 32 : 48}
+                height={32}
+                className={isCollapsed ? "h-8 w-8 object-contain" : "h-7 w-auto object-contain"}
               />
             </div>
           ) : (
