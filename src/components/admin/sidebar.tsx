@@ -8,6 +8,7 @@ import {
   ShoppingCart,
   Settings,
   Users,
+  UserCog,
 } from "lucide-react";
 import { Tenant } from "@prisma/client";
 
@@ -15,7 +16,8 @@ const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Estoque", href: "/admin/inventory", icon: Package },
   { name: "Vendas", href: "/admin/orders", icon: ShoppingCart },
-  { name: "Usuários", href: "/admin/users", icon: Users },
+  { name: "Clientes", href: "/admin/customers", icon: Users },
+  { name: "Usuários", href: "/admin/users", icon: UserCog },
   { name: "Configurações", href: "/admin/settings", icon: Settings },
 ];
 

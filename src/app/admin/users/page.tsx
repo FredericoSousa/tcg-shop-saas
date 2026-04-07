@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Trash2, Shield, User as UserIcon, Loader2, Users } from "lucide-react";
+import { Plus, Trash2, Shield, User as UserIcon, Loader2, UserCog } from "lucide-react";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Button } from "@/components/ui/button";
@@ -129,7 +129,7 @@ export default function UsersPage() {
       <PageHeader
         title="Usuários"
         description="Gerencie quem tem acesso ao seu painel administrativo"
-        icon={Users}
+        icon={UserCog}
         actions={
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger

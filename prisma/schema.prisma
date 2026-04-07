@@ -25,9 +25,9 @@ model Tenant {
   slug        String  @unique
   name        String
   active      Boolean @default(true)
-  brandColor  String?
-  logoUrl     String?
-  faviconUrl  String?
+  brandColor  String? @map("brand_color")
+  logoUrl     String? @map("logo_url")
+  faviconUrl  String? @map("favicon_url")
   description String?
   address     String?
   phone       String?
@@ -53,11 +53,11 @@ enum UserRole {
 model User {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   username     String
-  passwordHash String
+  passwordHash String   @map("password_hash")
   role         UserRole @default(USER)
-  tenantId     String   @db.Uuid
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  tenantId     String   @map("tenant_id") @db.Uuid
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -70,8 +70,8 @@ model CardTemplate {
   id           String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name         String
   set          String
-  imageUrl     String?
-  backImageUrl String?
+  imageUrl     String? @map("image_url")
+  backImageUrl String? @map("back_image_url")
   game         Game
   metadata     Json?
 
@@ -83,8 +83,8 @@ model CardTemplate {
 
 model InventoryItem {
   id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId       String    @db.Uuid
-  cardTemplateId String    @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  cardTemplateId String    @map("card_template_id") @db.Uuid
   price          Decimal
   quantity       Int       @default(0)
   condition      Condition
@@ -102,6 +102,32 @@ model InventoryItem {
   @@map("inventory_items")
 }
 
+model ProductCategory {
+  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name            String
+  description     String?
+  showOnEcommerce Boolean @default(true) @map("show_on_ecommerce")
+
+  products Product[]
+
+  @@map("product_categories")
+}
+
+model Product {
+  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  description String?
+  imageUrl    String? @map("image_url")
+  price       Decimal
+  categoryId  String  @map("category_id") @db.Uuid
+
+  category   ProductCategory @relation(fields: [categoryId], references: [id])
+  orderItems OrderItem[]
+
+  @@index([name])
+  @@map("products")
+}
+
 enum OrderStatus {
   PENDING
   PAID
@@ -111,12 +137,12 @@ enum OrderStatus {
 
 model Order {
   id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String      @db.Uuid
-  customerId  String      @db.Uuid
-  totalAmount Decimal
+  tenantId    String      @map("tenant_id") @db.Uuid
+  customerId  String      @map("customer_id") @db.Uuid
+  totalAmount Decimal     @map("total_amount")
   status      OrderStatus @default(PENDING)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime?   @updatedAt
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime?   @updatedAt @map("updated_at")
 
   tenant   Tenant      @relation(fields: [tenantId], references: [id])
   customer Customer    @relation(fields: [customerId], references: [id])
@@ -128,29 +154,34 @@ model Order {
 
 model OrderItem {
   id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId         String  @db.Uuid
-  inventoryItemId String  @db.Uuid
+  orderId         String  @map("order_id") @db.Uuid
+  inventoryItemId String? @map("inventory_item_id") @db.Uuid
+  productId       String? @map("product_id") @db.Uuid
   quantity        Int
-  priceAtPurchase Decimal
+  priceAtPurchase Decimal @map("price_at_purchase")
 
-  order         Order         @relation(fields: [orderId], references: [id])
-  inventoryItem InventoryItem @relation(fields: [inventoryItemId], references: [id])
+  order         Order          @relation(fields: [orderId], references: [id])
+  inventoryItem InventoryItem? @relation(fields: [inventoryItemId], references: [id])
+  product       Product?       @relation(fields: [productId], references: [id])
 
   @@map("order_items")
 }
 
 model Customer {
-  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name        String
-  phoneNumber String
-  tenantId    String   @db.Uuid
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  email       String?
+  phoneNumber String    @map("phone_number")
+  tenantId    String    @map("tenant_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   tenant Tenant  @relation(fields: [tenantId], references: [id])
   orders Order[]
 
   @@unique([phoneNumber, tenantId])
   @@index([tenantId])
+  @@index([deletedAt])
   @@map("customers")
 }
