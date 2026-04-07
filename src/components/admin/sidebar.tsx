@@ -16,6 +16,7 @@ const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Estoque", href: "/admin/inventory", icon: Package },
   { name: "Vendas", href: "/admin/orders", icon: ShoppingCart },
+  { name: "Produtos", href: "/admin/products", icon: Package },
   { name: "Clientes", href: "/admin/customers", icon: Users },
   { name: "Usuários", href: "/admin/users", icon: UserCog },
   { name: "Configurações", href: "/admin/settings", icon: Settings },

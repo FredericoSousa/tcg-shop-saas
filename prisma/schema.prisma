@@ -41,6 +41,8 @@ model Tenant {
   orders    Order[]
   users     User[]
   customers Customer[]
+  products  Product[]
+  productCategories ProductCategory[]
 
   @@map("tenants")
 }
@@ -107,9 +109,16 @@ model ProductCategory {
   name            String
   description     String?
   showOnEcommerce Boolean @default(true) @map("show_on_ecommerce")
+  tenantId        String  @map("tenant_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
 
+  tenant   Tenant    @relation(fields: [tenantId], references: [id])
   products Product[]
 
+  @@index([tenantId])
+  @@index([deletedAt])
   @@map("product_categories")
 }
 
@@ -120,11 +129,19 @@ model Product {
   imageUrl    String? @map("image_url")
   price       Decimal
   categoryId  String  @map("category_id") @db.Uuid
+  tenantId    String  @map("tenant_id") @db.Uuid
+  active      Boolean @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
+  tenant     Tenant          @relation(fields: [tenantId], references: [id])
   category   ProductCategory @relation(fields: [categoryId], references: [id])
   orderItems OrderItem[]
 
   @@index([name])
+  @@index([tenantId])
+  @@index([deletedAt])
   @@map("products")
 }
 
