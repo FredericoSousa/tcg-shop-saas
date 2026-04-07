@@ -9,7 +9,7 @@ export type OrderItemType = {
   id: string;
   quantity: number;
   priceAtPurchase: number;
-  inventoryItem: {
+  inventoryItem?: {
     condition: string;
     language: string;
     cardTemplate: {
@@ -17,7 +17,12 @@ export type OrderItemType = {
       set: string;
       imageUrl: string | null;
     } | null;
-  };
+  } | null;
+  product?: {
+    name: string;
+    imageUrl: string | null;
+    category: { name: string } | null;
+  } | null;
 };
 
 export type OrderType = {

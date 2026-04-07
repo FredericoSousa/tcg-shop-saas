@@ -49,20 +49,25 @@ export async function PATCH(request: NextRequest) {
         );
       }
 
-      await prisma.$transaction([
-        // Restore each item's quantity to inventory
-        ...order.items.map((item) =>
-          prisma.inventoryItem.update({
-            where: { id: item.inventoryItemId },
-            data: { quantity: { increment: item.quantity } },
-          }),
-        ),
-        // Update order status
-        prisma.order.update({
+      await prisma.$transaction(async (tx) => {
+        for (const item of order.items) {
+          if (item.inventoryItemId) {
+            await tx.inventoryItem.update({
+              where: { id: item.inventoryItemId },
+              data: { quantity: { increment: item.quantity } },
+            });
+          } else if (item.productId) {
+            await tx.product.update({
+              where: { id: item.productId },
+              data: { stock: { increment: item.quantity } },
+            });
+          }
+        }
+        await tx.order.update({
           where: { id: orderId, tenantId },
           data: { status },
-        }),
-      ]);
+        });
+      });
     } else {
       await prisma.order.update({
         where: { id: orderId, tenantId },

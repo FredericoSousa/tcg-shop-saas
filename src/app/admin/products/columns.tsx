@@ -5,6 +5,7 @@ export type ProductColumn = {
   id: string;
   name: string;
   price: number;
+  stock: number;
   description: string | null;
   imageUrl: string | null;
   active: boolean;
@@ -53,6 +54,18 @@ export const createColumns = (categories: { id: string; name: string }[]): Colum
         currency: "BRL",
       }).format(price);
       return <div className="font-medium">{formatted}</div>;
+    },
+  },
+  {
+    accessorKey: "stock",
+    header: "Qtd",
+    cell: ({ row }) => {
+      const stock = row.original.stock;
+      return (
+        <div className={`font-bold ${stock <= 5 ? "text-destructive" : "text-foreground"}`}>
+          {stock}
+        </div>
+      );
     },
   },
   {

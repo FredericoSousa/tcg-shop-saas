@@ -9,13 +9,16 @@ import {
   Settings,
   Users,
   UserCog,
+  Cuboid,
+  DollarSign,
 } from "lucide-react";
 import { Tenant } from "@prisma/client";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "Estoque", href: "/admin/inventory", icon: Package },
-  { name: "Vendas", href: "/admin/orders", icon: ShoppingCart },
+  { name: "PDV", href: "/admin/pos", icon: ShoppingCart },
+  { name: "Singles", href: "/admin/inventory", icon: Cuboid },
+  { name: "Vendas", href: "/admin/orders", icon: DollarSign },
   { name: "Produtos", href: "/admin/products", icon: Package },
   { name: "Clientes", href: "/admin/customers", icon: Users },
   { name: "Usuários", href: "/admin/users", icon: UserCog },

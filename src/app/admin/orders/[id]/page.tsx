@@ -41,6 +41,11 @@ export default async function OrderDetailsPage({
               cardTemplate: true,
             },
           },
+          product: {
+            include: {
+              category: true,
+            },
+          },
         },
       },
     },
@@ -106,31 +111,39 @@ export default async function OrderDetailsPage({
               className="flex items-center gap-4 p-4 border rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors"
             >
               <div className="h-20 w-14 shrink-0 bg-card rounded-lg shadow-sm border overflow-hidden">
-                {item.inventoryItem.cardTemplate?.imageUrl && (
+                {(item.inventoryItem?.cardTemplate?.imageUrl || item.product?.imageUrl) && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={item.inventoryItem.cardTemplate.imageUrl as string}
+                    src={(item.inventoryItem?.cardTemplate?.imageUrl || item.product?.imageUrl) as string}
                     className="h-full w-full object-cover"
-                    alt="Card Artwork"
+                    alt={item.inventoryItem?.cardTemplate?.name || item.product?.name || "Produto"}
                   />
                 )}
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-base font-bold truncate leading-tight mb-1">
-                  {item.inventoryItem.cardTemplate?.name}
+                  {item.inventoryItem?.cardTemplate?.name || item.product?.name}
                 </p>
                 <div className="flex items-center gap-2 mt-1">
-                  <SetBadge
-                    setCode={item.inventoryItem.cardTemplate?.set || ""}
-                    iconClassName="h-4 w-4 dark:invert"
-                    textClassName="text-xs m-0 leading-none text-foreground"
-                  />
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-tight flex items-center gap-1">
-                    <span className="text-muted-foreground/30">•</span>{" "}
-                    {item.inventoryItem.condition}{" "}
-                    <span className="text-muted-foreground/30">•</span>{" "}
-                    {item.inventoryItem.language}
-                  </span>
+                  {item.inventoryItem ? (
+                    <>
+                      <SetBadge
+                        setCode={item.inventoryItem.cardTemplate?.set || ""}
+                        iconClassName="h-4 w-4 dark:invert"
+                        textClassName="text-xs m-0 leading-none text-foreground"
+                      />
+                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-tight flex items-center gap-1">
+                        <span className="text-muted-foreground/30">•</span>{" "}
+                        {item.inventoryItem.condition}{" "}
+                        <span className="text-muted-foreground/30">•</span>{" "}
+                        {item.inventoryItem.language}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-tight flex items-center gap-1">
+                      {item.product?.category?.name || "Sem Categoria"}
+                    </span>
+                  )}
                 </div>
               </div>
               <div className="text-right shrink-0 min-w-20">

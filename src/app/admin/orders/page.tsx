@@ -34,6 +34,11 @@ export default async function OrdersPage() {
               cardTemplate: true,
             },
           },
+          product: {
+            include: {
+              category: true,
+            },
+          },
         },
       },
     },
@@ -50,10 +55,14 @@ export default async function OrdersPage() {
     items: order.items.map((item) => ({
       ...item,
       priceAtPurchase: Number(item.priceAtPurchase),
-      inventoryItem: {
+      inventoryItem: item.inventoryItem ? {
         ...item.inventoryItem,
         price: Number(item.inventoryItem.price),
-      },
+      } : null,
+      product: item.product ? {
+        ...item.product,
+        price: Number(item.product.price),
+      } : null,
     })),
   }));
 
@@ -66,7 +75,7 @@ export default async function OrdersPage() {
       />
 
       <div className="bg-card rounded-lg shadow-sm border p-3 md:p-4">
-        <OrdersClient orders={formattedOrders} />
+        <OrdersClient orders={formattedOrders as any} />
       </div>
     </div>
   );

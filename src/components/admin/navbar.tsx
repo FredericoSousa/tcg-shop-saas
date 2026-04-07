@@ -27,7 +27,7 @@ import { LayoutDashboard, Package, ShoppingCart, Users } from "lucide-react";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "Estoque", href: "/admin/inventory", icon: Package },
+  { name: "Singles", href: "/admin/inventory", icon: Package },
   { name: "Vendas", href: "/admin/orders", icon: ShoppingCart },
   { name: "Usuários", href: "/admin/users", icon: Users },
 ];
@@ -92,11 +92,10 @@ export function Navbar({ username }: NavbarProps) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${
-                    isStrictActive
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all ${isStrictActive
                       ? "bg-primary/10 text-primary font-semibold"
                       : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
-                  }`}
+                    }`}
                 >
                   <item.icon className="h-5 w-5" />
                   {item.name}

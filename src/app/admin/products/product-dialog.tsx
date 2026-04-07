@@ -31,6 +31,7 @@ interface ProductDialogProps {
     name: string;
     description: string | null;
     price: number;
+    stock: number;
     imageUrl: string | null;
     category: { id: string; name: string };
   };
@@ -57,6 +58,7 @@ export function ProductDialog({
     name: "",
     description: "",
     price: "",
+    stock: "",
     categoryId: "",
     imageUrl: "",
   });
@@ -67,6 +69,7 @@ export function ProductDialog({
         name: product.name,
         description: product.description || "",
         price: product.price.toString(),
+        stock: product.stock?.toString() ?? "0",
         categoryId: product.category.id,
         imageUrl: product.imageUrl || "",
       });
@@ -75,6 +78,7 @@ export function ProductDialog({
         name: "",
         description: "",
         price: "",
+        stock: "0",
         categoryId: "",
         imageUrl: "",
       });
@@ -97,6 +101,7 @@ export function ProductDialog({
         body: JSON.stringify({
           ...formData,
           price: parseFloat(formData.price),
+          stock: parseInt(formData.stock) || 0,
         }),
       });
 
@@ -105,7 +110,9 @@ export function ProductDialog({
       toast.success(
         product ? "Produto atualizado com sucesso" : "Produto criado com sucesso"
       );
-      setIsOpen(false);
+      if (setIsOpen) {
+        setIsOpen(false);
+      }
       router.refresh();
     } catch {
       toast.error("Erro ao salvar produto");
@@ -188,16 +195,31 @@ export function ProductDialog({
               </Select>
             </div>
           </div>
-          <div className="grid gap-2">
-            <label className="text-sm font-medium leading-none" htmlFor="imageUrl">URL da Imagem</label>
-            <Input
-              id="imageUrl"
-              value={formData.imageUrl}
-              onChange={(e) =>
-                setFormData({ ...formData, imageUrl: e.target.value })
-              }
-              placeholder="https://..."
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <label className="text-sm font-medium leading-none" htmlFor="stock">Estoque (Qtd)</label>
+              <Input
+                id="stock"
+                type="number"
+                value={formData.stock}
+                onChange={(e) =>
+                  setFormData({ ...formData, stock: e.target.value })
+                }
+                placeholder="0"
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <label className="text-sm font-medium leading-none" htmlFor="imageUrl">URL da Imagem</label>
+              <Input
+                id="imageUrl"
+                value={formData.imageUrl}
+                onChange={(e) =>
+                  setFormData({ ...formData, imageUrl: e.target.value })
+                }
+                placeholder="https://..."
+              />
+            </div>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>

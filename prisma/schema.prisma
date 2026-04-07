@@ -128,6 +128,7 @@ model Product {
   description String?
   imageUrl    String? @map("image_url")
   price       Decimal
+  stock       Int     @default(0)
   categoryId  String  @map("category_id") @db.Uuid
   tenantId    String  @map("tenant_id") @db.Uuid
   active      Boolean @default(true)

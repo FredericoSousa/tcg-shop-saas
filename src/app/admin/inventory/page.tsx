@@ -58,7 +58,7 @@ export default async function InventoryPage(props: {
   return (
     <div className="flex flex-col gap-6 w-full">
       <PageHeader
-        title="Gestão de Estoque"
+        title="Gestão de Singles"
         description={`Gerencie o inventário da loja ${tenant?.name || "sua loja"}`}
         icon={Package}
         actions={

@@ -41,7 +41,8 @@ export async function getProductsPaginated(
   return {
     items: items.map(item => ({
       ...item,
-      price: Number(item.price)
+      price: Number(item.price),
+      stock: item.stock
     })),
     total,
     pageCount: Math.ceil(total / limit)
@@ -67,6 +68,7 @@ export async function createProduct(tenantId: string, data: {
   description?: string;
   imageUrl?: string;
   price: number;
+  stock: number;
   categoryId: string;
 }) {
   return prisma.product.create({
@@ -83,6 +85,7 @@ export async function updateProduct(tenantId: string, id: string, data: {
   description?: string;
   imageUrl?: string;
   price?: number;
+  stock?: number;
   categoryId?: string;
   active?: boolean;
 }) {
