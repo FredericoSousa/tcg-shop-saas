@@ -1,5 +1,5 @@
 import { injectable } from "tsyringe";
-import { prisma } from "../../prisma";
+import { BasePrismaRepository } from "./base-prisma.repository";
 import { Prisma } from "@prisma/client";
 import type { ICardTemplateRepository } from "@/lib/domain/repositories/inventory.repository";
 import { CardTemplate as DomainCardTemplate } from "@/lib/domain/entities/inventory";
@@ -7,7 +7,7 @@ import { CardTemplate as PrismaCardTemplate, Game as PrismaGame } from "@prisma/
 import type { ScryfallCard } from "@/lib/types/scryfall";
 
 @injectable()
-export class PrismaCardTemplateRepository implements ICardTemplateRepository {
+export class PrismaCardTemplateRepository extends BasePrismaRepository implements ICardTemplateRepository {
   private mapToDomain(item: PrismaCardTemplate): DomainCardTemplate {
     return {
       id: item.id,
@@ -20,6 +20,7 @@ export class PrismaCardTemplateRepository implements ICardTemplateRepository {
     };
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   private mapScryfallToDomain(card: ScryfallCard): DomainCardTemplate {
     return {
       id: "",
@@ -33,14 +34,14 @@ export class PrismaCardTemplateRepository implements ICardTemplateRepository {
   }
 
   async findById(id: string): Promise<DomainCardTemplate | null> {
-    const item = await prisma.cardTemplate.findUnique({
+    const item = await this.prisma.cardTemplate.findUnique({
       where: { id },
     });
     return item ? this.mapToDomain(item) : null;
   }
 
   async save(template: DomainCardTemplate): Promise<DomainCardTemplate> {
-    const saved = await prisma.cardTemplate.upsert({
+    const saved = await this.prisma.cardTemplate.upsert({
       where: { id: template.id },
       create: {
         name: template.name,

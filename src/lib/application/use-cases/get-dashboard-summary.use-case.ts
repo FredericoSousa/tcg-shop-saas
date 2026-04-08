@@ -2,9 +2,9 @@ import { injectable, inject } from "tsyringe";
 import { TOKENS } from "../../infrastructure/container";
 import type { IReportsRepository } from "@/lib/domain/repositories/report.repository";
 import type { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
-import type { IOrderRepository } from "@/lib/domain/repositories/order.repository";
+import { IUseCase } from "./use-case.interface";
 
-interface DashboardSummary {
+export interface DashboardSummary {
   inventoryCount: number;
   totalInventoryValue: number;
   ordersCount: number;
@@ -13,11 +13,10 @@ interface DashboardSummary {
 }
 
 @injectable()
-export class GetDashboardSummaryUseCase {
+export class GetDashboardSummaryUseCase implements IUseCase<string, DashboardSummary> {
   constructor(
     @inject(TOKENS.ReportsRepository) private reportsRepository: IReportsRepository,
     @inject(TOKENS.InventoryRepository) private inventoryRepository: IInventoryRepository,
-    @inject(TOKENS.OrderRepository) private orderRepository: IOrderRepository
   ) {}
 
   async execute(tenantId: string): Promise<DashboardSummary> {
@@ -28,7 +27,6 @@ export class GetDashboardSummaryUseCase {
       this.reportsRepository.getWeeklyRevenue(tenantId)
     ]);
 
-    // For simplicity in this example, we calculate some values here
     const totalInventoryValue = inventoryValuation.reduce((sum, item) => sum + item.value, 0);
     const totalRevenue = ordersProgress.reduce((sum, item) => sum + item.revenue, 0);
     

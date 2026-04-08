@@ -1,7 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import "reflect-metadata";
 import { injectable } from "tsyringe";
-import { prisma } from "../../prisma";
+import { BasePrismaRepository } from "./base-prisma.repository";
 import type { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
 import type { InventoryItem as DomainInventoryItem } from "@/lib/domain/entities/inventory";
 import { InventoryItem as PrismaInventoryItem, CardTemplate as PrismaCardTemplate, Prisma, Condition as PrismaCondition } from "@prisma/client";
@@ -11,7 +9,7 @@ type PrismaInventoryWithTemplate = PrismaInventoryItem & {
 };
 
 @injectable()
-export class PrismaInventoryRepository implements IInventoryRepository {
+export class PrismaInventoryRepository extends BasePrismaRepository implements IInventoryRepository {
   private mapToDomain(item: PrismaInventoryWithTemplate): DomainInventoryItem {
     return {
       id: item.id,
@@ -21,7 +19,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
       quantity: item.quantity,
       language: item.language,
       active: item.active,
-      extras: item.extras,
+      extras: item.extras as string[],
       condition: item.condition as string,
       cardTemplate: item.cardTemplate ? {
         id: item.cardTemplate.id,
@@ -36,7 +34,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
   }
 
   async findById(id: string): Promise<DomainInventoryItem | null> {
-    const item = await prisma.inventoryItem.findFirst({
+    const item = await this.prisma.inventoryItem.findFirst({
       where: { id },
       include: { cardTemplate: true },
     });
@@ -47,7 +45,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     templateId: string, 
     filters: Partial<DomainInventoryItem>
   ): Promise<DomainInventoryItem | null> {
-    const item = await prisma.inventoryItem.findFirst({
+    const item = await this.prisma.inventoryItem.findFirst({
       where: {
         cardTemplateId: templateId,
         price: filters.price ? new Prisma.Decimal(filters.price) : undefined,
@@ -71,7 +69,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
       extras: item.extras,
     };
 
-    const saved = await prisma.inventoryItem.upsert({
+    const saved = await this.prisma.inventoryItem.upsert({
       where: { id: item.id || "" },
       create: { ...data, tenantId: item.tenantId },
       update: data,
@@ -86,7 +84,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     if (data.quantity !== undefined) prismaData.quantity = data.quantity;
     if (data.active !== undefined) prismaData.active = data.active;
 
-    const updated = await prisma.inventoryItem.update({
+    const updated = await this.prisma.inventoryItem.update({
       where: { id },
       data: prismaData,
     });
@@ -100,14 +98,14 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     if (data.quantity !== undefined) prismaData.quantity = data.quantity;
     if (data.active !== undefined) prismaData.active = data.active;
 
-    await prisma.inventoryItem.updateMany({
+    await this.prisma.inventoryItem.updateMany({
       where: { id: { in: ids } },
       data: prismaData,
     });
   }
 
   async deleteMany(ids: string[]): Promise<void> {
-    await prisma.inventoryItem.updateMany({
+    await this.prisma.inventoryItem.updateMany({
       where: { id: { in: ids } },
       data: { active: false },
     });
@@ -129,14 +127,14 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     };
 
     const [items, total] = await Promise.all([
-      prisma.inventoryItem.findMany({
+      this.prisma.inventoryItem.findMany({
         where,
         include: { cardTemplate: true },
         orderBy: { cardTemplate: { name: "asc" } },
         skip,
         take: limit,
       }),
-      prisma.inventoryItem.count({ where }),
+      this.prisma.inventoryItem.count({ where }),
     ]);
 
     return {
@@ -146,7 +144,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
   }
 
   async decrementStock(id: string, quantity: number): Promise<void> {
-    const result = await prisma.inventoryItem.updateMany({
+    const result = await this.prisma.inventoryItem.updateMany({
       where: {
         id,
         quantity: { gte: quantity },
@@ -162,7 +160,7 @@ export class PrismaInventoryRepository implements IInventoryRepository {
   }
 
   async countActive(tenantId: string): Promise<number> {
-    return prisma.inventoryItem.count({
+    return this.prisma.inventoryItem.count({
       where: { tenantId, active: true },
     });
   }

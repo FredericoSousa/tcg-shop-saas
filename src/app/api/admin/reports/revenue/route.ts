@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
     const report = await useCase.execute({ tenantId, startDate, endDate });
 
     return NextResponse.json(report);
-  } catch (error: any) {
+  } catch (error) {
     console.error("[REPORTS_REVENUE_GET]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

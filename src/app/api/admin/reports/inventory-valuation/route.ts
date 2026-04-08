@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
     const report = await useCase.execute(tenantId);
 
     return NextResponse.json(report);
-  } catch (error: any) {
+  } catch (error) {
     console.error("[REPORTS_INVENTORY_VALUATION_GET]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

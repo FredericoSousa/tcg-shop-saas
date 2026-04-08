@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { injectable } from "tsyringe";
-import { prisma } from "../../prisma";
+import { BasePrismaRepository } from "./base-prisma.repository";
 import { IOrderRepository } from "@/lib/domain/repositories/order.repository";
 import { Order as DomainOrder, OrderStatus, OrderSource, OrderItem as DomainOrderItem } from "@/lib/domain/entities/order";
 import { Prisma, Order as PrismaOrder, OrderItem as PrismaOrderItem, Customer as PrismaCustomer } from "@prisma/client";
@@ -11,7 +10,7 @@ type PrismaOrderWithRelations = PrismaOrder & {
 };
 
 @injectable()
-export class PrismaOrderRepository implements IOrderRepository {
+export class PrismaOrderRepository extends BasePrismaRepository implements IOrderRepository {
   private mapToDomain(item: PrismaOrderWithRelations): DomainOrder {
     return {
       id: item.id,
@@ -38,7 +37,7 @@ export class PrismaOrderRepository implements IOrderRepository {
   }
 
   async findById(id: string): Promise<DomainOrder | null> {
-    const item = await prisma.order.findFirst({
+    const item = await this.prisma.order.findFirst({
       where: { id },
       include: { 
         customer: true,
@@ -54,8 +53,7 @@ export class PrismaOrderRepository implements IOrderRepository {
   }
 
   async save(order: DomainOrder, items: Omit<DomainOrderItem, "id" | "orderId">[]): Promise<DomainOrder> {
-    const saved = await prisma.order.create({
-      // RLS takes over filtering.
+    const saved = await this.prisma.order.create({
       data: {
         customerId: order.customerId,
         totalAmount: new Prisma.Decimal(order.totalAmount),
@@ -69,7 +67,7 @@ export class PrismaOrderRepository implements IOrderRepository {
             priceAtPurchase: new Prisma.Decimal(item.priceAtPurchase),
           })),
         },
-      } as any,
+      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
       include: { customer: true, items: true },
     });
 
@@ -77,7 +75,7 @@ export class PrismaOrderRepository implements IOrderRepository {
   }
 
   async updateStatus(id: string, status: OrderStatus): Promise<void> {
-    await prisma.order.update({
+    await this.prisma.order.update({
       where: { id },
       data: { status },
     });
@@ -109,14 +107,14 @@ export class PrismaOrderRepository implements IOrderRepository {
     };
 
     const [items, total] = await Promise.all([
-      prisma.order.findMany({
+      this.prisma.order.findMany({
         where,
         orderBy: { createdAt: "desc" },
         include: { customer: true, items: true },
         skip,
         take: limit,
       }),
-      prisma.order.count({ where }),
+      this.prisma.order.count({ where }),
     ]);
 
     return {
@@ -126,7 +124,7 @@ export class PrismaOrderRepository implements IOrderRepository {
   }
 
   async findPendingPOSOrder(customerId: string): Promise<DomainOrder | null> {
-    const item = await prisma.order.findFirst({
+    const item = await this.prisma.order.findFirst({
       where: {
         customerId,
         status: "PENDING",
@@ -138,7 +136,7 @@ export class PrismaOrderRepository implements IOrderRepository {
   }
 
   async appendToOrder(orderId: string, items: { productId: string; quantity: number; priceAtPurchase: number }[], totalAmountIncrement: number): Promise<void> {
-    await prisma.$transaction(async (tx) => {
+    await this.prisma.$transaction(async (tx) => {
       // 1. Update order total
       await tx.order.update({
         where: { id: orderId },

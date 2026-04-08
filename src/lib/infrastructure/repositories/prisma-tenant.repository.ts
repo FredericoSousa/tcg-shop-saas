@@ -1,28 +1,27 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { injectable } from "tsyringe";
-import { prisma } from "../../prisma";
+import { BasePrismaRepository } from "./base-prisma.repository";
 import { ITenantRepository, IUserRepository } from "@/lib/domain/repositories/tenant.repository";
 import { Tenant as DomainTenant, User as DomainUser, UserRole } from "@/lib/domain/entities/tenant";
 import { Tenant as PrismaTenant, User as PrismaUser } from "@prisma/client";
 
 @injectable()
-export class PrismaTenantRepository implements ITenantRepository {
+export class PrismaTenantRepository extends BasePrismaRepository implements ITenantRepository {
   private mapToDomain(item: PrismaTenant): DomainTenant {
     return { ...item };
   }
 
   async findById(id: string): Promise<DomainTenant | null> {
-    const item = await prisma.tenant.findUnique({ where: { id } });
+    const item = await this.prisma.tenant.findUnique({ where: { id } });
     return item ? this.mapToDomain(item) : null;
   }
 
   async findBySlug(slug: string): Promise<DomainTenant | null> {
-    const item = await prisma.tenant.findUnique({ where: { slug } });
+    const item = await this.prisma.tenant.findUnique({ where: { slug } });
     return item ? this.mapToDomain(item) : null;
   }
 
   async update(id: string, data: Partial<DomainTenant>): Promise<DomainTenant> {
-    const updated = await prisma.tenant.update({
+    const updated = await this.prisma.tenant.update({
       where: { id },
       data,
     });
@@ -31,7 +30,7 @@ export class PrismaTenantRepository implements ITenantRepository {
 }
 
 @injectable()
-export class PrismaUserRepository implements IUserRepository {
+export class PrismaUserRepository extends BasePrismaRepository implements IUserRepository {
   private mapToDomain(item: PrismaUser): DomainUser {
     return { 
       ...item,
@@ -40,46 +39,44 @@ export class PrismaUserRepository implements IUserRepository {
   }
 
   async findById(id: string): Promise<DomainUser | null> {
-    const item = await prisma.user.findFirst({ where: { id } });
+    const item = await this.prisma.user.findFirst({ where: { id } });
     return item ? this.mapToDomain(item) : null;
   }
 
   async findByUsername(username: string): Promise<DomainUser | null> {
-    const item = await prisma.user.findFirst({
+    const item = await this.prisma.user.findFirst({
       where: { username }
     });
     return item ? this.mapToDomain(item) : null;
   }
 
   async findAll(): Promise<DomainUser[]> {
-    const items = await prisma.user.findMany({
+    const items = await this.prisma.user.findMany({
       orderBy: { createdAt: "desc" }
     });
-    return items.map(this.mapToDomain);
+    return items.map(this.mapToDomain.bind(this));
   }
 
   async save(user: DomainUser): Promise<DomainUser> {
-    const saved = await prisma.user.create({
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const saved = await this.prisma.user.create({
       data: {
         username: user.username,
         passwordHash: user.passwordHash,
         role: user.role,
-      } as any
+      } as any // eslint-disable-line @typescript-eslint/no-explicit-any
     });
     return this.mapToDomain(saved);
   }
 
   async update(id: string, data: Partial<DomainUser>): Promise<DomainUser> {
-    const updated = await prisma.user.update({
+    const updated = await this.prisma.user.update({
       where: { id },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      data: data as any,
+      data: data as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     });
     return this.mapToDomain(updated);
   }
 
   async delete(id: string): Promise<void> {
-    await prisma.user.delete({ where: { id } });
+    await this.prisma.user.delete({ where: { id } });
   }
 }

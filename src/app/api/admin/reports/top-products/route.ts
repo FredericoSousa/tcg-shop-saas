@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
     const topProducts = await useCase.execute({ tenantId, limit });
 
     return NextResponse.json(topProducts);
-  } catch (error: any) {
+  } catch (error) {
     console.error("[REPORTS_TOP_PRODUCTS_GET]", error);
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }

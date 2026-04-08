@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { injectable } from "tsyringe";
-import { prisma } from "../../prisma";
+import { BasePrismaRepository } from "./base-prisma.repository";
 import { IProductRepository } from "@/lib/domain/repositories/product.repository";
 import { Product as DomainProduct, ProductCategory as DomainCategory } from "@/lib/domain/entities/product";
 import { Prisma, Product as PrismaProduct, ProductCategory as PrismaCategory } from "@prisma/client";
 
 @injectable()
-export class PrismaProductRepository implements IProductRepository {
+export class PrismaProductRepository extends BasePrismaRepository implements IProductRepository {
   private mapToDomain(item: PrismaProduct & { category?: PrismaCategory | null }): DomainProduct {
     return {
       id: item.id,
@@ -39,7 +38,7 @@ export class PrismaProductRepository implements IProductRepository {
   }
 
   async findById(id: string): Promise<DomainProduct | null> {
-    const item = await prisma.product.findFirst({
+    const item = await this.prisma.product.findFirst({
       where: { id, deletedAt: null },
       include: { category: true },
     });
@@ -47,7 +46,7 @@ export class PrismaProductRepository implements IProductRepository {
   }
 
   async save(product: DomainProduct): Promise<DomainProduct> {
-    const saved = await prisma.product.create({
+    const saved = await this.prisma.product.create({
       data: {
         name: product.name,
         description: product.description,
@@ -55,14 +54,13 @@ export class PrismaProductRepository implements IProductRepository {
         price: new Prisma.Decimal(product.price),
         stock: product.stock,
         categoryId: product.categoryId,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
+      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     });
     return this.mapToDomain(saved);
   }
 
   async update(id: string, data: Partial<DomainProduct>): Promise<DomainProduct> {
-    const updated = await prisma.product.update({
+    const updated = await this.prisma.product.update({
       where: { id },
       data: {
         name: data.name,
@@ -91,14 +89,14 @@ export class PrismaProductRepository implements IProductRepository {
     };
 
     const [items, total] = await Promise.all([
-      prisma.product.findMany({
+      this.prisma.product.findMany({
         where,
         include: { category: true },
         orderBy: { name: "asc" },
         skip,
         take: limit,
       }),
-      prisma.product.count({ where }),
+      this.prisma.product.count({ where }),
     ]);
 
     return {
@@ -108,7 +106,7 @@ export class PrismaProductRepository implements IProductRepository {
   }
 
   async decrementStock(id: string, quantity: number): Promise<void> {
-    const result = await prisma.product.updateMany({
+    const result = await this.prisma.product.updateMany({
       where: {
         id,
         stock: { gte: quantity },
@@ -126,34 +124,33 @@ export class PrismaProductRepository implements IProductRepository {
   }
 
   async findCategories(): Promise<DomainCategory[]> {
-    const items = await prisma.productCategory.findMany({
+    const items = await this.prisma.productCategory.findMany({
       where: { deletedAt: null },
       orderBy: { name: "asc" },
     });
-    return items.map(this.mapCategoryToDomain);
+    return items.map(this.mapCategoryToDomain.bind(this));
   }
 
   async findCategoryById(id: string): Promise<DomainCategory | null> {
-    const item = await prisma.productCategory.findFirst({
+    const item = await this.prisma.productCategory.findFirst({
       where: { id, deletedAt: null },
     });
     return item ? this.mapCategoryToDomain(item) : null;
   }
 
   async saveCategory(category: DomainCategory): Promise<DomainCategory> {
-    const saved = await prisma.productCategory.create({
+    const saved = await this.prisma.productCategory.create({
       data: {
         name: category.name,
         description: category.description,
         showOnEcommerce: category.showOnEcommerce,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } as any,
+      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
     });
     return this.mapCategoryToDomain(saved);
   }
 
   async updateCategory(id: string, data: Partial<DomainCategory>): Promise<DomainCategory> {
-    const updated = await prisma.productCategory.update({
+    const updated = await this.prisma.productCategory.update({
       where: { id },
       data: {
         name: data.name,
