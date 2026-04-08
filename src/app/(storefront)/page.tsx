@@ -22,7 +22,7 @@ export default async function HomePage() {
   const tenantId = tenant.id;
 
   // Fetch some stats
-  const [totalCards, totalSets, mostExpensiveCards] = await Promise.all([
+  const [totalCards, totalSets, featuredCards] = await Promise.all([
     prisma.inventoryItem.count({ where: { tenantId, active: true, quantity: { gt: 0 } } }),
     prisma.inventoryItem.findMany({
       where: { tenantId, active: true, quantity: { gt: 0 } },
@@ -33,7 +33,7 @@ export default async function HomePage() {
       where: { tenantId, active: true, quantity: { gt: 0 } },
       include: { cardTemplate: true },
       orderBy: { price: 'desc' },
-      take: 5,
+      take: 8,
     }),
   ]);
 
@@ -41,7 +41,7 @@ export default async function HomePage() {
   const shopName = tenant.name;
 
   return (
-    <main className="min-h-screen bg-zinc-50">
+    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 transition-colors duration-500">
       {/* Hero Section */}
       <section className="relative bg-zinc-950 text-white overflow-hidden">
         {/* Background effects */}
@@ -50,7 +50,7 @@ export default async function HomePage() {
         <div className="absolute bottom-0 left-0 -ml-32 -mb-32 w-[400px] h-[400px] rounded-full bg-blue-500/15 blur-[100px]" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-violet-500/10 blur-[80px]" />
 
-        <div className="relative container mx-auto py-24 md:py-32 px-6 z-10">
+        <div className="relative container mx-auto py-24 md:py-32 px-6 z-10 animate-in fade-in zoom-in duration-700">
           <div className="max-w-3xl mx-auto text-center">
             {/* Logo */}
             {tenant?.logoUrl ? (
@@ -75,7 +75,7 @@ export default async function HomePage() {
                 className="inline-flex items-center justify-center gap-2 bg-white text-zinc-900 font-bold px-8 py-4 rounded-xl hover:bg-zinc-100 transition-all hover:scale-105 active:scale-100 shadow-lg text-lg"
               >
                 <ShoppingBag className="w-5 h-5" />
-                Ver Catálogo
+                Explorar Catálogo
               </Link>
             </div>
           </div>
@@ -85,71 +85,79 @@ export default async function HomePage() {
       {/* Stats */}
       <section className="relative -mt-12 z-20">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-3xl mx-auto">
-            <div className="bg-white rounded-2xl shadow-lg border p-6 text-center hover:shadow-xl transition-shadow">
-              <p className="text-3xl font-black text-primary">{totalCards}</p>
-              <p className="text-sm font-semibold text-muted-foreground mt-1">Cards Disponíveis</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto animate-in slide-in-from-bottom-8 duration-700 delay-150 fill-mode-both">
+            <div className="bg-card/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200/50 dark:border-zinc-800/50 p-6 text-center hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">
+              <p className="text-3xl font-black text-primary group-hover:scale-110 transition-transform">{totalCards.toLocaleString()}</p>
+              <p className="text-sm font-bold text-muted-foreground mt-1 uppercase tracking-widest">Cards Atuais</p>
             </div>
-            <div className="bg-white rounded-2xl shadow-lg border p-6 text-center hover:shadow-xl transition-shadow">
-              <p className="text-3xl font-black text-primary">{uniqueSets}</p>
-              <p className="text-sm font-semibold text-muted-foreground mt-1">Edições</p>
+            <div className="bg-card/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200/50 dark:border-zinc-800/50 p-6 text-center hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">
+              <p className="text-3xl font-black text-primary group-hover:scale-110 transition-transform">{uniqueSets}</p>
+              <p className="text-sm font-bold text-muted-foreground mt-1 uppercase tracking-widest">Coleções</p>
             </div>
-            <div className="bg-white rounded-2xl shadow-lg border p-6 text-center hover:shadow-xl transition-shadow">
-              <p className="text-3xl font-black text-primary">100%</p>
-              <p className="text-sm font-semibold text-muted-foreground mt-1">Estoque Verificado</p>
+            <div className="bg-card/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200/50 dark:border-zinc-800/50 p-6 text-center hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">
+              <p className="text-3xl font-black text-primary group-hover:scale-110 transition-transform">100%</p>
+              <p className="text-sm font-bold text-muted-foreground mt-1 uppercase tracking-widest">Originalidade</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Featured Cards */}
-      {mostExpensiveCards.length > 0 && (
-        <section className="container mx-auto px-6 pt-20 pb-8">
-          <div className="text-center mb-10">
-            <h2 className="text-3xl md:text-4xl font-black font-heading tracking-tight">
-              Destaques do Estoque
+      {featuredCards.length > 0 && (
+        <section className="container mx-auto px-6 pt-24 pb-8">
+          <div className="text-center mb-12 animate-in fade-in duration-700">
+            <h2 className="text-4xl md:text-5xl font-black font-heading tracking-tight">
+              Destaques do Dia
             </h2>
-            <p className="text-muted-foreground mt-2 font-medium">
-              Confira os últimos cards adicionados à loja
+            <p className="text-muted-foreground mt-3 font-medium text-lg">
+              As cartas mais valiosas e raras em nosso estoque
             </p>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 max-w-4xl mx-auto">
-            {mostExpensiveCards.map((item) => (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 max-w-6xl mx-auto">
+            {featuredCards.map((item, idx) => (
               <Link
                 key={item.id}
                 href="/singles"
-                className="group relative bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-lg transition-all hover:-translate-y-1 duration-300"
+                className="group relative bg-card/60 backdrop-blur-sm rounded-2xl shadow-sm border border-zinc-200/50 dark:border-zinc-800/50 overflow-hidden hover:shadow-2xl hover:border-primary/30 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
+                style={{ animationDelay: `${idx * 100}ms` }}
               >
-                <div className="aspect-[2/3] w-full bg-muted/30 relative overflow-hidden flex items-center justify-center">
+                <div className="aspect-[2/3] w-full bg-zinc-100 dark:bg-zinc-900 relative overflow-hidden flex items-center justify-center">
                   {item.cardTemplate?.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={item.cardTemplate.imageUrl}
                       alt={item.cardTemplate.name}
-                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
+                      className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700"
                       loading="lazy"
                     />
                   ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground/40 text-xs">
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground/40 text-xs font-bold uppercase tracking-widest">
                       <span>Sem Imagem</span>
                     </div>
                   )}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  
+                  <div className="absolute bottom-3 left-3 right-3 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                    <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md text-[10px] font-black py-2 rounded-lg text-center shadow-xl uppercase tracking-widest">
+                      Detalhes
+                    </div>
+                  </div>
                 </div>
-                <div className="p-3">
-                  <h3 className="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem]" title={item.cardTemplate?.name}>
+                <div className="p-4 bg-card/40">
+                  <h3 className="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem] mb-3 group-hover:text-primary transition-colors" title={item.cardTemplate?.name}>
                     {item.cardTemplate?.name}
                   </h3>
-                  <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-[10px] font-semibold px-1 py-0.5 bg-muted rounded border inline-flex items-center justify-center">
+                  <div className="flex items-center justify-between mt-auto">
+                    <span className="text-[10px] font-bold px-2 py-1 bg-muted/50 rounded-lg border border-border">
                       <SetBadge
                         setCode={item.cardTemplate?.set || ''}
-                        className="gap-1"
+                        className="gap-1.5"
                         iconClassName="h-3 w-3"
-                        textClassName="text-[10px] font-semibold text-foreground tracking-normal m-0 p-0"
+                        textClassName="text-[10px] font-black tracking-tight"
                       />
                     </span>
-                    <span className="font-extrabold text-sm text-primary">
+                    <span className="font-black text-base text-primary tabular-nums group-hover:scale-110 transition-transform">
                       {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(item.price))}
                     </span>
                   </div>
@@ -158,12 +166,12 @@ export default async function HomePage() {
             ))}
           </div>
 
-          <div className="text-center mt-10">
+          <div className="text-center mt-16 animate-in fade-in duration-700 delay-500">
             <Link
               href="/singles"
-              className="inline-flex items-center gap-2 text-primary font-bold hover:underline text-lg"
+              className="inline-flex items-center gap-2 bg-zinc-900 text-white px-8 py-3 rounded-full font-bold hover:bg-primary transition-all hover:scale-105"
             >
-              Ver catálogo completo →
+              Ver Todas as Cartas →
             </Link>
           </div>
         </section>

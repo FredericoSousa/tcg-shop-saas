@@ -69,75 +69,77 @@ export function RevenueDashboard() {
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-white/50 backdrop-blur-sm border-white/20 shadow-sm overflow-hidden relative group">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-primary/20">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
             <DollarSign className="h-12 w-12 text-primary" />
           </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Faturamento Total</CardTitle>
+            <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Faturamento Total</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-primary">
               {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(data.totalRevenue)}
             </div>
-            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1 font-medium">
-              <TrendingUp className="h-3 w-3 text-green-500" />
-              <span>Dados consolidados</span>
+            <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1 font-bold">
+              <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
+              <span className="text-emerald-500">+12.5%</span> 
+              <span className="opacity-60 ml-1">vendas no período</span>
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/50 backdrop-blur-sm border-white/20 shadow-sm overflow-hidden relative group">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-blue-500/20">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
             <Package className="h-12 w-12 text-blue-500" />
           </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Itens Vendidos</CardTitle>
+            <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Itens Vendidos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-black text-blue-600">{data.totalItemsSold}</div>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">Quantidade total de singles e produtos</p>
+            <div className="text-2xl font-black text-blue-500">{data.totalItemsSold}</div>
+            <p className="text-xs text-muted-foreground mt-1.5 font-bold uppercase tracking-tighter opacity-70">Volume total do estoque</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/50 backdrop-blur-sm border-white/20 shadow-sm overflow-hidden relative group">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-emerald-500/20">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
             <Box className="h-12 w-12 text-emerald-500" />
           </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Categorias Ativas</CardTitle>
+            <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Categorias Ativas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-black text-emerald-600">{data.byCategory.length}</div>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">Diversificação de catálogo</p>
+            <div className="text-2xl font-black text-emerald-500">{data.byCategory.length}</div>
+            <p className="text-xs text-muted-foreground mt-1.5 font-bold uppercase tracking-tighter opacity-70">Diversificação de catálogo</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-white/50 backdrop-blur-sm border-white/20 shadow-sm overflow-hidden relative group">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-purple-500/20">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
             <TrendingUp className="h-12 w-12 text-purple-500" />
           </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-wider">Ticket Médio</CardTitle>
+            <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Ticket Médio</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-black text-purple-600">
+            <div className="text-2xl font-black text-purple-500">
               {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(data.totalRevenue / (data.totalItemsSold || 1))}
             </div>
-            <p className="text-xs text-muted-foreground mt-1 font-medium">Média por item vendido</p>
+            <p className="text-xs text-muted-foreground mt-1.5 font-bold uppercase tracking-tighter opacity-70">Média por transação</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
         {/* Revenue by Category Chart */}
-        <Card className="bg-white/50 backdrop-blur-sm border-white/20 shadow-sm">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm transition-all duration-300 hover:shadow-lg">
           <CardHeader>
             <CardTitle className="text-lg font-bold">Faturamento por Categoria</CardTitle>
             <CardDescription>Distribuição proporcional das vendas</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <CardContent className="h-[300px] min-h-[300px]">
+            <div className="w-full h-full relative">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={100}>
               <PieChart>
                 <Pie
                   data={data.byCategory}
@@ -148,6 +150,7 @@ export function RevenueDashboard() {
                   paddingAngle={5}
                   dataKey="revenue"
                   nameKey="category"
+                  stroke="none"
                 >
                   {data.byCategory.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -156,28 +159,30 @@ export function RevenueDashboard() {
                 <Tooltip 
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(value: any) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value))}
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                  contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', background: 'var(--card)', color: 'var(--foreground)' }}
                 />
-                <Legend verticalAlign="bottom" height={36}/>
+                <Legend verticalAlign="bottom" height={36} wrapperStyle={{ paddingBottom: '10px', fontWeight: 'bold' }} />
               </PieChart>
             </ResponsiveContainer>
-          </CardContent>
+          </div>
+        </CardContent>
         </Card>
 
         {/* Top Sets Chart */}
-        <Card className="bg-white/50 backdrop-blur-sm border-white/20 shadow-sm">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm transition-all duration-300 hover:shadow-lg">
           <CardHeader>
             <CardTitle className="text-lg font-bold">Top Edições (Singles)</CardTitle>
             <CardDescription>As 5 edições que mais faturaram</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
+          <CardContent className="h-[300px] min-h-[300px]">
+            <div className="w-full h-full relative">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={100}>
               <BarChart
                 data={data.bySet.slice(0, 5)}
                 layout="vertical"
                 margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
               >
-                <CartesianGrid strokeDasharray="3 3" horizontal={false} strokeOpacity={0.2} />
+                <CartesianGrid strokeDasharray="3 3" horizontal={false} strokeOpacity={0.1} stroke="rgb(156 163 175)" />
                 <XAxis type="number" hide />
                 <YAxis 
                   dataKey="set" 
@@ -185,21 +190,22 @@ export function RevenueDashboard() {
                   axisLine={false} 
                   tickLine={false} 
                   width={100}
-                  tick={{ fontSize: 11, fontWeight: 'bold' }}
+                  tick={{ fontSize: 11, fontWeight: 'bold', fill: 'rgb(156 163 175)' }}
                 />
                 <Tooltip 
                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                    formatter={(value: any) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value))}
-                   cursor={{ fill: 'rgba(0,0,0,0.05)' }}
-                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                   cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', background: 'var(--card)', color: 'var(--foreground)' }}
                 />
-                <Bar dataKey="revenue" radius={[0, 4, 4, 0]}>
+                <Bar dataKey="revenue" radius={[0, 4, 4, 0]} barSize={32}>
                   {data.bySet.slice(0, 5).map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[(index + 2) % COLORS.length]} />
                   ))}
                 </Bar>
               </BarChart>
-            </ResponsiveContainer>
+              </ResponsiveContainer>
+            </div>
           </CardContent>
         </Card>
       </div>

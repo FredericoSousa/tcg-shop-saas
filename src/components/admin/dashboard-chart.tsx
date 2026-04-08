@@ -17,13 +17,13 @@ export function DashboardChart({ data, title, total }: DashboardChartProps) {
   const maxAmount = Math.max(...data.map((d) => d.amount), 1);
 
   return (
-    <div className="flex flex-col h-full bg-card/40 border shadow-sm backdrop-blur-sm rounded-xl p-5 group transition-all duration-300 hover:shadow-md">
-      <div className="flex items-center justify-between mb-6">
+    <div className="flex flex-col h-full bg-card/40 border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm backdrop-blur-md rounded-2xl p-6 group transition-all duration-300 hover:shadow-lg hover:border-primary/20">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">{title}</h2>
-          <p className="text-2xl font-black text-foreground mt-1">{total}</p>
+          <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none mb-2">{title}</h2>
+          <p className="text-2xl font-black text-foreground tracking-tight">{total}</p>
         </div>
-        <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+        <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 uppercase tracking-widest shadow-sm">
           <TrendingUp className="h-3 w-3" />
           +12.5%
         </div>

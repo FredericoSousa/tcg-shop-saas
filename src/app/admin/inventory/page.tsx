@@ -55,7 +55,7 @@ export default async function InventoryPage(props: {
         }
       />
 
-      <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden p-0">
+      <div className="rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 bg-card/30 shadow-sm backdrop-blur-sm overflow-hidden p-0">
         <DataTable columns={columns} data={inventory} pageCount={pageCount} />
       </div>
     </div>

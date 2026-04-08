@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Check, Sparkles } from "lucide-react";
+import { Loader2, Check, Sparkles, Search, XCircle, Info } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -20,6 +20,8 @@ import {
 import { toast } from "sonner";
 import { ScryfallCard } from "@/lib/types/scryfall";
 import { LanguageBadge } from "@/components/ui/language-badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Feedback } from "@/components/ui/feedback";
 
 const VALID_EXTRAS = [
   { value: "FOIL", label: "Foil" },
@@ -46,10 +48,12 @@ export function AddCardDialog() {
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [isPending, startTransition] = useTransition();
   const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = async () => {
     if (!query) return;
     setIsSearching(true);
+    setHasSearched(true);
     try {
       const response = await fetch(`/api/scryfall/search?q=${encodeURIComponent(query)}`);
       if (!response.ok) throw new Error("Search failed");
@@ -57,7 +61,7 @@ export function AddCardDialog() {
       if (result.success && result.data) {
         setResults(result.data as Card[]);
       } else {
-        throw new Error(result.message || "Search failed");
+        setResults([]);
       }
     } catch {
       toast.error("Erro ao buscar o card.");
@@ -96,6 +100,7 @@ export function AddCardDialog() {
         setResults([]);
         setSelectedCardId("");
         setSelectedExtras([]);
+        setHasSearched(false);
       } catch (error) {
         const msg =
           error instanceof Error ? error.message : "Erro ao salvar o card";
@@ -108,49 +113,50 @@ export function AddCardDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <Button
         onClick={() => setOpen(true)}
-        className="transition-all duration-200 hover:scale-105 active:scale-95 gap-2"
+        className="transition-all duration-300 hover:scale-105 active:scale-95 gap-2 shadow-lg shadow-primary/10"
         aria-label="Adicionar novo card ao estoque"
       >
         <Sparkles className="h-4 w-4" />
         Adicionar Card
       </Button>
-      <DialogContent className="!max-w-full !w-[90vw] max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="pb-4 border-b">
-          <DialogTitle className="text-2xl font-bold">
-            Adicionar Card ao Estoque
+      <DialogContent className="!max-w-4xl !w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0 border-zinc-200/60 dark:border-zinc-800/60 shadow-2xl">
+        <DialogHeader className="p-6 pb-4 border-b bg-muted/5">
+          <DialogTitle className="text-2xl font-black tracking-tight">
+            Adicionar ao Estoque
           </DialogTitle>
-          <p className="text-sm text-muted-foreground mt-1">
-            Busque, selecione e configure seu card
+          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
+            <Info className="h-3.5 w-3.5 text-blue-500" />
+            Busque, selecione a edição e configure as propriedades do card.
           </p>
         </DialogHeader>
 
-        <div className="flex flex-col gap-6 mt-4">
+        <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
           {/* Buscador */}
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-foreground">
-              Buscar Card
+          <div className="flex flex-col gap-3">
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
+              Buscar Card na Base Global
             </label>
             <div className="flex gap-2">
-              <Input
-                placeholder="Ex: Black Lotus, Sheoldred's Edict, Lightning Bolt..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                autoFocus
-                className="transition-all duration-200 focus-visible:ring-2 focus-visible:ring-primary/50"
-                aria-label="Campo de busca de cards"
-              />
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Ex: Black Lotus, Sheoldred's Edict, Lightning Bolt..."
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                  autoFocus
+                  className="pl-10 h-12 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary/40 bg-muted/30 border-zinc-200/50 dark:border-zinc-800/50 rounded-xl"
+                  aria-label="Campo de busca de cards"
+                />
+              </div>
               <Button
                 onClick={handleSearch}
                 disabled={isSearching || !query}
-                className="w-28 transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50"
+                className="h-12 w-32 transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 rounded-xl font-bold"
                 aria-label="Buscar cards na Scryfall"
               >
                 {isSearching ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span className="sr-only">Buscando...</span>
-                  </>
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
                   "Buscar"
                 )}
@@ -158,92 +164,128 @@ export function AddCardDialog() {
             </div>
           </div>
 
-          <form action={handleSubmit} className="flex flex-col gap-6">
-            {/* Seleção de Edição */}
-            {results.length > 0 && (
-              <fieldset className="flex flex-col gap-3 border border-border rounded-lg p-4 bg-gradient-to-b from-muted/40 to-muted/20">
-                <legend className="text-sm font-semibold text-foreground">
-                  Edições Encontradas ({results.length})
-                </legend>
-                <div className="max-h-72 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-                  {results.map((card) => {
-                    const cardObj = card;
-                    const imageUris = cardObj.image_uris;
-                    const imageUrl =
-                      imageUris?.small ||
-                      imageUris?.normal ||
-                      cardObj.card_faces?.[0]?.image_uris?.normal ||
-                      "";
-                    return (
-                      <label
-                        key={card.id}
-                        className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-150 hover:bg-muted/60 border-2 ${selectedCardId === card.id ? "bg-primary/15 border-primary shadow-sm" : "border-transparent bg-muted/30 hover:bg-muted/50"}`}
-                      >
-                        <input
-                          type="radio"
-                          name="scryfallId"
-                          value={card.id}
-                          className="w-4 h-4 accent-primary cursor-pointer"
-                          checked={selectedCardId === card.id}
-                          onChange={() => setSelectedCardId(card.id)}
-                          required
-                          aria-label={`Selecionar ${card.name} de ${card.set_name}`}
-                        />
-                        <div className="w-12 h-16 relative bg-muted rounded shrink-0 overflow-hidden border border-muted-foreground/20">
-                          {imageUrl && (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={imageUrl}
-                              alt={card.name}
-                              className="object-cover rounded w-full h-full hover:scale-110 transition-transform duration-300"
-                            />
+          <form action={handleSubmit} className="flex flex-col gap-8">
+            {/* Resultados da Busca */}
+            <div className="flex flex-col gap-3">
+               <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1 flex items-center justify-between">
+                <span>Edições Disponíveis</span>
+                {results.length > 0 && <span className="text-primary">{results.length} resultados</span>}
+              </label>
+              
+              <div className="min-h-[200px] border border-dashed rounded-2xl bg-muted/5 overflow-hidden flex flex-col">
+                {isSearching ? (
+                  <div className="p-4 space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="flex items-center gap-4 p-3 border rounded-xl animate-pulse">
+                        <Skeleton className="w-12 h-16 rounded-md" />
+                        <div className="space-y-2 flex-1">
+                          <Skeleton className="h-4 w-1/3" />
+                          <Skeleton className="h-3 w-1/4" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : !hasSearched ? (
+                  <Feedback 
+                    type="search" 
+                    description="Digite o nome de uma carta acima para começar a busca global." 
+                    className="flex-1"
+                  />
+                ) : results.length === 0 ? (
+                  <Feedback 
+                    type="empty" 
+                    title="Nenhum card encontrado"
+                    description={`Não encontramos resultados para "${query}". Verifique a ortografia ou tente outro termo.`}
+                    className="flex-1"
+                    icon={<XCircle className="h-10 w-10 text-destructive/40" />}
+                  />
+                ) : (
+                  <div className="max-h-80 overflow-y-auto p-4 grid gap-3 custom-scrollbar">
+                    {results.map((card) => {
+                      const imageUrl = card.image_uris?.small || card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || "";
+                      const isSelected = selectedCardId === card.id;
+                      
+                      return (
+                        <label
+                          key={card.id}
+                          className={`group flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all duration-300 border-2 relative overflow-hidden ${
+                            isSelected 
+                              ? "bg-primary/10 border-primary shadow-sm ring-1 ring-primary/20" 
+                              : "border-zinc-200/50 dark:border-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white/50 dark:bg-zinc-900/50"
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name="scryfallId"
+                            value={card.id}
+                            className="sr-only"
+                            checked={isSelected}
+                            onChange={() => setSelectedCardId(card.id)}
+                            required
+                          />
+                          <div className="w-14 h-20 relative bg-muted rounded-lg shrink-0 overflow-hidden border border-zinc-200/30 dark:border-zinc-800/30 shadow-sm transition-transform duration-500 group-hover:scale-105">
+                            {imageUrl && (
+                              <img
+                                src={imageUrl}
+                                alt={card.name}
+                                className="object-cover w-full h-full"
+                                loading="lazy"
+                              />
+                            )}
+                          </div>
+                          <div className="flex flex-col flex-1 min-w-0">
+                            <span className="font-bold text-base tracking-tight leading-tight mb-0.5 truncate group-hover:text-primary transition-colors">
+                              {(card.printed_name as string) || card.name}
+                            </span>
+                            <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 capitalize">
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                              {card.set_name} · <span className="uppercase text-[10px] font-black">{card.set}</span>
+                            </span>
+                          </div>
+                          {isSelected && (
+                            <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground rounded-full p-1 shadow-md">
+                              <Check className="h-3.5 w-3.5" />
+                            </div>
                           )}
-                        </div>
-                        <div className="flex flex-col flex-1 min-w-0">
-                          <span className="font-semibold text-sm leading-tight">
-                            {String(card.printed_name || card.name || "")}
-                          </span>
-                          <span className="text-xs text-muted-foreground">
-                            {card.set_name} ({card.set.toUpperCase()})
-                          </span>
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              </fieldset>
-            )}
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
 
             {selectedCardId && (
-              <>
+              <div className="space-y-8 animate-in slide-in-from-top-4 duration-500">
                 {/* Seção de Preço e Quantidade */}
-                <fieldset className="grid grid-cols-2 gap-4">
-                  <legend className="sr-only">Preço e Quantidade</legend>
-                  <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
                     <label
                       htmlFor="price"
-                      className="text-sm font-semibold text-foreground"
+                      className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
                     >
-                      Preço (R$) <span className="text-destructive">*</span>
+                      Preço Unitário (R$)
                     </label>
-                    <Input
-                      id="price"
-                      type="number"
-                      step="0.01"
-                      name="price"
-                      required
-                      placeholder="0.00"
-                      min="0"
-                      className="transition-all duration-200 focus-visible:ring-2"
-                      aria-label="Preço do card"
-                    />
+                    <div className="relative group">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground group-focus-within:text-primary transition-colors">R$</span>
+                      <Input
+                        id="price"
+                        type="number"
+                        step="0.01"
+                        name="price"
+                        required
+                        placeholder="0,00"
+                        min="0"
+                        className="pl-10 h-12 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary/40 rounded-xl font-mono tabular-nums font-bold"
+                      />
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-2">
+                  <div className="space-y-2">
                     <label
                       htmlFor="quantity"
-                      className="text-sm font-semibold text-foreground"
+                      className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
                     >
-                      Quantidade <span className="text-destructive">*</span>
+                      Quantidade
                     </label>
                     <Input
                       id="quantity"
@@ -252,122 +294,101 @@ export function AddCardDialog() {
                       required
                       defaultValue="1"
                       min="1"
-                      className="transition-all duration-200 focus-visible:ring-2"
-                      aria-label="Quantidade de cards"
+                      className="h-12 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary/40 rounded-xl font-bold"
                     />
                   </div>
-                </fieldset>
+                </div>
 
                 {/* Seção de Condição e Idioma */}
-                <fieldset className="grid grid-cols-2 gap-4">
-                  <legend className="sr-only">Condição e Idioma</legend>
-                  <div className="flex flex-col gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="space-y-2">
                     <label
                       htmlFor="condition"
-                      className="text-sm font-semibold text-foreground"
+                      className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
                     >
-                      Condição <span className="text-destructive">*</span>
+                      Estado de Conservação
                     </label>
                     <Select name="condition" defaultValue="NM" required>
                       <SelectTrigger
                         id="condition"
-                        className="transition-all duration-200 focus-visible:ring-2"
-                        aria-label="Selecionar condição do card"
+                        className="h-12 transition-all duration-300 focus-visible:ring-2 rounded-xl font-medium"
                       >
                         <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="NM">Near Mint (NM)</SelectItem>
-                        <SelectItem value="SP">
-                          Slightly Played (SP)
-                        </SelectItem>
-                        <SelectItem value="MP">
-                          Moderately Played (MP)
-                        </SelectItem>
-                        <SelectItem value="HP">
-                          Heavily Played (HP)
-                        </SelectItem>
-                        <SelectItem value="D">Damaged (D)</SelectItem>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="NM">Near Mint (NM) · <span className="text-[10px] text-emerald-500 font-bold uppercase">Impecável</span></SelectItem>
+                        <SelectItem value="SP">Slightly Played (SP) · <span className="text-[10px] text-blue-500 font-bold uppercase">Sinais leves</span></SelectItem>
+                        <SelectItem value="MP">Moderately Played (MP) · <span className="text-[10px] text-amber-500 font-bold uppercase">Sinais visíveis</span></SelectItem>
+                        <SelectItem value="HP">Heavily Played (HP) · <span className="text-[10px] text-orange-500 font-bold uppercase">Muito usado</span></SelectItem>
+                        <SelectItem value="D">Damaged (D) · <span className="text-[10px] text-destructive font-bold uppercase">Danificado</span></SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="flex flex-col gap-2">
+                  <div className="space-y-2">
                     <label
                       htmlFor="language"
-                      className="text-sm font-semibold text-foreground"
+                      className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1"
                     >
-                      Idioma <span className="text-destructive">*</span>
+                      Idioma Original
                     </label>
                     <Select name="language" defaultValue="EN" required>
                       <SelectTrigger
                         id="language"
-                        className="transition-all duration-200 focus-visible:ring-2"
-                        aria-label="Selecionar idioma do card"
+                        className="h-12 transition-all duration-300 focus-visible:ring-2 rounded-xl font-medium"
                       >
                         <SelectValue placeholder="Selecione..." />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="EN">
-                          <LanguageBadge language="EN" className="bg-transparent border-0 p-0 shadow-none" />
-                        </SelectItem>
-                        <SelectItem value="PT">
-                          <LanguageBadge language="PT" className="bg-transparent border-0 p-0 shadow-none" />
-                        </SelectItem>
-                        <SelectItem value="JP">
-                          <LanguageBadge language="JP" className="bg-transparent border-0 p-0 shadow-none" />
-                        </SelectItem>
+                      <SelectContent className="rounded-xl">
+                        <SelectItem value="EN"><LanguageBadge language="EN" className="bg-transparent border-0 p-0 shadow-none text-sm font-bold" /></SelectItem>
+                        <SelectItem value="PT"><LanguageBadge language="PT" className="bg-transparent border-0 p-0 shadow-none text-sm font-bold" /></SelectItem>
+                        <SelectItem value="JP"><LanguageBadge language="JP" className="bg-transparent border-0 p-0 shadow-none text-sm font-bold" /></SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                </fieldset>
+                </div>
 
                 {/* Seção de Extras */}
-                <fieldset className="flex flex-col gap-3 border border-border rounded-lg p-4 bg-gradient-to-b from-muted/40 to-muted/20">
-                  <legend className="text-sm font-semibold text-foreground">
-                    Extras (Opcional)
-                  </legend>
-                  <p className="text-xs text-muted-foreground">
-                    Selecione quaisquer características especiais do card
-                  </p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                    {VALID_EXTRAS.map((extra) => (
-                      <label
-                        key={extra.value}
-                        className={`flex items-center gap-2 p-2 rounded-lg border-2 cursor-pointer transition-all duration-200 ${selectedExtras.includes(extra.value)
-                            ? "border-primary bg-primary/10 shadow-sm"
-                            : "border-transparent bg-muted/50 hover:bg-muted/70"
+                <div className="space-y-3">
+                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
+                    Atributos Especiais (Extras)
+                  </label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {VALID_EXTRAS.map((extra) => {
+                      const isSelected = selectedExtras.includes(extra.value);
+                      return (
+                        <label
+                          key={extra.value}
+                          className={`flex items-center gap-2 p-2.5 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
+                            isSelected
+                              ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/20"
+                              : "border-zinc-200/50 dark:border-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700 bg-muted/30"
                           }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedExtras.includes(extra.value)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedExtras([
-                                ...selectedExtras,
-                                extra.value,
-                              ]);
-                            } else {
-                              setSelectedExtras(
-                                selectedExtras.filter((e) => e !== extra.value),
-                              );
-                            }
-                          }}
-                          className="w-4 h-4 accent-primary cursor-pointer rounded"
-                          aria-label={`Selecionar ${extra.label}`}
-                        />
-                        <span className="text-xs font-medium truncate">
-                          {extra.label}
-                        </span>
-                      </label>
-                    ))}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedExtras([...selectedExtras, extra.value]);
+                              } else {
+                                setSelectedExtras(selectedExtras.filter((e) => e !== extra.value));
+                              }
+                            }}
+                            className="w-4 h-4 accent-primary cursor-pointer rounded-md"
+                          />
+                          <span className={`text-[10px] font-black uppercase tracking-tight truncate ${isSelected ? "text-primary" : "text-muted-foreground"}`}>
+                            {extra.label}
+                          </span>
+                        </label>
+                      );
+                    })}
                   </div>
-                </fieldset>
-              </>
+                </div>
+              </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-4 border-t mt-2">
+            <div className="flex justify-end gap-3 pt-6 border-t mt-4 sticky bottom-0 bg-white dark:bg-zinc-950 pb-2 z-10 transition-colors">
               <Button
                 type="button"
                 variant="outline"
@@ -377,28 +398,26 @@ export function AddCardDialog() {
                   setResults([]);
                   setSelectedCardId("");
                   setSelectedExtras([]);
+                  setHasSearched(false);
                 }}
-                className="transition-all duration-200 hover:scale-105 active:scale-95"
+                className="transition-all duration-300 hover:bg-muted h-12 px-6 rounded-xl font-bold"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
                 disabled={!selectedCardId || isPending}
-                className="transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 gap-2 px-6"
-                aria-label={
-                  isPending ? "Salvando card..." : "Salvar card no estoque"
-                }
+                className="transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 gap-2 px-8 h-12 rounded-xl font-bold shadow-lg shadow-primary/20"
               >
                 {isPending ? (
                   <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Salvando...
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                    <span>Salvando...</span>
                   </>
                 ) : (
                   <>
-                    <Check className="h-4 w-4" />
-                    Salvar no Estoque
+                    <Check className="h-5 w-5" />
+                    <span>Salvar no Estoque</span>
                   </>
                 )}
               </Button>

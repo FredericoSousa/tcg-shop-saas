@@ -15,7 +15,7 @@ import { GetDashboardSummaryUseCase } from "@/lib/application/use-cases/get-dash
 import { ListOrdersUseCase } from "@/lib/application/use-cases/list-orders.use-case";
 
 // Premium performance optimization for Next.js 16
-export const unstable_instant = true;
+export const unstable_instant = { prefetch: "static" };
 
 export default async function AdminDashboardPage() {
   const { tenant } = await getAdminContext();
@@ -94,7 +94,7 @@ export default async function AdminDashboardPage() {
         {kpis.map((kpi, idx) => (
           <div
             key={kpi.title}
-            className="group relative overflow-hidden rounded-2xl bg-card/40 border shadow-sm backdrop-blur-md bg-gradient-to-br from-card/80 to-card/40 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/20"
+            className="group relative overflow-hidden rounded-2xl bg-card/40 border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm backdrop-blur-md bg-gradient-to-br from-card/80 to-card/40 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/30 p-6"
             style={{
               animation: `fadeInUp 0.6s ease-out ${idx * 0.15}s both`,
             }}

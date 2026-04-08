@@ -44,58 +44,59 @@ export function TopProductsTable() {
   }
 
   return (
-    <Card className="bg-white/50 backdrop-blur-sm border-white/20 shadow-sm col-span-1 md:col-span-2 lg:col-span-1">
+    <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm col-span-1 md:col-span-2 lg:col-span-1 transition-all duration-300 hover:shadow-lg hover:border-primary/20">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
             <CardTitle className="text-lg font-bold">Top 5 Produtos</CardTitle>
-            <CardDescription>Mais vendidos em faturamento</CardDescription>
+            <CardDescription className="text-xs font-medium">Mais vendidos em faturamento</CardDescription>
           </div>
-          <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10 font-bold">
+          <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black uppercase tracking-tighter text-[9px]">
             Popularidade
           </Badge>
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-5">
           {products.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm font-medium">
               Nenhuma venda registrada ainda.
             </div>
           ) : (
             products.map((product, idx) => (
-              <div key={product.id} className="flex items-center gap-4 group">
-                <div className="relative h-12 w-10 flex-shrink-0 bg-muted rounded overflow-hidden shadow-sm group-hover:shadow-md transition-shadow">
+              <div key={product.id} className="flex items-center gap-4 group cursor-pointer">
+                <div className="relative h-12 w-10 flex-shrink-0 bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden shadow-sm group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
                   {product.imageUrl ? (
                     <Image
                       src={product.imageUrl}
                       alt={product.name}
                       fill
+                      sizes="40px"
                       className="object-cover"
                     />
                   ) : (
-                    <div className="flex items-center justify-center h-full text-[10px] text-muted-foreground">?</div>
+                    <div className="flex items-center justify-center h-full text-[10px] text-muted-foreground font-bold">TCG</div>
                   )}
-                  <div className="absolute top-0 left-0 bg-primary text-white text-[8px] font-bold px-1 rounded-br-md">
+                  <div className="absolute top-0 left-0 bg-primary/90 backdrop-blur-sm text-white text-[8px] font-black px-1.5 py-0.5 rounded-br-lg shadow-sm">
                     #{idx + 1}
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate group-hover:text-primary transition-colors">{product.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] font-medium text-muted-foreground flex items-center gap-1">
+                  <p className="text-sm font-bold truncate group-hover:text-primary transition-colors leading-tight mb-0.5">{product.name}</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-muted-foreground/80 flex items-center gap-1 uppercase tracking-tighter">
                       <ShoppingCart className="h-2.5 w-2.5" />
                       {product.count} vendidos
                     </span>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm font-black text-primary">
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-black text-primary tabular-nums">
                     {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(product.revenue)}
                   </p>
-                  <p className="text-[10px] text-green-600 font-bold flex items-center justify-end gap-0.5">
+                  <p className="text-[9px] text-emerald-500 font-black flex items-center justify-end gap-0.5 uppercase tracking-tight">
                     <TrendingUp className="h-2.5 w-2.5" />
-                    High
+                    +5%
                   </p>
                 </div>
               </div>

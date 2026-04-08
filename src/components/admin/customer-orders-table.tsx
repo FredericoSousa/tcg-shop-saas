@@ -37,9 +37,13 @@ export function CustomerOrdersTable({ customerId }: CustomerOrdersTableProps) {
     try {
       const response = await fetch(`/api/admin/customers/${customerId}/orders?page=${page}&limit=5`);
       if (!response.ok) throw new Error("Failed to fetch orders");
-      const data = await response.json();
-      setOrders(data.items);
-      setTotalPages(data.pageCount);
+      const result = await response.json();
+      if (result.success && result.data) {
+        setOrders(result.data.items || []);
+        setTotalPages(result.data.pageCount || 1);
+      } else {
+        throw new Error(result.message || "Failed to parse orders");
+      }
     } catch (error) {
       console.error(error);
       toast.error("Erro ao carregar histórico de pedidos");
@@ -53,7 +57,7 @@ export function CustomerOrdersTable({ customerId }: CustomerOrdersTableProps) {
   }, [fetchOrders]);
 
   return (
-    <div className="bg-card rounded-xl border shadow-sm overflow-hidden flex flex-col h-full">
+    <div className="bg-card/40 backdrop-blur-md rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-lg">
       <div className="p-6 border-b flex items-center justify-between">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <ShoppingBag className="w-5 h-5 text-primary" />

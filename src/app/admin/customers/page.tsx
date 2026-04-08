@@ -87,10 +87,14 @@ export default function CustomersPage() {
       });
       const response = await fetch(`/api/admin/customers?${queryParams}`);
       if (!response.ok) throw new Error("Failed to fetch customers");
-      const data = await response.json();
-      setCustomers(data.items);
-      setTotal(data.total);
-      setPageCount(data.pageCount);
+      const result = await response.json();
+      if (result.success && result.data) {
+        setCustomers(result.data.items || []);
+        setTotal(result.data.total || 0);
+        setPageCount(result.data.pageCount || 1);
+      } else {
+        throw new Error(result.message || "Failed to parse customers data");
+      }
     } catch (error) {
       console.error(error);
       toast.error("Erro ao carregar clientes");

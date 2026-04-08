@@ -20,7 +20,7 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card p-5 md:p-6 rounded-xl border shadow-sm backdrop-blur-sm bg-gradient-to-br from-card to-card/50 transition-all duration-300 hover:shadow-md",
+        "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card/40 p-5 md:p-6 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm backdrop-blur-md bg-gradient-to-br from-card to-card/50 transition-all duration-300 hover:shadow-lg hover:border-primary/20",
         className
       )}
     >
