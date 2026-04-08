@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import "reflect-metadata";
 import { injectable } from "tsyringe";
 import { prisma } from "../../prisma";
 import type { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
@@ -72,8 +73,8 @@ export class PrismaInventoryRepository implements IInventoryRepository {
 
     const saved = await prisma.inventoryItem.upsert({
       where: { id: item.id || "" },
-      create: data as any,
-      update: data as any,
+      create: { ...data, tenantId: item.tenantId },
+      update: data,
     });
 
     return this.mapToDomain(saved);
@@ -158,5 +159,11 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     if (result.count === 0) {
       throw new Error("Item esgotado ou quantidade insuficiente no estoque.");
     }
+  }
+
+  async countActive(tenantId: string): Promise<number> {
+    return prisma.inventoryItem.count({
+      where: { tenantId, active: true },
+    });
   }
 }

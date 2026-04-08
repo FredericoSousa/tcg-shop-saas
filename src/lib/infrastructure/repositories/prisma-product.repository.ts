@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { injectable } from "tsyringe";
 import { prisma } from "../../prisma";
 import { IProductRepository } from "@/lib/domain/repositories/product.repository";

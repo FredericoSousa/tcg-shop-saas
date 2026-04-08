@@ -42,7 +42,6 @@ export class PrismaCustomerRepository implements ICustomerRepository {
       phoneNumber: customer.phoneNumber,
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const saved = await prisma.customer.create({ data: data as any });
     return this.mapToDomain(saved);
   }

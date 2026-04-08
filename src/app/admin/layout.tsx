@@ -2,7 +2,7 @@ import { Sidebar } from "@/components/admin/sidebar";
 import { Navbar } from "@/components/admin/navbar";
 import { Footer } from "@/components/admin/footer";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 import { getAdminContext } from "@/lib/tenant-server";
 
 import { SidebarProvider } from "@/components/admin/sidebar-provider";
@@ -28,7 +28,13 @@ export default async function AdminLayout({
           navbar={<Navbar username={session.username} />}
           footer={<Footer />}
         >
-          {children}
+          <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[400px]">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+            </div>
+          }>
+            {children}
+          </Suspense>
         </AdminLayoutShell>
       </SidebarProvider>
     </ThemeProvider>

@@ -1,4 +1,5 @@
 import { injectable } from "tsyringe";
+import { Prisma } from "@prisma/client";
 import { prisma } from "../../prisma";
 import { 
   RevenueByCategory, 
@@ -12,33 +13,33 @@ import {
 } from "@/lib/domain/entities/report";
 import { IReportsRepository } from "@/lib/domain/repositories/report.repository";
 
+interface RevenueByCategoryRow {
+  category: string;
+  count: number;
+  revenue: number;
+}
+
+interface RevenueBySetRow {
+  set: string;
+  count: number;
+  revenue: number;
+}
+
+interface TopSellingProductRow {
+  id: string;
+  name: string;
+  image_url: string | null;
+  count: number;
+  revenue: number;
+}
+
 @injectable()
 export class PrismaReportsRepository implements IReportsRepository {
   async getRevenueByCategory(tenantId: string, startDate?: Date, endDate?: Date): Promise<RevenueByCategory[]> {
-    // For products with categories
-    const results = await prisma.orderItem.groupBy({
-      by: ['productId'],
-      where: {
-        order: {
-          tenantId,
-          status: { not: 'CANCELLED' },
-          createdAt: {
-            gte: startDate,
-            lte: endDate
-          }
-        },
-        productId: { not: null }
-      },
-      _sum: {
-        quantity: true,
-        priceAtPurchase: true
-      }
-    });
+    const startDateFilter = startDate ? Prisma.sql`AND o.created_at >= ${startDate}` : Prisma.empty;
+    const endDateFilter = endDate ? Prisma.sql`AND o.created_at <= ${endDate}` : Prisma.empty;
 
-    // This is a bit simplified, but for a real "Category" report we'd need to join.
-    // I'll use queryRaw to get it in one shot including categories and card sets.
-    
-    const rawResults = await prisma.$queryRaw<any[]>`
+    const rawResults = await prisma.$queryRaw<RevenueByCategoryRow[]>`
       SELECT 
         c.name as category,
         SUM(oi.quantity)::int as count,
@@ -49,8 +50,8 @@ export class PrismaReportsRepository implements IReportsRepository {
       JOIN product_categories c ON c.id = p.category_id
       WHERE o.tenant_id = ${tenantId}::uuid
         AND o.status != 'CANCELLED'
-        ${startDate ? `AND o.created_at >= ${startDate}` : ''}
-        ${endDate ? `AND o.created_at <= ${endDate}` : ''}
+        ${startDateFilter}
+        ${endDateFilter}
       GROUP BY c.name
       
       UNION ALL
@@ -64,8 +65,8 @@ export class PrismaReportsRepository implements IReportsRepository {
       WHERE o.tenant_id = ${tenantId}::uuid
         AND o.status != 'CANCELLED'
         AND oi.inventory_item_id IS NOT NULL
-        ${startDate ? `AND o.created_at >= ${startDate}` : ''}
-        ${endDate ? `AND o.created_at <= ${endDate}` : ''}
+        ${startDateFilter}
+        ${endDateFilter}
     `;
 
     return rawResults.map(r => ({
@@ -76,7 +77,10 @@ export class PrismaReportsRepository implements IReportsRepository {
   }
 
   async getRevenueBySet(tenantId: string, startDate?: Date, endDate?: Date): Promise<RevenueBySet[]> {
-    const rawResults = await prisma.$queryRaw<any[]>`
+    const startDateFilter = startDate ? Prisma.sql`AND o.created_at >= ${startDate}` : Prisma.empty;
+    const endDateFilter = endDate ? Prisma.sql`AND o.created_at <= ${endDate}` : Prisma.empty;
+
+    const rawResults = await prisma.$queryRaw<RevenueBySetRow[]>`
       SELECT 
         ct.set as "set",
         SUM(oi.quantity)::int as count,
@@ -87,8 +91,8 @@ export class PrismaReportsRepository implements IReportsRepository {
       JOIN card_templates ct ON ct.id = ii.card_template_id
       WHERE o.tenant_id = ${tenantId}::uuid
         AND o.status != 'CANCELLED'
-        ${startDate ? `AND o.created_at >= ${startDate}` : ''}
-        ${endDate ? `AND o.created_at <= ${endDate}` : ''}
+        ${startDateFilter}
+        ${endDateFilter}
       GROUP BY ct.set
       ORDER BY revenue DESC
     `;
@@ -101,8 +105,7 @@ export class PrismaReportsRepository implements IReportsRepository {
   }
 
   async getTopSellingProducts(tenantId: string, limit: number = 10): Promise<TopSellingProduct[]> {
-    // Combine inventory items (cards) and products
-    const rawResults = await prisma.$queryRaw<any[]>`
+    const rawResults = await prisma.$queryRaw<TopSellingProductRow[]>`
       WITH sold_items AS (
         SELECT 
           p.id,
@@ -281,7 +284,7 @@ export class PrismaReportsRepository implements IReportsRepository {
 
     return Object.entries(monthlyData)
       .map(([month, revenue]) => ({ month, revenue }))
-      .reverse(); // Standard chronological order for the last 6 months
+      .reverse(); 
   }
 
   async getInventoryValuationBySet(tenantId: string): Promise<InventoryValuation[]> {
@@ -322,5 +325,3 @@ export class PrismaReportsRepository implements IReportsRepository {
     return results.sort((a, b) => b.value - a.value).slice(0, 10);
   }
 }
-
-

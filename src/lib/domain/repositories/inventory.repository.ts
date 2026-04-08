@@ -8,6 +8,7 @@ export interface IInventoryRepository {
   updateMany(ids: string[], data: Partial<InventoryItem>): Promise<void>;
   deleteMany(ids: string[]): Promise<void>;
   findPaginated(page: number, limit: number, search?: string): Promise<{ items: InventoryItem[], total: number }>;
+  countActive(tenantId: string): Promise<number>;
   decrementStock(id: string, quantity: number): Promise<void>;
 }
 

@@ -1,7 +1,8 @@
-import { prisma } from "@/lib/prisma";
+import "reflect-metadata";
+import { container } from "@/lib/infrastructure/container";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
-import { LayoutDashboard, Package, ShoppingCart, DollarSign, TrendingUp, Calendar, PieChart as PieChartIcon, ArrowUpRight } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, DollarSign, TrendingUp, Calendar, PieChart as PieChartIcon } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getAdminContext } from "@/lib/tenant-server";
@@ -9,60 +10,43 @@ import { DashboardChart } from "@/components/admin/dashboard-chart";
 import { RevenueDashboard } from "@/components/admin/analytics/revenue-dashboard";
 import { TopProductsTable } from "@/components/admin/analytics/top-products-table";
 import { TopBuyersCard } from "@/components/admin/analytics/top-buyers-card";
+import { GetDashboardSummaryUseCase } from "@/lib/application/use-cases/get-dashboard-summary.use-case";
+import { ListOrdersUseCase } from "@/lib/application/use-cases/list-orders.use-case";
 
+// Type for order items with populated relations returned by repository
+interface OrderItemWithRelations {
+  id: string;
+  inventoryItem?: {
+    cardTemplate?: {
+      imageUrl: string | null;
+    };
+  };
+  product?: {
+    imageUrl: string | null;
+  };
+}
+
+// Premium performance optimization for Next.js 16
+export const unstable_instant = true;
 
 export default async function AdminDashboardPage() {
   const { tenant } = await getAdminContext();
+  
+  // Resolve use cases from container
+  const getDashboardSummary = container.resolve(GetDashboardSummaryUseCase);
+  const listOrders = container.resolve(ListOrdersUseCase);
 
-  const [inventoryCount, inventoryAgg, ordersCount, revenueAgg, recentOrders, weeklyRevenue] =
-    await Promise.all([
-      prisma.inventoryItem.count({ where: { tenantId: tenant.id } }),
-      prisma.inventoryItem.aggregate({
-        where: { tenantId: tenant.id },
-        _sum: { price: true },
-      }),
-      prisma.order.count({ where: { tenantId: tenant.id } }),
-      prisma.order.aggregate({
-        where: { tenantId: tenant.id, status: { not: "CANCELLED" } },
-        _sum: { totalAmount: true },
-      }),
-      prisma.order.findMany({
-        where: { tenantId: tenant.id },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-        include: {
-          customer: true,
-          items: {
-            include: {
-              inventoryItem: { include: { cardTemplate: true } },
-              product: true,
-            },
-          },
-        },
-      }),
-      // Simulated weekly revenue for the chart
-      prisma.order.groupBy({
-        by: ['createdAt'],
-        where: { 
-          tenantId: tenant.id, 
-          status: { not: "CANCELLED" },
-          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
-        },
-        _sum: { totalAmount: true },
-      })
-    ]);
+  const [summary, ordersData] = await Promise.all([
+    getDashboardSummary.execute(tenant.id),
+    listOrders.execute({ 
+      page: 1, 
+      limit: 5, 
+      filters: {} 
+    })
+  ]);
 
-  const totalInventoryValue = Number(inventoryAgg._sum.price ?? 0);
-  const totalRevenue = Number(revenueAgg._sum.totalAmount ?? 0);
-
-  // Format data for chart
-  const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
-  const chartData = days.map((day, i) => {
-    const amount = weeklyRevenue
-      .filter(r => new Date(r.createdAt).getDay() === i)
-      .reduce((sum, curr) => sum + Number(curr._sum.totalAmount || 0), 0);
-    return { day, amount: amount || Math.floor(Math.random() * 100) }; // Mock some data if 0 for demo
-  });
+  const { inventoryCount, totalInventoryValue, ordersCount, totalRevenue, weeklyRevenue } = summary;
+  const recentOrders = ordersData.items;
 
   const kpis = [
     {
@@ -187,7 +171,7 @@ export default async function AdminDashboardPage() {
           <DashboardChart 
             title="Tendência de Faturamento" 
             total={new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalRevenue)} 
-            data={chartData} 
+            data={weeklyRevenue} 
           />
         </div>
       </div>
@@ -217,7 +201,7 @@ export default async function AdminDashboardPage() {
         </div>
 
         <div className="rounded-2xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden border-zinc-200/50 dark:border-zinc-800/50">
-          {recentOrders.length === 0 ? (
+          {!recentOrders || recentOrders.length === 0 ? (
             <div className="text-center py-20 px-4 text-muted-foreground">
               <div className="mb-4 flex justify-center">
                 <div className="h-14 w-14 rounded-full bg-muted/50 flex items-center justify-center">
@@ -238,8 +222,9 @@ export default async function AdminDashboardPage() {
                   >
                     <div className="flex items-center gap-5 min-w-0 flex-1">
                       <div className="hidden sm:flex -space-x-2">
-                        {order.items.slice(0, 3).map((item) => {
-                          const imageUrl = item.inventoryItem?.cardTemplate?.imageUrl || item.product?.imageUrl;
+                        {order.items?.slice(0, 3).map((item) => {
+                          const typedItem = item as unknown as OrderItemWithRelations;
+                          const imageUrl = typedItem.inventoryItem?.cardTemplate?.imageUrl || typedItem.product?.imageUrl;
                           return (
                             <div
                               key={item.id}
@@ -256,7 +241,7 @@ export default async function AdminDashboardPage() {
                             </div>
                           );
                         })}
-                        {order.items.length > 3 && (
+                        {(order.items?.length || 0) > 3 && (
                           <div className="h-12 w-9 rounded-lg border-2 border-background bg-zinc-800 shadow-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0 ring-1 ring-border/30">
                             +{order.items.length - 3}
                           </div>
@@ -264,14 +249,14 @@ export default async function AdminDashboardPage() {
                       </div>
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
-                          {order.customer.name}
+                          {order.customer?.name || "Cliente Desconhecido"}
                         </p>
                         <p className="text-[11px] font-medium text-muted-foreground mt-0.5">
                           {new Date(order.createdAt).toLocaleDateString(
                             "pt-BR",
                             { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }
-                          )} · {order.items.length}{" "}
-                          {order.items.length === 1 ? "item" : "itens"}
+                          )} · {order.items?.length || 0}{" "}
+                          {order.items?.length === 1 ? "item" : "itens"}
                         </p>
                       </div>
                     </div>
