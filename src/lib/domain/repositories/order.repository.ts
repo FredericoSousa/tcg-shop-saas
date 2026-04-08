@@ -7,11 +7,10 @@ export type OrderRelation = Order & {
 };
 
 export interface IOrderRepository {
-  findById(id: string, tenantId: string): Promise<Order | null>;
+  findById(id: string): Promise<Order | null>;
   save(order: Order, items: Omit<OrderItem, "id" | "orderId">[]): Promise<Order>;
-  updateStatus(id: string, tenantId: string, status: OrderStatus): Promise<void>;
+  updateStatus(id: string, status: OrderStatus): Promise<void>;
   findPaginated(
-    tenantId: string,
     page: number,
     limit: number,
     filters?: {
@@ -19,8 +18,9 @@ export interface IOrderRepository {
       source?: OrderSource | "all";
       search?: string;
       customerPhone?: string;
+      customerId?: string;
     }
   ): Promise<{ items: Order[]; total: number }>;
-  findPendingPOSOrder(customerId: string, tenantId: string): Promise<Order | null>;
+  findPendingPOSOrder(customerId: string): Promise<Order | null>;
   appendToOrder(orderId: string, items: { productId: string; quantity: number; priceAtPurchase: number }[], totalAmountIncrement: number): Promise<void>;
 }

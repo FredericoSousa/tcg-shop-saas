@@ -5,9 +5,9 @@ import type { IProductRepository } from "@/lib/domain/repositories/product.repos
 import type { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
 import { Order } from "@/lib/domain/entities/order";
 import { prisma } from "@/lib/prisma";
+import { getTenantId } from "../../tenant-context";
 
 interface POSCheckoutRequest {
-  tenantId: string;
   items: {
     productId: string;
     quantity: number;
@@ -29,13 +29,13 @@ export class POSCheckoutUseCase {
   ) {}
 
   async execute(request: POSCheckoutRequest): Promise<{ orderId: string }> {
-    const { tenantId, items, customerData } = request;
+    const { items, customerData } = request;
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const orderId = await prisma.$transaction(async (_tx) => {
       // 1. Decrement stock for products
       for (const item of items) {
-        await this.productRepo.decrementStock(item.productId, tenantId, item.quantity);
+        await this.productRepo.decrementStock(item.productId, item.quantity);
       }
 
       // 2. Resolve Customer
@@ -43,7 +43,7 @@ export class POSCheckoutUseCase {
       if (customerData.id) {
         customerId = customerData.id;
       } else if (customerData.phoneNumber) {
-        const customer = await this.customerRepo.upsert(customerData.phoneNumber, tenantId, {
+        const customer = await this.customerRepo.upsert(customerData.phoneNumber, {
           name: customerData.name,
         });
         customerId = customer.id;
@@ -52,7 +52,7 @@ export class POSCheckoutUseCase {
       }
 
       // 3. Check for existing PENDING POS order
-      const existingOrder = await this.orderRepo.findPendingPOSOrder(customerId, tenantId);
+      const existingOrder = await this.orderRepo.findPendingPOSOrder(customerId);
       const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
       if (existingOrder) {
@@ -65,7 +65,7 @@ export class POSCheckoutUseCase {
       } else {
         const orderEntity: Order = {
           id: "",
-          tenantId,
+          tenantId: getTenantId()!,
           customerId,
           totalAmount,
           status: "PENDING",

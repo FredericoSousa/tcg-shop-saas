@@ -7,7 +7,7 @@ import { Product } from "@/lib/domain/entities/product";
 export class GetProductUseCase {
   constructor(@inject(TOKENS.ProductRepository) private productRepo: IProductRepository) {}
 
-  async execute(id: string, tenantId: string): Promise<Product | null> {
-    return this.productRepo.findById(id, tenantId);
+  async execute(id: string): Promise<Product | null> {
+    return this.productRepo.findById(id);
   }
 }

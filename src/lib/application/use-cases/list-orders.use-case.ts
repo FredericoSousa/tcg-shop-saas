@@ -4,7 +4,6 @@ import type { IOrderRepository } from "@/lib/domain/repositories/order.repositor
 import { Order, OrderStatus, OrderSource } from "@/lib/domain/entities/order";
 
 interface ListOrdersRequest {
-  tenantId: string;
   page: number;
   limit: number;
   filters: {
@@ -12,6 +11,7 @@ interface ListOrdersRequest {
     status?: OrderStatus | "all";
     search?: string;
     customerPhone?: string;
+    customerId?: string;
   };
 }
 
@@ -20,8 +20,8 @@ export class ListOrdersUseCase {
   constructor(@inject(TOKENS.OrderRepository) private orderRepo: IOrderRepository) {}
 
   async execute(request: ListOrdersRequest): Promise<{ items: Order[]; total: number; pageCount: number }> {
-    const { tenantId, page, limit, filters } = request;
-    const { items, total } = await this.orderRepo.findPaginated(tenantId, page, limit, filters);
+    const { page, limit, filters } = request;
+    const { items, total } = await this.orderRepo.findPaginated(page, limit, filters);
     
     return {
       items,

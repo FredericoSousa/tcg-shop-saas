@@ -4,7 +4,6 @@ import type { IInventoryRepository } from "@/lib/domain/repositories/inventory.r
 
 interface DeleteInventoryRequest {
   ids: string[];
-  tenantId: string;
 }
 
 @injectable()
@@ -12,6 +11,6 @@ export class DeleteInventoryUseCase {
   constructor(@inject(TOKENS.InventoryRepository) private inventoryRepo: IInventoryRepository) {}
 
   async execute(request: DeleteInventoryRequest): Promise<void> {
-    await this.inventoryRepo.deleteMany(request.ids, request.tenantId);
+    await this.inventoryRepo.deleteMany(request.ids);
   }
 }

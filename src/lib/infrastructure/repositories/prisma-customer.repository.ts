@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { injectable } from "tsyringe";
 import { prisma } from "../../prisma";
 import { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
 import { Customer as DomainCustomer, CustomerStats } from "@/lib/domain/entities/customer";
 import { Prisma, Customer as PrismaCustomer } from "@prisma/client";
+import { getTenantId } from "../../tenant-context";
 
 @injectable()
 export class PrismaCustomerRepository implements ICustomerRepository {
@@ -19,16 +21,16 @@ export class PrismaCustomerRepository implements ICustomerRepository {
     };
   }
 
-  async findById(id: string, tenantId: string): Promise<DomainCustomer | null> {
+  async findById(id: string): Promise<DomainCustomer | null> {
     const item = await prisma.customer.findFirst({
-      where: { id, tenantId },
+      where: { id },
     });
     return item ? this.mapToDomain(item) : null;
   }
 
-  async findByPhoneNumber(phoneNumber: string, tenantId: string): Promise<DomainCustomer | null> {
-    const item = await prisma.customer.findUnique({
-      where: { phoneNumber_tenantId: { phoneNumber, tenantId } },
+  async findByPhoneNumber(phoneNumber: string): Promise<DomainCustomer | null> {
+    const item = await prisma.customer.findFirst({
+      where: { phoneNumber },
     });
     return item ? this.mapToDomain(item) : null;
   }
@@ -38,16 +40,16 @@ export class PrismaCustomerRepository implements ICustomerRepository {
       name: customer.name,
       email: customer.email,
       phoneNumber: customer.phoneNumber,
-      tenantId: customer.tenantId,
     };
 
-    const saved = await prisma.customer.create({ data });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const saved = await prisma.customer.create({ data: data as any });
     return this.mapToDomain(saved);
   }
 
-  async update(id: string, tenantId: string, data: Partial<DomainCustomer>): Promise<DomainCustomer> {
+  async update(id: string, data: Partial<DomainCustomer>): Promise<DomainCustomer> {
     const updated = await prisma.customer.update({
-      where: { id, tenantId },
+      where: { id },
       data: {
         name: data.name,
         email: data.email,
@@ -59,14 +61,12 @@ export class PrismaCustomerRepository implements ICustomerRepository {
   }
 
   async findPaginated(
-    tenantId: string,
     page: number,
     limit: number,
     options?: { search?: string; includeDeleted?: boolean }
   ): Promise<{ items: DomainCustomer[]; total: number }> {
     const skip = (page - 1) * limit;
     const where: Prisma.CustomerWhereInput = {
-      tenantId,
       ...(options?.includeDeleted ? {} : { deletedAt: null }),
       ...(options?.search ? {
         OR: [
@@ -93,9 +93,9 @@ export class PrismaCustomerRepository implements ICustomerRepository {
     };
   }
 
-  async getStats(id: string, tenantId: string): Promise<CustomerStats> {
+  async getStats(id: string): Promise<CustomerStats> {
     const stats = await prisma.order.aggregate({
-      where: { customerId: id, tenantId },
+      where: { customerId: id },
       _sum: { totalAmount: true },
       _count: { id: true },
     });
@@ -106,7 +106,8 @@ export class PrismaCustomerRepository implements ICustomerRepository {
     };
   }
 
-  async upsert(phoneNumber: string, tenantId: string, data: { name?: string; email?: string }): Promise<DomainCustomer> {
+  async upsert(phoneNumber: string, data: { name?: string; email?: string }): Promise<DomainCustomer> {
+    const tenantId = getTenantId()!;
     const customer = await prisma.customer.upsert({
       where: { phoneNumber_tenantId: { phoneNumber, tenantId } },
       update: {
@@ -116,9 +117,9 @@ export class PrismaCustomerRepository implements ICustomerRepository {
       create: {
         name: data.name || "",
         phoneNumber,
-        tenantId,
         email: data.email || null,
-      },
+      // RLS takes over filtering.
+      } as any,
     });
     return this.mapToDomain(customer);
   }

@@ -3,6 +3,7 @@ import { TOKENS } from "../../infrastructure/container";
 import type { ITenantRepository, IUserRepository } from "@/lib/domain/repositories/tenant.repository";
 import { Tenant, User, UserRole } from "@/lib/domain/entities/tenant";
 import { hashPassword } from "@/lib/auth";
+import { getTenantId } from "../../tenant-context";
 
 @injectable()
 export class UpdateSettingsUseCase {
@@ -29,8 +30,8 @@ export class UpdateSettingsUseCase {
 export class ListUsersUseCase {
   constructor(@inject(TOKENS.UserRepository) private userRepo: IUserRepository) {}
 
-  async execute(tenantId: string): Promise<Partial<User>[]> {
-    const users = await this.userRepo.findAll(tenantId);
+  async execute(): Promise<Partial<User>[]> {
+    const users = await this.userRepo.findAll();
     return users.map(u => ({
       id: u.id,
       username: u.username,
@@ -42,7 +43,6 @@ export class ListUsersUseCase {
 
 interface SaveUserRequest {
   id?: string;
-  tenantId: string;
   username: string;
   password?: string;
   role?: UserRole;
@@ -53,20 +53,20 @@ export class SaveUserUseCase {
   constructor(@inject(TOKENS.UserRepository) private userRepo: IUserRepository) {}
 
   async execute(request: SaveUserRequest): Promise<Partial<User>> {
-    const { id, tenantId, username, password, role } = request;
+    const { id, username, password, role } = request;
 
     if (id) {
       const updateData: Partial<User> = { username, role };
       if (password) {
         updateData.passwordHash = await hashPassword(password);
       }
-      const updated = await this.userRepo.update(id, tenantId, updateData);
+      const updated = await this.userRepo.update(id, updateData);
       return { id: updated.id, username: updated.username, role: updated.role };
     }
 
     if (!password) throw new Error("Senha é obrigatória para novos usuários.");
 
-    const existing = await this.userRepo.findByUsername(username, tenantId);
+    const existing = await this.userRepo.findByUsername(username);
     if (existing) throw new Error("Usuário já existe.");
 
     const user = await this.userRepo.save({
@@ -74,7 +74,7 @@ export class SaveUserUseCase {
       username,
       passwordHash: await hashPassword(password),
       role: role || "USER",
-      tenantId,
+      tenantId: getTenantId()!,
       createdAt: new Date(),
       updatedAt: new Date(),
     });

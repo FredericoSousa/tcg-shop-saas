@@ -11,7 +11,6 @@ export async function GET() {
   try {
     const rawInventory = await prisma.inventoryItem.findMany({
       where: {
-        tenantId: tenant.id,
         active: true,
         quantity: { gt: 0 } // Only active stock on the storefront
       },

@@ -22,7 +22,7 @@ export async function GET(
   const { phone } = await params;
 
   try {
-    const customer = await lookupCustomerUseCase.execute(phone, tenant.id);
+    const customer = await lookupCustomerUseCase.execute(phone);
 
     if (customer) {
       return Response.json({ exists: true, id: customer.id });

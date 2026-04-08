@@ -2,10 +2,10 @@ import { injectable, inject } from "tsyringe";
 import { TOKENS } from "../../infrastructure/container";
 import type { IProductRepository } from "@/lib/domain/repositories/product.repository";
 import { ProductCategory } from "@/lib/domain/entities/product";
+import { getTenantId } from "../../tenant-context";
 
 interface SaveCategoryRequest {
   id?: string;
-  tenantId: string;
   name: string;
   description?: string | null;
   showOnEcommerce?: boolean;
@@ -17,7 +17,7 @@ export class SaveCategoryUseCase {
 
   async execute(request: SaveCategoryRequest): Promise<ProductCategory> {
     if (request.id) {
-      return this.productRepo.updateCategory(request.id, request.tenantId, {
+      return this.productRepo.updateCategory(request.id, {
         name: request.name,
         description: request.description,
         showOnEcommerce: request.showOnEcommerce,
@@ -29,7 +29,7 @@ export class SaveCategoryUseCase {
       name: request.name,
       description: request.description || null,
       showOnEcommerce: request.showOnEcommerce ?? true,
-      tenantId: request.tenantId,
+      tenantId: getTenantId()!,
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,

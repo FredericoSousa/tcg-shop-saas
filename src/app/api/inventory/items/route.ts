@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
     const { scryfallId, price, quantity, condition, language, extras = [] } = await request.json();
 
     await addInventoryUseCase.execute({
-      tenantId: tenant.id,
       scryfallId,
       price: Number(price),
       quantity: Number(quantity),
@@ -57,7 +56,7 @@ export async function DELETE(request: NextRequest) {
       return Response.json({ error: "No items selected" }, { status: 400 });
     }
 
-    await deleteInventoryUseCase.execute({ ids, tenantId: tenant.id });
+    await deleteInventoryUseCase.execute({ ids });
 
     revalidatePath("/admin/inventory");
     return Response.json({ success: true });
@@ -85,7 +84,6 @@ export async function PATCH(request: NextRequest) {
 
     await updateInventoryUseCase.execute({
       id,
-      tenantId: tenant.id,
       price: price !== undefined ? Number(price) : undefined,
       quantity: quantity !== undefined ? Number(quantity) : undefined,
     });

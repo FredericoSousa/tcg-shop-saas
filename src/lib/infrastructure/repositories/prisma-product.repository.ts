@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import { injectable } from "tsyringe";
 import { prisma } from "../../prisma";
 import { IProductRepository } from "@/lib/domain/repositories/product.repository";
@@ -37,9 +38,9 @@ export class PrismaProductRepository implements IProductRepository {
     };
   }
 
-  async findById(id: string, tenantId: string): Promise<DomainProduct | null> {
+  async findById(id: string): Promise<DomainProduct | null> {
     const item = await prisma.product.findFirst({
-      where: { id, tenantId, deletedAt: null },
+      where: { id, deletedAt: null },
       include: { category: true },
     });
     return item ? this.mapToDomain(item) : null;
@@ -54,15 +55,15 @@ export class PrismaProductRepository implements IProductRepository {
         price: new Prisma.Decimal(product.price),
         stock: product.stock,
         categoryId: product.categoryId,
-        tenantId: product.tenantId,
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
     });
     return this.mapToDomain(saved);
   }
 
-  async update(id: string, tenantId: string, data: Partial<DomainProduct>): Promise<DomainProduct> {
+  async update(id: string, data: Partial<DomainProduct>): Promise<DomainProduct> {
     const updated = await prisma.product.update({
-      where: { id, tenantId },
+      where: { id },
       data: {
         name: data.name,
         description: data.description,
@@ -78,14 +79,12 @@ export class PrismaProductRepository implements IProductRepository {
   }
 
   async findPaginated(
-    tenantId: string,
     page: number,
     limit: number,
     filters?: { search?: string; categoryId?: string }
   ): Promise<{ items: DomainProduct[]; total: number }> {
     const skip = (page - 1) * limit;
     const where: Prisma.ProductWhereInput = {
-      tenantId,
       deletedAt: null,
       ...(filters?.search ? { name: { contains: filters.search, mode: "insensitive" } } : {}),
       ...(filters?.categoryId ? { categoryId: filters.categoryId } : {}),
@@ -108,11 +107,10 @@ export class PrismaProductRepository implements IProductRepository {
     };
   }
 
-  async decrementStock(id: string, tenantId: string, quantity: number): Promise<void> {
+  async decrementStock(id: string, quantity: number): Promise<void> {
     const result = await prisma.product.updateMany({
       where: {
         id,
-        tenantId,
         stock: { gte: quantity },
         active: true,
         deletedAt: null,
@@ -127,17 +125,17 @@ export class PrismaProductRepository implements IProductRepository {
     }
   }
 
-  async findCategories(tenantId: string): Promise<DomainCategory[]> {
+  async findCategories(): Promise<DomainCategory[]> {
     const items = await prisma.productCategory.findMany({
-      where: { tenantId, deletedAt: null },
+      where: { deletedAt: null },
       orderBy: { name: "asc" },
     });
     return items.map(this.mapCategoryToDomain);
   }
 
-  async findCategoryById(id: string, tenantId: string): Promise<DomainCategory | null> {
+  async findCategoryById(id: string): Promise<DomainCategory | null> {
     const item = await prisma.productCategory.findFirst({
-      where: { id, tenantId, deletedAt: null },
+      where: { id, deletedAt: null },
     });
     return item ? this.mapCategoryToDomain(item) : null;
   }
@@ -148,15 +146,15 @@ export class PrismaProductRepository implements IProductRepository {
         name: category.name,
         description: category.description,
         showOnEcommerce: category.showOnEcommerce,
-        tenantId: category.tenantId,
-      },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
     });
     return this.mapCategoryToDomain(saved);
   }
 
-  async updateCategory(id: string, tenantId: string, data: Partial<DomainCategory>): Promise<DomainCategory> {
+  async updateCategory(id: string, data: Partial<DomainCategory>): Promise<DomainCategory> {
     const updated = await prisma.productCategory.update({
-      where: { id, tenantId },
+      where: { id },
       data: {
         name: data.name,
         description: data.description,

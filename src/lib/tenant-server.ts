@@ -1,7 +1,9 @@
-import { getSession } from "./auth";
+import { getSession, type SessionData } from "./auth";
 import { getTenantById } from "./services/tenant.service";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { runWithTenant } from "./tenant-context";
+import type { Tenant } from "./domain/entities/tenant";
 
 /**
  * Gets the current tenant from the x-tenant-id header.
@@ -71,4 +73,18 @@ export async function validateAdminApi() {
   }
 
   return { session, tenant };
+}
+
+/**
+ * Wrapper for API routes and Server Actions to ensure tenant context is set.
+ */
+export async function withAdminApi<T>(
+  handler: (context: { session: SessionData, tenant: Tenant }) => Promise<T>
+): Promise<T | Response> {
+  const context = await validateAdminApi();
+  if (!context) {
+    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  return runWithTenant(context.tenant.id, () => handler(context));
 }

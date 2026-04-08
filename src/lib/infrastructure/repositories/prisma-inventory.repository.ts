@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { injectable } from "tsyringe";
 import { prisma } from "../../prisma";
 import type { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
@@ -33,22 +34,20 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     };
   }
 
-  async findById(id: string, tenantId: string): Promise<DomainInventoryItem | null> {
+  async findById(id: string): Promise<DomainInventoryItem | null> {
     const item = await prisma.inventoryItem.findFirst({
-      where: { id, tenantId },
+      where: { id },
       include: { cardTemplate: true },
     });
     return item ? this.mapToDomain(item) : null;
   }
 
   async findByTemplate(
-    tenantId: string, 
     templateId: string, 
     filters: Partial<DomainInventoryItem>
   ): Promise<DomainInventoryItem | null> {
     const item = await prisma.inventoryItem.findFirst({
       where: {
-        tenantId,
         cardTemplateId: templateId,
         price: filters.price ? new Prisma.Decimal(filters.price) : undefined,
         condition: filters.condition as Prisma.EnumConditionFilter,
@@ -62,7 +61,6 @@ export class PrismaInventoryRepository implements IInventoryRepository {
   async save(item: DomainInventoryItem): Promise<DomainInventoryItem> {
     const data = {
       id: item.id,
-      tenantId: item.tenantId,
       cardTemplateId: item.cardTemplateId,
       price: new Prisma.Decimal(item.price),
       quantity: item.quantity,
@@ -74,43 +72,41 @@ export class PrismaInventoryRepository implements IInventoryRepository {
 
     const saved = await prisma.inventoryItem.upsert({
       where: { id: item.id || "" },
-      create: data,
-      update: data,
+      create: data as any,
+      update: data as any,
     });
 
     return this.mapToDomain(saved);
   }
 
-  async update(id: string, tenantId: string, data: Partial<DomainInventoryItem>): Promise<DomainInventoryItem> {
+  async update(id: string, data: Partial<DomainInventoryItem>): Promise<DomainInventoryItem> {
     const prismaData: Prisma.InventoryItemUpdateInput = {};
     if (data.price !== undefined) prismaData.price = new Prisma.Decimal(data.price);
     if (data.quantity !== undefined) prismaData.quantity = data.quantity;
     if (data.active !== undefined) prismaData.active = data.active;
 
     const updated = await prisma.inventoryItem.update({
-      where: { id, tenantId },
+      where: { id },
       data: prismaData,
     });
 
     return this.mapToDomain(updated);
   }
 
-  async deleteMany(ids: string[], tenantId: string): Promise<void> {
+  async deleteMany(ids: string[]): Promise<void> {
     await prisma.inventoryItem.updateMany({
-      where: { id: { in: ids }, tenantId },
+      where: { id: { in: ids } },
       data: { active: false },
     });
   }
 
   async findPaginated(
-    tenantId: string, 
     page: number, 
     limit: number, 
     search?: string
   ): Promise<{ items: DomainInventoryItem[]; total: number }> {
     const skip = (page - 1) * limit;
     const where: Prisma.InventoryItemWhereInput = {
-      tenantId,
       active: true,
       ...(search ? {
         cardTemplate: {
@@ -136,11 +132,10 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     };
   }
 
-  async decrementStock(id: string, tenantId: string, quantity: number): Promise<void> {
+  async decrementStock(id: string, quantity: number): Promise<void> {
     const result = await prisma.inventoryItem.updateMany({
       where: {
         id,
-        tenantId,
         quantity: { gte: quantity },
       },
       data: {

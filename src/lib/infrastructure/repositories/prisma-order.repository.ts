@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { injectable } from "tsyringe";
 import { prisma } from "../../prisma";
 import { IOrderRepository } from "@/lib/domain/repositories/order.repository";
@@ -36,9 +37,9 @@ export class PrismaOrderRepository implements IOrderRepository {
     };
   }
 
-  async findById(id: string, tenantId: string): Promise<DomainOrder | null> {
+  async findById(id: string): Promise<DomainOrder | null> {
     const item = await prisma.order.findFirst({
-      where: { id, tenantId },
+      where: { id },
       include: { 
         customer: true,
         items: {
@@ -54,8 +55,8 @@ export class PrismaOrderRepository implements IOrderRepository {
 
   async save(order: DomainOrder, items: Omit<DomainOrderItem, "id" | "orderId">[]): Promise<DomainOrder> {
     const saved = await prisma.order.create({
+      // RLS takes over filtering.
       data: {
-        tenantId: order.tenantId,
         customerId: order.customerId,
         totalAmount: new Prisma.Decimal(order.totalAmount),
         status: order.status,
@@ -68,22 +69,21 @@ export class PrismaOrderRepository implements IOrderRepository {
             priceAtPurchase: new Prisma.Decimal(item.priceAtPurchase),
           })),
         },
-      },
+      } as any,
       include: { customer: true, items: true },
     });
 
     return this.mapToDomain(saved);
   }
 
-  async updateStatus(id: string, tenantId: string, status: OrderStatus): Promise<void> {
+  async updateStatus(id: string, status: OrderStatus): Promise<void> {
     await prisma.order.update({
-      where: { id, tenantId },
+      where: { id },
       data: { status },
     });
   }
 
   async findPaginated(
-    tenantId: string,
     page: number,
     limit: number,
     filters?: {
@@ -91,14 +91,15 @@ export class PrismaOrderRepository implements IOrderRepository {
       source?: OrderSource | "all";
       search?: string;
       customerPhone?: string;
+      customerId?: string;
     }
   ): Promise<{ items: DomainOrder[]; total: number }> {
     const skip = (page - 1) * limit;
     const where: Prisma.OrderWhereInput = {
-      tenantId,
       ...(filters?.status && filters.status !== "all" ? { status: filters.status as OrderStatus } : {}),
       ...(filters?.source && filters.source !== "all" ? { source: filters.source as OrderSource } : {}),
       ...(filters?.customerPhone ? { customer: { phoneNumber: filters.customerPhone } } : {}),
+      ...(filters?.customerId ? { customerId: filters.customerId } : {}),
       ...(filters?.search ? {
         OR: [
           { customer: { name: { contains: filters.search, mode: "insensitive" } } },
@@ -124,10 +125,9 @@ export class PrismaOrderRepository implements IOrderRepository {
     };
   }
 
-  async findPendingPOSOrder(customerId: string, tenantId: string): Promise<DomainOrder | null> {
+  async findPendingPOSOrder(customerId: string): Promise<DomainOrder | null> {
     const item = await prisma.order.findFirst({
       where: {
-        tenantId,
         customerId,
         status: "PENDING",
         source: "POS",

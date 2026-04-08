@@ -4,7 +4,6 @@ import type { IProductRepository } from "@/lib/domain/repositories/product.repos
 import { Product } from "@/lib/domain/entities/product";
 
 interface ListProductsRequest {
-  tenantId: string;
   page: number;
   limit: number;
   search?: string;
@@ -13,12 +12,12 @@ interface ListProductsRequest {
 
 @injectable()
 export class ListProductsUseCase {
-  constructor(@inject(TOKENS.ProductRepository) private productRepo: IProductRepository) {}
+  constructor(@inject(TOKENS.ProductRepository) private productRepo: IProductRepository) { }
 
   async execute(request: ListProductsRequest): Promise<{ items: Product[]; total: number; pageCount: number }> {
-    const { tenantId, page, limit, search, categoryId } = request;
-    const { items, total } = await this.productRepo.findPaginated(tenantId, page, limit, { search, categoryId });
-    
+    const { page, limit, search, categoryId } = request;
+    const { items, total } = await this.productRepo.findPaginated(page, limit, { search, categoryId });
+
     return {
       items,
       total,

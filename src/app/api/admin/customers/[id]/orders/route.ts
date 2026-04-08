@@ -1,28 +1,33 @@
-import { getCustomerOrdersPaginated } from "@/lib/services/customer.service";
-import { validateAdminApi } from "@/lib/tenant-server";
+import { NextRequest } from "next/server";
+import { withAdminApi } from "@/lib/tenant-server";
+import { container } from "@/lib/infrastructure/container";
+import { ListOrdersUseCase } from "@/lib/application/use-cases/list-orders.use-case";
+import { logger } from "@/lib/logger";
 
 export async function GET(
-  request: Request,
+  request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const context = await validateAdminApi();
-  const { id } = await params;
+  return withAdminApi(async ({ tenant }) => {
+    try {
+      const { id } = await params;
+      const { searchParams } = new URL(request.url);
+      const page = parseInt(searchParams.get("page") || "1");
+      const limit = parseInt(searchParams.get("limit") || "10");
 
-  if (!context) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { tenant } = context;
-
-  try {
-    const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "10");
-
-    const result = await getCustomerOrdersPaginated(tenant.id, id, page, limit);
-    return Response.json(result);
-  } catch (error) {
-    console.error("Error fetching customer orders:", error);
-    return Response.json({ error: "Internal server error" }, { status: 500 });
-  }
+      const listOrdersUseCase = container.resolve(ListOrdersUseCase);
+      const result = await listOrdersUseCase.execute({
+        page,
+        limit,
+        filters: {
+          customerId: id
+        }
+      });
+      
+      return Response.json(result);
+    } catch (error) {
+      logger.error("Error fetching customer orders", error as Error, { tenantId: tenant.id });
+      return Response.json({ error: "Internal server error" }, { status: 500 });
+    }
+  });
 }

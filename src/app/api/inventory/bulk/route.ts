@@ -131,9 +131,6 @@ export async function POST(request: Request) {
 
           const existing = await tx.inventoryItem.findFirst({
             where: {
-              tenantId: tenant.id,
-              cardTemplateId: item.scryfallId,
-              price: item.price,
               condition: item.condition,
               language: item.language,
               extras: { equals: item.extras || [] },
@@ -151,7 +148,7 @@ export async function POST(request: Request) {
           } else {
             await tx.inventoryItem.create({
               data: {
-                tenantId: tenant.id,
+                tenantId: tenant.id, // Mandatory but RLS will verify/set
                 cardTemplateId: item.scryfallId,
                 price: item.price,
                 quantity: item.quantity,

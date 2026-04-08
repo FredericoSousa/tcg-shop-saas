@@ -7,11 +7,11 @@ import { Customer, CustomerStats } from "@/lib/domain/entities/customer";
 export class GetCustomerUseCase {
   constructor(@inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository) {}
 
-  async execute(id: string, tenantId: string): Promise<{ customer: Customer; stats: CustomerStats } | null> {
-    const customer = await this.customerRepo.findById(id, tenantId);
+  async execute(id: string): Promise<{ customer: Customer; stats: CustomerStats } | null> {
+    const customer = await this.customerRepo.findById(id);
     if (!customer) return null;
 
-    const stats = await this.customerRepo.getStats(id, tenantId);
+    const stats = await this.customerRepo.getStats(id);
     return { customer, stats };
   }
 }

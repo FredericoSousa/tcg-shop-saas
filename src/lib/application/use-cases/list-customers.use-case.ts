@@ -4,7 +4,6 @@ import type { ICustomerRepository } from "@/lib/domain/repositories/customer.rep
 import { Customer } from "@/lib/domain/entities/customer";
 
 interface ListCustomersRequest {
-  tenantId: string;
   page: number;
   limit: number;
   search?: string;
@@ -16,8 +15,8 @@ export class ListCustomersUseCase {
   constructor(@inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository) {}
 
   async execute(request: ListCustomersRequest): Promise<{ items: Customer[]; total: number; pageCount: number }> {
-    const { tenantId, page, limit, search, includeDeleted } = request;
-    const { items, total } = await this.customerRepo.findPaginated(tenantId, page, limit, { search, includeDeleted });
+    const { page, limit, search, includeDeleted } = request;
+    const { items, total } = await this.customerRepo.findPaginated(page, limit, { search, includeDeleted });
     
     return {
       items,

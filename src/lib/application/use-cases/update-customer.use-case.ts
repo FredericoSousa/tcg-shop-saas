@@ -5,7 +5,6 @@ import { Customer } from "@/lib/domain/entities/customer";
 
 interface UpdateCustomerRequest {
   id: string;
-  tenantId: string;
   name?: string;
   phoneNumber?: string;
   email?: string | null;
@@ -17,7 +16,7 @@ export class UpdateCustomerUseCase {
   constructor(@inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository) {}
 
   async execute(request: UpdateCustomerRequest): Promise<Customer> {
-    const { id, tenantId, ...data } = request;
-    return this.customerRepo.update(id, tenantId, data);
+    const { id, ...data } = request;
+    return this.customerRepo.update(id, data);
   }
 }

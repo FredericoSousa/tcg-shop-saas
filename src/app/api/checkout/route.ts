@@ -48,7 +48,6 @@ export async function POST(request: NextRequest) {
     }
 
     const { orderId } = await placeOrderUseCase.execute({
-      tenantId: tenant.id,
       items,
       customerData,
     });

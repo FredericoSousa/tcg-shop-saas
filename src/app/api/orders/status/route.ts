@@ -31,7 +31,7 @@ export async function PATCH(request: Request) {
     // If cancelling, restore inventory quantities in a transaction
     if (status === "CANCELLED") {
       const order = await prisma.order.findUnique({
-        where: { id: orderId, tenantId: tenant.id },
+        where: { id: orderId },
         include: { items: true },
       });
 
@@ -64,13 +64,13 @@ export async function PATCH(request: Request) {
           }
         }
         await tx.order.update({
-          where: { id: orderId, tenantId: tenant.id },
+          where: { id: orderId },
           data: { status },
         });
       });
     } else {
       await prisma.order.update({
-        where: { id: orderId, tenantId: tenant.id },
+        where: { id: orderId },
         data: { status },
       });
     }

@@ -2,10 +2,10 @@ import { injectable, inject } from "tsyringe";
 import { TOKENS } from "../../infrastructure/container";
 import type { IProductRepository } from "@/lib/domain/repositories/product.repository";
 import { Product } from "@/lib/domain/entities/product";
+import { getTenantId } from "../../tenant-context";
 
 interface SaveProductRequest {
   id?: string;
-  tenantId: string;
   name: string;
   description?: string | null;
   imageUrl?: string | null;
@@ -21,7 +21,7 @@ export class SaveProductUseCase {
 
   async execute(request: SaveProductRequest): Promise<Product> {
     if (request.id) {
-      return this.productRepo.update(request.id, request.tenantId, {
+      return this.productRepo.update(request.id, {
         name: request.name,
         description: request.description,
         imageUrl: request.imageUrl,
@@ -41,7 +41,7 @@ export class SaveProductUseCase {
       stock: request.stock,
       categoryId: request.categoryId,
       active: true,
-      tenantId: request.tenantId,
+      tenantId: getTenantId()!,
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,

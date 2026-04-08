@@ -35,10 +35,9 @@ export default async function OrdersPage({
 
   // Call the internal API to fulfill "move all database operations to the api"
   const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/admin/orders?${queryParams}`;
+  
   const response = await fetch(apiUrl, {
-    headers: {
-      cookie: (await import("next/headers")).cookies().toString(),
-    },
+    headers: await (await import("next/headers")).headers(),
   });
 
   if (!response.ok) {
