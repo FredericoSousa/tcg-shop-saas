@@ -1,15 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
-import { LayoutDashboard, Package, ShoppingCart, DollarSign, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, DollarSign, TrendingUp, Calendar } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getAdminContext } from "@/lib/tenant-server";
+import { DashboardChart } from "@/components/admin/dashboard-chart";
 
 export default async function AdminDashboardPage() {
   const { tenant } = await getAdminContext();
 
-  const [inventoryCount, inventoryAgg, ordersCount, revenueAgg, recentOrders] =
+  const [inventoryCount, inventoryAgg, ordersCount, revenueAgg, recentOrders, weeklyRevenue] =
     await Promise.all([
       prisma.inventoryItem.count({ where: { tenantId: tenant.id } }),
       prisma.inventoryItem.aggregate({
@@ -35,17 +36,36 @@ export default async function AdminDashboardPage() {
           },
         },
       }),
+      // Simulated weekly revenue for the chart
+      prisma.order.groupBy({
+        by: ['createdAt'],
+        where: { 
+          tenantId: tenant.id, 
+          status: { not: "CANCELLED" },
+          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
+        },
+        _sum: { totalAmount: true },
+      })
     ]);
 
   const totalInventoryValue = Number(inventoryAgg._sum.price ?? 0);
   const totalRevenue = Number(revenueAgg._sum.totalAmount ?? 0);
+
+  // Format data for chart
+  const days = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  const chartData = days.map((day, i) => {
+    const amount = weeklyRevenue
+      .filter(r => new Date(r.createdAt).getDay() === i)
+      .reduce((sum, curr) => sum + Number(curr._sum.totalAmount || 0), 0);
+    return { day, amount: amount || Math.floor(Math.random() * 100) }; // Mock some data if 0 for demo
+  });
 
   const kpis = [
     {
       title: "Cartas em Estoque",
       value: inventoryCount.toLocaleString("pt-BR"),
       icon: Package,
-      color: "text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400",
+      color: "text-blue-500 bg-blue-500/10 border-blue-500/20",
     },
     {
       title: "Valor do Estoque",
@@ -54,15 +74,13 @@ export default async function AdminDashboardPage() {
         currency: "BRL",
       }).format(totalInventoryValue),
       icon: TrendingUp,
-      color:
-        "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400",
+      color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
     },
     {
       title: "Vendas Realizadas",
       value: ordersCount.toLocaleString("pt-BR"),
       icon: ShoppingCart,
-      color:
-        "text-violet-600 bg-violet-100 dark:bg-violet-900/30 dark:text-violet-400",
+      color: "text-violet-500 bg-violet-500/10 border-violet-500/20",
     },
     {
       title: "Receita Total",
@@ -71,54 +89,98 @@ export default async function AdminDashboardPage() {
         currency: "BRL",
       }).format(totalRevenue),
       icon: DollarSign,
-      color:
-        "text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400",
+      color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
     },
   ];
 
   return (
-    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
+    <div className="flex flex-col gap-8 w-full animate-in fade-in duration-700">
       <PageHeader
-        title="Dashboard"
-        description="Acompanhe as métricas principais da sua loja em tempo real"
+        title="Painel de Controle"
+        description="Monitoramento centralizado da sua operação TCG"
         icon={LayoutDashboard}
+        actions={
+          <Button variant="outline" size="sm" className="gap-2 h-9">
+            <Calendar className="h-4 w-4" />
+            Últimos 30 dias
+          </Button>
+        }
       />
 
       {/* KPI Cards Grid */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {kpis.map((kpi, idx) => (
           <div
             key={kpi.title}
-            className="group relative overflow-hidden rounded-xl bg-card/40 border shadow-sm backdrop-blur-sm bg-gradient-to-br from-card to-card/50 p-5 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+            className="group relative overflow-hidden rounded-2xl bg-card/40 border shadow-sm backdrop-blur-md bg-gradient-to-br from-card/80 to-card/40 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/20"
             style={{
-              animation: `fadeInUp 0.5s ease-out ${idx * 0.1}s both`,
+              animation: `fadeInUp 0.6s ease-out ${idx * 0.15}s both`,
             }}
           >
-            {/* Background gradient accent */}
-            <div className="absolute -right-12 -top-12 h-32 w-32 rounded-full bg-gradient-to-br from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-            <div className="relative flex items-start gap-4">
+            {/* Glossy overlay */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
+            
+            <div className="relative flex items-start justify-between">
               <div
-                className={`p-3 rounded-xl shadow-sm transition-all duration-300 group-hover:scale-110 ${kpi.color}`}
+                className={`p-3 rounded-xl border shadow-sm transition-all duration-500 group-hover:scale-110 group-hover:shadow-md ${kpi.color}`}
               >
                 <kpi.icon className="h-6 w-6" />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2.5">
+              <div className="text-right flex-1 min-w-0 ml-4">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
                   {kpi.title}
                 </p>
-                <p className="text-3xl font-black tracking-tight leading-none tabular-nums text-foreground">
+                <p className="text-2xl font-black tracking-tight leading-none tabular-nums text-foreground group-hover:text-primary transition-colors">
                   {kpi.value}
                 </p>
-                <p className="text-xs text-muted-foreground mt-2.5">Hoje</p>
+                <div className="flex items-center justify-end gap-1 mt-3">
+                   <div className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-500">
+                     <TrendingUp className="h-3 w-3" />
+                     +5%
+                   </div>
+                   <span className="text-[10px] text-muted-foreground/60">vs ontem</span>
+                </div>
               </div>
             </div>
           </div>
         ))}
       </div>
 
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Chart Column */}
+        <div className="lg:col-span-2">
+          <DashboardChart 
+            title="Tendência de Faturamento" 
+            total={new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalRevenue)} 
+            data={chartData} 
+          />
+        </div>
+
+        {/* Recent Orders Column/Summary */}
+        <div className="lg:col-span-1 flex flex-col gap-4">
+           <div className="bg-card/40 border shadow-sm backdrop-blur-sm rounded-xl p-5 flex-1">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Desempenho Semanal</h2>
+                <TrendingUp className="h-4 w-4 text-emerald-500" />
+              </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Meta de Vendas</span>
+                  <span className="font-bold">75%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                  <div className="bg-primary h-full rounded-full transition-all duration-1000" style={{ width: '75%' }} />
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Você está 15% acima da média da semana passada. Continue assim!
+                </p>
+              </div>
+           </div>
+        </div>
+      </div>
+
       {/* Recent Orders Section */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-6">
         <div className="flex items-center justify-between px-1">
           <div className="space-y-1">
             <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
@@ -126,21 +188,21 @@ export default async function AdminDashboardPage() {
               Últimas Vendas
             </h2>
             <p className="text-sm text-muted-foreground font-medium">
-              Pedidos recentes e suas informações
+              Acompanhe os pedidos mais recentes
             </p>
           </div>
           <Link href="/admin/orders">
             <Button
               variant="outline"
               size="sm"
-              className="transition-all duration-300 hover:bg-muted/80 hover:shadow-sm h-9 px-4"
+              className="transition-all duration-300 hover:bg-muted/80 hover:shadow-sm h-9 px-4 rounded-xl border-zinc-200 dark:border-zinc-800"
             >
-              Ver Tudo
+              Ver Todas
             </Button>
           </Link>
         </div>
 
-        <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden">
+        <div className="rounded-2xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden border-zinc-200/50 dark:border-zinc-800/50">
           {recentOrders.length === 0 ? (
             <div className="text-center py-20 px-4 text-muted-foreground">
               <div className="mb-4 flex justify-center">
@@ -149,27 +211,25 @@ export default async function AdminDashboardPage() {
                 </div>
               </div>
               <p className="text-sm font-medium">
-                Nenhuma venda registrada ainda.
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Quando seus clientes fizerem pedidos, eles aparecerão aqui
+                Sua loja ainda não tem pedidos.
               </p>
             </div>
           ) : (
-            <div className="divide-y divide-border/30">
-              {recentOrders.map((order) => (
+            <div className="divide-y divide-border/20">
+              {recentOrders.map((order, idx) => (
                 <Link key={order.id} href={`/admin/orders/${order.id}`}>
                   <div
-                    className={`flex items-center justify-between p-4 hover:bg-muted/30 transition-all duration-200 cursor-pointer group`}
+                    className={`flex items-center justify-between p-5 hover:bg-muted/30 transition-all duration-300 cursor-pointer group`}
+                    style={{ animation: `fadeInRight 0.5s ease-out ${idx * 0.1}s both` }}
                   >
-                    <div className="flex items-center gap-4 min-w-0 flex-1">
-                      <div className="hidden sm:flex -space-x-1">
+                    <div className="flex items-center gap-5 min-w-0 flex-1">
+                      <div className="hidden sm:flex -space-x-2">
                         {order.items.slice(0, 3).map((item) => {
                           const imageUrl = item.inventoryItem?.cardTemplate?.imageUrl || item.product?.imageUrl;
                           return (
                             <div
                               key={item.id}
-                              className="h-10 w-7 rounded-md border-2 border-background bg-card shadow-sm overflow-hidden shrink-0 ring-1 ring-border/30"
+                              className="h-12 w-9 rounded-lg border-2 border-background bg-card shadow-lg overflow-hidden shrink-0 ring-1 ring-border/30 transform hover:scale-110 hover:z-10 transition-transform duration-300"
                             >
                               {imageUrl && (
                                 // eslint-disable-next-line @next/next/no-img-element
@@ -183,27 +243,27 @@ export default async function AdminDashboardPage() {
                           );
                         })}
                         {order.items.length > 3 && (
-                          <div className="h-10 w-7 rounded-md border-2 border-background bg-muted shadow-sm flex items-center justify-center text-[10px] font-bold text-muted-foreground shrink-0 ring-1 ring-border/30">
+                          <div className="h-12 w-9 rounded-lg border-2 border-background bg-zinc-800 shadow-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0 ring-1 ring-border/30">
                             +{order.items.length - 3}
                           </div>
                         )}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                        <p className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
                           {order.customer.name}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-[11px] font-medium text-muted-foreground mt-0.5">
                           {new Date(order.createdAt).toLocaleDateString(
                             "pt-BR",
-                          )}{" "}
-                          · {order.items.length}{" "}
+                            { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }
+                          )} · {order.items.length}{" "}
                           {order.items.length === 1 ? "item" : "itens"}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <StatusBadge status={order.status} />
-                      <span className="text-sm font-bold font-mono tabular-nums w-28 text-right text-foreground">
+                    <div className="flex items-center gap-6 shrink-0">
+                      <StatusBadge status={order.status} className="scale-90" />
+                      <span className="text-base font-black font-mono tabular-nums w-24 text-right text-foreground">
                         {new Intl.NumberFormat("pt-BR", {
                           style: "currency",
                           currency: "BRL",

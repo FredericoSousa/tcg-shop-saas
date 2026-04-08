@@ -50,6 +50,7 @@ import { toast } from "sonner";
 import { useTableState } from "@/lib/hooks/use-table-state";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { TableSearch } from "@/components/admin/table-search";
+import { BulkActionsBar } from "@/components/admin/inventory/bulk-actions-bar";
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
@@ -156,28 +157,14 @@ export function DataTable<TData, TValue>({
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
   const hasActiveFilters = columnFilters.length > 0 || search;
 
-  const handleBulkDelete = async () => {
-    const selectedRows = table.getFilteredSelectedRowModel().rows;
-    const ids = selectedRows.map((row) => (row.original as { id: string }).id);
-
-    setIsDeleting(true);
-    try {
-      const response = await fetch("/api/inventory/items", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids }),
-      });
-
-      if (!response.ok) throw new Error("Failed to delete");
-
-      toast.success(`${ids.length} item(ns) removido(s) com sucesso.`);
-      setRowSelection({});
-      setIsDeleteDialogOpen(false);
-    } catch {
-      toast.error("Erro ao excluir itens selecionados.");
-    } finally {
-      setIsDeleting(false);
-    }
+  const handleBulkDelete = () => {
+    // This is now handled by the BulkActionsBar component
+    // We just need to refresh the table data and clear selection
+    setRowSelection({});
+    // router.refresh() or similar could be better but Tanstack table handles its own state
+    // The parent component (InventoryPage) fetches data. 
+    // We can rely on router.refresh() via window.location.reload() or a more reach-friendly way.
+    window.location.reload(); 
   };
 
   const handleClearFilters = () => {
@@ -292,50 +279,15 @@ export function DataTable<TData, TValue>({
       </div>
 
       {selectedCount > 0 && (
-        <div className="flex items-center gap-3 bg-primary/5 border border-primary/30 rounded-lg px-4 py-3 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
-          <span className="text-sm font-semibold text-primary">
-            {selectedCount}{" "}
-            {selectedCount === 1 ? "item selecionado" : "itens selecionados"}
-          </span>
-          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-            <DialogTrigger
-              render={
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  disabled={isDeleting}
-                  className="ml-auto transition-all duration-200 hover:scale-105 active:scale-95 disabled:opacity-50 gap-2"
-                />
-              }
-            >
-              <Trash2 className="h-4 w-4" />
-              Excluir Selecionados
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Confirmar Exclusão</DialogTitle>
-                <DialogDescription>
-                  Tem certeza de que deseja excluir {selectedCount} {selectedCount === 1 ? "item" : "itens"} do estoque? Esta ação não pode ser desfeita.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter className="mt-4 gap-2 sm:gap-0">
-                <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} disabled={isDeleting}>
-                  Cancelar
-                </Button>
-                <Button variant="destructive" onClick={handleBulkDelete} disabled={isDeleting} className="gap-2">
-                  {isDeleting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Excluindo...
-                    </>
-                  ) : (
-                    "Confirmar Exclusão"
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
+        <BulkActionsBar
+          selectedCount={selectedCount}
+          selectedIds={table.getFilteredSelectedRowModel().rows.map(row => (row.original as { id: string }).id)}
+          onClearSelection={() => setRowSelection({})}
+          onActionComplete={() => {
+            setRowSelection({});
+            window.location.reload();
+          }}
+        />
       )}
 
       <div className={`rounded-lg border bg-card shadow-sm overflow-x-auto ${isPending ? "opacity-50 pointer-events-none" : ""}`}>

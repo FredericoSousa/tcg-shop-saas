@@ -93,6 +93,18 @@ export class PrismaInventoryRepository implements IInventoryRepository {
     return this.mapToDomain(updated);
   }
 
+  async updateMany(ids: string[], data: Partial<DomainInventoryItem>): Promise<void> {
+    const prismaData: Prisma.InventoryItemUpdateManyMutationInput = {};
+    if (data.price !== undefined) prismaData.price = new Prisma.Decimal(data.price);
+    if (data.quantity !== undefined) prismaData.quantity = data.quantity;
+    if (data.active !== undefined) prismaData.active = data.active;
+
+    await prisma.inventoryItem.updateMany({
+      where: { id: { in: ids } },
+      data: prismaData,
+    });
+  }
+
   async deleteMany(ids: string[]): Promise<void> {
     await prisma.inventoryItem.updateMany({
       where: { id: { in: ids } },

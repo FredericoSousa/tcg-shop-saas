@@ -4,11 +4,13 @@ import { validateAdminApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
 import { AddInventoryUseCase } from "@/lib/application/use-cases/add-inventory.use-case";
 import { UpdateInventoryUseCase } from "@/lib/application/use-cases/update-inventory.use-case";
+import { BulkUpdateInventoryUseCase } from "@/lib/application/use-cases/bulk-update-inventory.use-case";
 import { DeleteInventoryUseCase } from "@/lib/application/use-cases/delete-inventory.use-case";
 import { logger } from "@/lib/logger";
 
 const addInventoryUseCase = container.resolve(AddInventoryUseCase);
 const updateInventoryUseCase = container.resolve(UpdateInventoryUseCase);
+const bulkUpdateInventoryUseCase = container.resolve(BulkUpdateInventoryUseCase);
 const deleteInventoryUseCase = container.resolve(DeleteInventoryUseCase);
 
 export async function POST(request: NextRequest) {
@@ -76,22 +78,28 @@ export async function PATCH(request: NextRequest) {
   const { tenant } = context;
 
   try {
-    const { id, price, quantity } = await request.json();
+    const { id, ids, price, quantity } = await request.json();
 
-    if (!id || (price === undefined && quantity === undefined)) {
+    if (ids && Array.isArray(ids)) {
+      await bulkUpdateInventoryUseCase.execute({
+        ids,
+        price: price !== undefined ? Number(price) : undefined,
+        quantity: quantity !== undefined ? Number(quantity) : undefined,
+      });
+    } else if (id) {
+      await updateInventoryUseCase.execute({
+        id,
+        price: price !== undefined ? Number(price) : undefined,
+        quantity: quantity !== undefined ? Number(quantity) : undefined,
+      });
+    } else {
       return Response.json({ error: "Invalid data" }, { status: 400 });
     }
-
-    await updateInventoryUseCase.execute({
-      id,
-      price: price !== undefined ? Number(price) : undefined,
-      quantity: quantity !== undefined ? Number(quantity) : undefined,
-    });
 
     revalidatePath("/admin/inventory");
     return Response.json({ success: true });
   } catch (error) {
-    logger.error("Error updating inventory item", error as Error, {
+    logger.error("Error updating inventory items", error as Error, {
       tenantId: tenant.id,
       action: "update_inventory",
     });

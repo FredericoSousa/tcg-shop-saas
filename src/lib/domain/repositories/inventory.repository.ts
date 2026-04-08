@@ -5,6 +5,7 @@ export interface IInventoryRepository {
   findByTemplate(templateId: string, filters: Partial<InventoryItem>): Promise<InventoryItem | null>;
   save(item: InventoryItem): Promise<InventoryItem>;
   update(id: string, data: Partial<InventoryItem>): Promise<InventoryItem>;
+  updateMany(ids: string[], data: Partial<InventoryItem>): Promise<void>;
   deleteMany(ids: string[]): Promise<void>;
   findPaginated(page: number, limit: number, search?: string): Promise<{ items: InventoryItem[], total: number }>;
   decrementStock(id: string, quantity: number): Promise<void>;
