@@ -5,42 +5,48 @@ import { Product } from "@/lib/domain/entities/product";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
 
-export interface SaveProductRequest {
-  id?: string;
-  name: string;
-  description?: string | null;
-  imageUrl?: string | null;
-  price: number;
-  stock: number;
-  categoryId: string;
-  active?: boolean;
-}
+import { z } from "zod";
+
+export const SaveProductSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "O nome é obrigatório"),
+  description: z.string().nullable().optional(),
+  imageUrl: z.string().url("URL da imagem inválida").nullable().optional().or(z.string().length(0)),
+  price: z.number().positive("O preço deve ser superior a zero"),
+  stock: z.number().int().min(0, "O estoque não pode ser negativo"),
+  categoryId: z.string().min(1, "A categoria é obrigatória"),
+  active: z.boolean().optional(),
+});
+
+export type SaveProductRequest = z.infer<typeof SaveProductSchema>;
 
 @injectable()
 export class SaveProductUseCase implements IUseCase<SaveProductRequest, Product> {
-  constructor(@inject(TOKENS.ProductRepository) private productRepo: IProductRepository) {}
+  constructor(@inject(TOKENS.ProductRepository) private productRepo: IProductRepository) { }
 
   async execute(request: SaveProductRequest): Promise<Product> {
-    if (request.id) {
-      return this.productRepo.update(request.id, {
-        name: request.name,
-        description: request.description,
-        imageUrl: request.imageUrl,
-        price: request.price,
-        stock: request.stock,
-        categoryId: request.categoryId,
-        active: request.active,
+    const validatedRequest = SaveProductSchema.parse(request);
+
+    if (validatedRequest.id) {
+      return this.productRepo.update(validatedRequest.id, {
+        name: validatedRequest.name,
+        description: validatedRequest.description,
+        imageUrl: validatedRequest.imageUrl,
+        price: validatedRequest.price,
+        stock: validatedRequest.stock,
+        categoryId: validatedRequest.categoryId,
+        active: validatedRequest.active,
       });
     }
 
     return this.productRepo.save({
       id: "",
-      name: request.name,
-      description: request.description || null,
-      imageUrl: request.imageUrl || null,
-      price: request.price,
-      stock: request.stock,
-      categoryId: request.categoryId,
+      name: validatedRequest.name,
+      description: validatedRequest.description || null,
+      imageUrl: validatedRequest.imageUrl || null,
+      price: validatedRequest.price,
+      stock: validatedRequest.stock,
+      categoryId: validatedRequest.categoryId,
       active: true,
       tenantId: getTenantId()!,
       createdAt: new Date(),

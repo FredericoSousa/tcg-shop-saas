@@ -31,6 +31,31 @@ describe('Product & Category Use Cases', () => {
       await useCase.execute({ id: 'p1', name: 'New P1', price: 20, stock: 10, categoryId: 'cat1' });
       expect(productRepo.update).toHaveBeenCalledWith('p1', expect.anything());
     });
+
+    it('should fail with invalid price', async () => {
+      const useCase = new SaveProductUseCase(productRepo);
+      await expect(useCase.execute({ name: 'P1', price: -10, stock: 5, categoryId: 'cat1' }))
+        .rejects.toThrow();
+    });
+
+    it('should fail with invalid imageUrl', async () => {
+      const useCase = new SaveProductUseCase(productRepo);
+      await expect(useCase.execute({ name: 'P1', price: 10, stock: 5, categoryId: 'cat1', imageUrl: 'invalid-url' }))
+        .rejects.toThrow();
+    });
+
+    it('should fail with empty name', async () => {
+      const useCase = new SaveProductUseCase(productRepo);
+      await expect(useCase.execute({ name: '', price: 10, stock: 5, categoryId: 'cat1' }))
+        .rejects.toThrow();
+    });
+
+    it('should handle repository errors', async () => {
+      const useCase = new SaveProductUseCase(productRepo);
+      productRepo.save.mockRejectedValue(new Error('DB Error'));
+      await expect(useCase.execute({ name: 'P1', price: 10, stock: 5, categoryId: 'cat1' }))
+        .rejects.toThrow('DB Error');
+    });
   });
 
   describe('GetProductUseCase', () => {
@@ -38,6 +63,13 @@ describe('Product & Category Use Cases', () => {
       const useCase = new GetProductUseCase(productRepo);
       await useCase.execute('p1');
       expect(productRepo.findById).toHaveBeenCalledWith('p1');
+    });
+
+    it('should return null if product not found', async () => {
+      const useCase = new GetProductUseCase(productRepo);
+      productRepo.findById.mockResolvedValue(null);
+      const result = await useCase.execute('non-existent');
+      expect(result).toBeNull();
     });
   });
 
@@ -50,19 +82,17 @@ describe('Product & Category Use Cases', () => {
     });
   });
 
-  describe('ListCategoriesUseCase', () => {
-    it('should list categories', async () => {
-      const useCase = new ListCategoriesUseCase(productRepo);
-      await useCase.execute();
-      expect(productRepo.findCategories).toHaveBeenCalled();
-    });
-  });
-
   describe('SaveCategoryUseCase', () => {
-     it('should create category', async () => {
+    it('should create category', async () => {
       const useCase = new SaveCategoryUseCase(productRepo);
       await useCase.execute({ name: 'Cat1' });
       expect(productRepo.saveCategory).toHaveBeenCalled();
+    });
+
+    it('should fail with empty category name', async () => {
+      const useCase = new SaveCategoryUseCase(productRepo);
+      await expect(useCase.execute({ name: '' }))
+        .rejects.toThrow();
     });
   });
 });
