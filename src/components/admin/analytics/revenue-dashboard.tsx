@@ -152,6 +152,7 @@ export function RevenueDashboard() {
                   ))}
                 </Pie>
                 <Tooltip 
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   formatter={(value: any) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value))}
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
                 />
@@ -185,6 +186,7 @@ export function RevenueDashboard() {
                   tick={{ fontSize: 11, fontWeight: 'bold' }}
                 />
                 <Tooltip 
+                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
                    formatter={(value: any) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value))}
                    cursor={{ fill: 'rgba(0,0,0,0.05)' }}
                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}

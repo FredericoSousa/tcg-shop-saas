@@ -1,7 +1,10 @@
+import "reflect-metadata";
+import { container } from "@/lib/infrastructure/container";
+import { ListOrdersUseCase } from "@/lib/application/use-cases/list-orders.use-case";
 import { PageHeader } from "@/components/admin/page-header";
 import { ShoppingCart } from "lucide-react";
 import { OrdersClient, OrderType } from "./orders-client";
-import { OrderStatus } from "@prisma/client";
+import { OrderStatus, OrderSource } from "@/lib/domain/entities/order";
 
 export default async function OrdersPage({
   searchParams,
@@ -24,27 +27,19 @@ export default async function OrdersPage({
   const status = params.status as OrderStatus | "all";
   const customerPhone = params.customerPhone;
 
-  const queryParams = new URLSearchParams({
-    page: page.toString(),
-    limit: limit.toString(),
-    ...(search ? { search } : {}),
-    ...(source ? { source } : {}),
-    ...(status ? { status } : {}),
-    ...(customerPhone ? { customerPhone } : {}),
-  });
-
-  // Call the internal API to fulfill "move all database operations to the api"
-  const apiUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/admin/orders?${queryParams}`;
+  // Resolve use case from container
+  const listOrders = container.resolve(ListOrdersUseCase);
   
-  const response = await fetch(apiUrl, {
-    headers: await (await import("next/headers")).headers(),
+  const { items, total, pageCount } = await listOrders.execute({
+    page,
+    limit,
+    filters: {
+      source: source === "all" ? undefined : source as OrderSource,
+      status: status === "all" ? undefined : status as OrderStatus,
+      search,
+      customerPhone,
+    }
   });
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch orders from API");
-  }
-
-  const { items, total, pageCount } = await response.json();
 
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">

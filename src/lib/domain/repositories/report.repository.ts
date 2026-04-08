@@ -19,4 +19,5 @@ export abstract class IReportsRepository {
     abstract getTopCustomersByLTV(tenantId: string, limit?: number): Promise<CustomerLTV[]>;
     abstract getMonthlyRevenueTrend(tenantId: string): Promise<MonthlyRevenue[]>;
     abstract getInventoryValuationBySet(tenantId: string): Promise<InventoryValuation[]>;
+    abstract getWeeklyRevenue(tenantId: string): Promise<{ day: string; amount: number }[]>;
 }

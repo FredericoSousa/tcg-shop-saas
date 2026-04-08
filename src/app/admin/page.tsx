@@ -1,4 +1,5 @@
 import "reflect-metadata";
+import { Suspense } from "react";
 import { container } from "@/lib/infrastructure/container";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -12,19 +13,6 @@ import { TopProductsTable } from "@/components/admin/analytics/top-products-tabl
 import { TopBuyersCard } from "@/components/admin/analytics/top-buyers-card";
 import { GetDashboardSummaryUseCase } from "@/lib/application/use-cases/get-dashboard-summary.use-case";
 import { ListOrdersUseCase } from "@/lib/application/use-cases/list-orders.use-case";
-
-// Type for order items with populated relations returned by repository
-interface OrderItemWithRelations {
-  id: string;
-  inventoryItem?: {
-    cardTemplate?: {
-      imageUrl: string | null;
-    };
-  };
-  product?: {
-    imageUrl: string | null;
-  };
-}
 
 // Premium performance optimization for Next.js 16
 export const unstable_instant = true;
@@ -111,7 +99,6 @@ export default async function AdminDashboardPage() {
               animation: `fadeInUp 0.6s ease-out ${idx * 0.15}s both`,
             }}
           >
-            {/* Glossy overlay */}
             <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
             
             <div className="relative flex items-start justify-between">
@@ -140,33 +127,36 @@ export default async function AdminDashboardPage() {
         ))}
       </div>
 
-      <section className="space-y-6">
-        <div className="flex items-center justify-between px-1">
-          <div className="space-y-1">
-            <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <PieChartIcon className="h-5 w-5 text-primary" />
-              Inteligência de Vendas
-            </h2>
-            <p className="text-sm text-muted-foreground font-medium">
-              Análise estratégica de faturamento e performance
-            </p>
+      <Suspense fallback={<div className="h-96 rounded-2xl border bg-card/40 animate-pulse" />}>
+        <section className="space-y-6">
+          <div className="flex items-center justify-between px-1">
+            <div className="space-y-1">
+              <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                <PieChartIcon className="h-5 w-5 text-primary" />
+                Inteligência de Vendas
+              </h2>
+              <p className="text-sm text-muted-foreground font-medium">
+                Análise estratégica de faturamento e performance
+              </p>
+            </div>
           </div>
-        </div>
-        <RevenueDashboard />
-      </section>
+          <RevenueDashboard />
+        </section>
+      </Suspense>
 
       <div className="grid gap-8 lg:grid-cols-4">
-        {/* Top Products Section */}
         <div className="lg:col-span-1">
-          <TopProductsTable />
+          <Suspense fallback={<div className="h-64 rounded-2xl border bg-card/40 animate-pulse" />}>
+            <TopProductsTable />
+          </Suspense>
         </div>
 
-        {/* Top Buyers Section */}
         <div className="lg:col-span-1">
-          <TopBuyersCard tenantId={tenant.id} />
+          <Suspense fallback={<div className="h-64 rounded-2xl border bg-card/40 animate-pulse" />}>
+            <TopBuyersCard tenantId={tenant.id} />
+          </Suspense>
         </div>
 
-        {/* Trend Chart */}
         <div className="lg:col-span-2">
           <DashboardChart 
             title="Tendência de Faturamento" 
@@ -176,9 +166,7 @@ export default async function AdminDashboardPage() {
         </div>
       </div>
 
-
-      {/* Recent Orders Section */}
-      <div className="flex flex-col gap-6">
+      <section className="flex flex-col gap-6">
         <div className="flex items-center justify-between px-1">
           <div className="space-y-1">
             <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
@@ -217,14 +205,13 @@ export default async function AdminDashboardPage() {
               {recentOrders.map((order, idx) => (
                 <Link key={order.id} href={`/admin/orders/${order.id}`}>
                   <div
-                    className={`flex items-center justify-between p-5 hover:bg-muted/30 transition-all duration-300 cursor-pointer group`}
+                    className="flex items-center justify-between p-5 hover:bg-muted/30 transition-all duration-300 cursor-pointer group"
                     style={{ animation: `fadeInRight 0.5s ease-out ${idx * 0.1}s both` }}
                   >
                     <div className="flex items-center gap-5 min-w-0 flex-1">
                       <div className="hidden sm:flex -space-x-2">
                         {order.items?.slice(0, 3).map((item) => {
-                          const typedItem = item as unknown as OrderItemWithRelations;
-                          const imageUrl = typedItem.inventoryItem?.cardTemplate?.imageUrl || typedItem.product?.imageUrl;
+                          const imageUrl = item.inventoryItem?.cardTemplate?.imageUrl || item.product?.imageUrl;
                           return (
                             <div
                               key={item.id}
@@ -243,7 +230,7 @@ export default async function AdminDashboardPage() {
                         })}
                         {(order.items?.length || 0) > 3 && (
                           <div className="h-12 w-9 rounded-lg border-2 border-background bg-zinc-800 shadow-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0 ring-1 ring-border/30">
-                            +{order.items.length - 3}
+                            +{order.items!.length - 3}
                           </div>
                         )}
                       </div>
@@ -275,7 +262,7 @@ export default async function AdminDashboardPage() {
             </div>
           )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

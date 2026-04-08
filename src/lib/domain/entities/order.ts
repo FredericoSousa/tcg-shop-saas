@@ -8,6 +8,15 @@ export interface OrderItem {
   productId?: string | null;
   quantity: number;
   priceAtPurchase: number;
+  // Relations for UI
+  inventoryItem?: {
+    cardTemplate?: {
+      imageUrl: string | null;
+    };
+  };
+  product?: {
+    imageUrl: string | null;
+  };
 }
 
 export interface Order {

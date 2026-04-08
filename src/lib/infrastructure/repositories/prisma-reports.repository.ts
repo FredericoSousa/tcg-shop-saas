@@ -324,4 +324,43 @@ export class PrismaReportsRepository implements IReportsRepository {
 
     return results.sort((a, b) => b.value - a.value).slice(0, 10);
   }
+
+  async getWeeklyRevenue(tenantId: string): Promise<{ day: string; amount: number }[]> {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    const results = await prisma.order.groupBy({
+      by: ['createdAt'],
+      where: {
+        tenantId,
+        status: { not: 'CANCELLED' },
+        createdAt: { gte: sevenDaysAgo }
+      },
+      _sum: {
+        totalAmount: true
+      }
+    });
+
+    const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+    const dailyRevenue: Record<string, number> = {};
+
+    // Initialize last 7 days
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      dailyRevenue[days[d.getDay()]] = 0;
+    }
+
+    results.forEach(order => {
+      const day = days[order.createdAt.getDay()];
+      if (dailyRevenue[day] !== undefined) {
+        dailyRevenue[day] += Number(order._sum.totalAmount || 0);
+      }
+    });
+
+    return Object.entries(dailyRevenue)
+      .map(([day, amount]) => ({ day, amount }))
+      .reverse();
+  }
 }
