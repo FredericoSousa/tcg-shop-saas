@@ -1,13 +1,35 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { container } from "@/lib/infrastructure/container";
 import { GetCustomerRankingUseCase } from "@/lib/application/use-cases/get-customer-ranking.use-case";
 import { validateAdminApi } from "@/lib/tenant-server";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
+/**
+ * @openapi
+ * /api/admin/reports/customer-ranking:
+ *   get:
+ *     summary: Get customer ranking report
+ *     description: Returns a ranking of top customers by revenue. Requires admin authentication.
+ *     tags: [Reports]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 5 }
+ *     responses:
+ *       200:
+ *         description: Customer ranking report
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 export async function GET(req: NextRequest) {
   try {
     const context = await validateAdminApi();
     if (!context) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return ApiResponse.unauthorized();
     }
     const tenantId = context.tenant.id;
 
@@ -17,9 +39,9 @@ export async function GET(req: NextRequest) {
     const useCase = container.resolve(GetCustomerRankingUseCase);
     const report = await useCase.execute({ tenantId, limit });
 
-    return NextResponse.json(report);
+    return ApiResponse.success(report);
   } catch (error) {
     console.error("[REPORTS_CUSTOMER_RANKING_GET]", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return ApiResponse.serverError();
   }
 }

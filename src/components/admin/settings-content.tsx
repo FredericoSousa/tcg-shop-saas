@@ -57,20 +57,23 @@ export function SettingsContent() {
       try {
         const response = await fetch("/api/admin/settings");
         if (!response.ok) throw new Error("Falha ao carregar configurações");
-        const data = await response.json();
-        setSettings({
-          name: data.name || "",
-          logoUrl: data.logoUrl || "",
-          faviconUrl: data.faviconUrl || "",
-          description: data.description || "",
-          address: data.address || "",
-          phone: data.phone || "",
-          email: data.email || "",
-          instagram: data.instagram || "",
-          whatsapp: data.whatsapp || "",
-          facebook: data.facebook || "",
-          twitter: data.twitter || "",
-        });
+        const result = await response.json();
+        if (result.success && result.data) {
+          const data = result.data;
+          setSettings({
+            name: data.name || "",
+            logoUrl: data.logoUrl || "",
+            faviconUrl: data.faviconUrl || "",
+            description: data.description || "",
+            address: data.address || "",
+            phone: data.phone || "",
+            email: data.email || "",
+            instagram: data.instagram || "",
+            whatsapp: data.whatsapp || "",
+            facebook: data.facebook || "",
+            twitter: data.twitter || "",
+          });
+        }
       } catch (error) {
         toast.error("Erro ao carregar configurações");
         console.error(error);
@@ -91,7 +94,8 @@ export function SettingsContent() {
         body: JSON.stringify(settings),
       });
 
-      if (!response.ok) throw new Error("Falha ao salvar");
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message || "Falha ao salvar");
       
       toast.success("Configurações atualizadas com sucesso!");
     } catch (error) {

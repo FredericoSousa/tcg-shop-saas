@@ -36,8 +36,10 @@ export function RevenueDashboard() {
       try {
         const response = await fetch("/api/admin/reports/revenue");
         if (response.ok) {
-          const json = await response.json();
-          setData(json);
+          const result = await response.json();
+          if (result.success && result.data) {
+            setData(result.data);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch revenue data", error);

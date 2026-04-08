@@ -58,7 +58,8 @@ export function InlineEditCell({
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to update");
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message || "Failed to update");
 
       toast.success("Atualizado com sucesso");
       if (onUpdate) onUpdate(numericValue);

@@ -1,3 +1,4 @@
+import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { scryfall } from "@/lib/scryfall";
 import { revalidatePath } from "next/cache";
@@ -6,16 +7,47 @@ import { logger, createTimer } from "@/lib/logger";
 import { cardCache, generateCardCacheKey } from "@/lib/cache/card-cache";
 import { ScryfallCard } from "@/lib/types/scryfall";
 import { validateAdminApi } from "@/lib/tenant-server";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
-export async function POST(request: Request) {
+/**
+ * @openapi
+ * /api/inventory/bulk:
+ *   post:
+ *     summary: Add bulk inventory items
+ *     description: Adds multiple items to the inventory at once. Requires admin authentication.
+ *     tags: [Inventory]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: array
+ *             items:
+ *               type: object
+ *               required: [scryfallId, quantity, condition, language, price]
+ *               properties:
+ *                 scryfallId: { type: string }
+ *                 quantity: { type: number }
+ *                 condition: { type: string }
+ *                 language: { type: string }
+ *                 price: { type: number }
+ *                 extras: { type: array, items: { type: string } }
+ *     responses:
+ *       200:
+ *         description: Results of the bulk operation
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+export async function POST(request: NextRequest) {
   const timer = createTimer("addBulkInventoryItems");
   const context = await validateAdminApi();
 
   if (!context) {
-    return Response.json(
-      { error: "Unauthorized" },
-      { status: 401 },
-    );
+    return ApiResponse.unauthorized("Ação não autorizada. Escopo restrito do Lojista.");
   }
 
   const { tenant } = context;
@@ -31,10 +63,7 @@ export async function POST(request: Request) {
     }[] = await request.json();
 
     if (!Array.isArray(items) || !items.length) {
-      return Response.json(
-        { error: "No items to add" },
-        { status: 400 },
-      );
+      return ApiResponse.badRequest("No items to add");
     }
 
     const results: {
@@ -174,7 +203,7 @@ export async function POST(request: Request) {
       itemsCount: items.length,
       successCount: results.filter((r) => r.status === "success").length,
     });
-    return Response.json(results);
+    return ApiResponse.success(results);
   } catch (error) {
     logger.error(
       "Error adding bulk inventory items",
@@ -183,10 +212,7 @@ export async function POST(request: Request) {
         action: "add_bulk_inventory",
       },
     );
-    return Response.json(
-      { error: "Internal server error" },
-      { status: 500 },
-    );
+    return ApiResponse.serverError("Internal server error");
   } finally {
     timer.log({ action: "add_bulk_inventory" });
   }

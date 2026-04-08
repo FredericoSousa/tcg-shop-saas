@@ -96,7 +96,7 @@ export function POSClient() {
         setCart([]);
         setSelectedCustomer(null);
       } else {
-        toast.error(result.error || "Erro ao processar venda");
+        toast.error(result.message || "Erro ao processar venda");
       }
     } catch (error) {
       console.error("Checkout error:", error);

@@ -1,22 +1,40 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { container } from "@/lib/infrastructure/container";
 import { GetMonthlyRevenueTrendUseCase } from "@/lib/application/use-cases/get-monthly-revenue-trend.use-case";
 import { validateAdminApi } from "@/lib/tenant-server";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
+/**
+ * @openapi
+ * /api/admin/reports/monthly-trend:
+ *   get:
+ *     summary: Get monthly revenue trend report
+ *     description: Returns a trend of revenue over the last few months. Requires admin authentication.
+ *     tags: [Reports]
+ *     security:
+ *       - cookieAuth: []
+ *     responses:
+ *       200:
+ *         description: Monthly revenue trend report
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 export async function GET(req: NextRequest) {
   try {
     const context = await validateAdminApi();
     if (!context) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return ApiResponse.unauthorized();
     }
     const tenantId = context.tenant.id;
 
     const useCase = container.resolve(GetMonthlyRevenueTrendUseCase);
     const report = await useCase.execute(tenantId);
 
-    return NextResponse.json(report);
+    return ApiResponse.success(report);
   } catch (error) {
     console.error("[REPORTS_MONTHLY_TREND_GET]", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return ApiResponse.serverError();
   }
 }

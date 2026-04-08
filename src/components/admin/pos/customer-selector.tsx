@@ -60,8 +60,10 @@ export function CustomerSelector({
     setLoading(true);
     try {
       const response = await fetch(`/api/admin/customers?search=${encodeURIComponent(searchQuery)}&limit=5`);
-      const data = await response.json();
-      setResults(data.items || []);
+      const result = await response.json();
+      if (result.success && result.data) {
+        setResults(result.data.items || []);
+      }
     } catch (error) {
       console.error("Customer search error:", error);
     } finally {

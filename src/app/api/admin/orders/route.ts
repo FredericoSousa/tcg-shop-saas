@@ -4,7 +4,44 @@ import { container } from "@/lib/infrastructure/container";
 import { ListOrdersUseCase } from "@/lib/application/use-cases/list-orders.use-case";
 import { OrderStatus } from "@prisma/client";
 import { logger } from "@/lib/logger";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
+/**
+ * @openapi
+ * /api/admin/orders:
+ *   get:
+ *     summary: List orders
+ *     description: Returns a paginated list of orders. Requires admin authentication.
+ *     tags: [Orders]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 10 }
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
+ *       - in: query
+ *         name: source
+ *         schema: { type: string, enum: [POS, ECOMMERCE, all], default: all }
+ *       - in: query
+ *         name: status
+ *         schema: { type: string, enum: [all, PENDING, PAID, SHIPPED, CANCELLED], default: all }
+ *       - in: query
+ *         name: customerPhone
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Paginated list of orders
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 export async function GET(request: NextRequest) {
   return withAdminApi(async ({ tenant }) => {
     try {
@@ -23,10 +60,10 @@ export async function GET(request: NextRequest) {
         filters: { search, source, status, customerPhone }
       });
 
-      return Response.json(result);
+      return ApiResponse.success(result);
     } catch (error: unknown) {
       logger.error("Error in list orders API", error as Error, { tenantId: tenant.id });
-      return Response.json({ error: "Internal server error" }, { status: 500 });
+      return ApiResponse.serverError();
     }
   });
 }

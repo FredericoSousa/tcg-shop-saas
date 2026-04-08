@@ -1,17 +1,43 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { scryfall } from "@/lib/scryfall";
 import type { BulkItemResult } from "@/lib/types/inventory";
 import { ScryfallCard } from "@/lib/types/scryfall";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
+/**
+ * @openapi
+ * /api/scryfall/search-by-name:
+ *   post:
+ *     summary: Search Scryfall card by name
+ *     description: Performs a precise search for a card by name and optional set/number. Returns standardized bulk item format.
+ *     tags: [Scryfall]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name]
+ *             properties:
+ *               name: { type: string }
+ *               setCode: { type: string }
+ *               cardNumber: { type: string }
+ *     responses:
+ *       200:
+ *         description: Search result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 export async function POST(request: NextRequest) {
   try {
     const { name, setCode, cardNumber } = await request.json();
 
     if (!name) {
-      return NextResponse.json(
-        { error: "Card name is required" },
-        { status: 400 },
-      );
+      return ApiResponse.badRequest("Card name is required");
     }
 
     let query = `!"${name}"`;
@@ -24,7 +50,7 @@ export async function POST(request: NextRequest) {
 
     const cards = (await scryfall.searchCards(query)) as ScryfallCard[];
     if (!cards.length) {
-      return NextResponse.json(null);
+      return ApiResponse.success(null);
     }
 
     const card = cards[0];
@@ -48,9 +74,9 @@ export async function POST(request: NextRequest) {
       cardNumber: card.collector_number || "",
     };
 
-    return NextResponse.json(result);
+    return ApiResponse.success(result);
   } catch (error) {
     console.error("Search by name error:", error);
-    return NextResponse.json(null);
+    return ApiResponse.success(null);
   }
 }

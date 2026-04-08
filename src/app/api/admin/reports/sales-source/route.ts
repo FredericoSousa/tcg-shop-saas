@@ -1,13 +1,38 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { container } from "@/lib/infrastructure/container";
 import { GetSalesSourceReportUseCase } from "@/lib/application/use-cases/get-sales-source-report.use-case";
 import { validateAdminApi } from "@/lib/tenant-server";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
+/**
+ * @openapi
+ * /api/admin/reports/sales-source:
+ *   get:
+ *     summary: Get sales source report
+ *     description: Returns a report of sales broken down by source (e.g., POS, Online). Requires admin authentication.
+ *     tags: [Reports]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         schema: { type: string, format: date }
+ *       - in: query
+ *         name: endDate
+ *         schema: { type: string, format: date }
+ *     responses:
+ *       200:
+ *         description: Sales source report
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 export async function GET(req: NextRequest) {
   try {
     const context = await validateAdminApi();
     if (!context) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return ApiResponse.unauthorized();
     }
     const tenantId = context.tenant.id;
 
@@ -18,9 +43,9 @@ export async function GET(req: NextRequest) {
     const useCase = container.resolve(GetSalesSourceReportUseCase);
     const report = await useCase.execute({ tenantId, startDate, endDate });
 
-    return NextResponse.json(report);
+    return ApiResponse.success(report);
   } catch (error) {
     console.error("[REPORTS_SALES_SOURCE_GET]", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return ApiResponse.serverError();
   }
 }

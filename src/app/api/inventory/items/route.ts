@@ -7,15 +7,83 @@ import { UpdateInventoryUseCase } from "@/lib/application/use-cases/update-inven
 import { BulkUpdateInventoryUseCase } from "@/lib/application/use-cases/bulk-update-inventory.use-case";
 import { DeleteInventoryUseCase } from "@/lib/application/use-cases/delete-inventory.use-case";
 import { logger } from "@/lib/logger";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
 const addInventoryUseCase = container.resolve(AddInventoryUseCase);
 const updateInventoryUseCase = container.resolve(UpdateInventoryUseCase);
 const bulkUpdateInventoryUseCase = container.resolve(BulkUpdateInventoryUseCase);
 const deleteInventoryUseCase = container.resolve(DeleteInventoryUseCase);
 
+/**
+ * @openapi
+ * /api/inventory/items:
+ *   post:
+ *     summary: Add inventory item
+ *     description: Adds a new item to the inventory. Requires admin authentication.
+ *     tags: [Inventory]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [scryfallId, price, quantity, condition, language]
+ *             properties:
+ *               scryfallId: { type: string }
+ *               price: { type: number }
+ *               quantity: { type: number }
+ *               condition: { type: string }
+ *               language: { type: string }
+ *               extras: { type: array, items: { type: string } }
+ *     responses:
+ *       200:
+ *         description: Success
+ *       401:
+ *         description: Unauthorized
+ *   delete:
+ *     summary: Delete inventory items
+ *     description: Deletes multiple items from the inventory. Requires admin authentication.
+ *     tags: [Inventory]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [ids]
+ *             properties:
+ *               ids: { type: array, items: { type: string } }
+ *     responses:
+ *       200:
+ *         description: Success
+ *   patch:
+ *     summary: Update inventory items
+ *     description: Updates one or more items in the inventory. Requires admin authentication.
+ *     tags: [Inventory]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               id: { type: string }
+ *               ids: { type: array, items: { type: string } }
+ *               price: { type: number }
+ *               quantity: { type: number }
+ *     responses:
+ *       200:
+ *         description: Success
+ */
 export async function POST(request: NextRequest) {
   const context = await validateAdminApi();
-  if (!context) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!context) return ApiResponse.unauthorized();
 
   const { tenant } = context;
 
@@ -32,22 +100,19 @@ export async function POST(request: NextRequest) {
     });
 
     revalidatePath("/admin/inventory");
-    return Response.json({ success: true });
+    return ApiResponse.success({ success: true });
   } catch (error) {
     logger.error("Error adding inventory item", error as Error, {
       tenantId: tenant.id,
       action: "add_inventory",
     });
-    return Response.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
-      { status: 500 },
-    );
+    return ApiResponse.serverError(error instanceof Error ? error.message : "Internal server error");
   }
 }
 
 export async function DELETE(request: NextRequest) {
   const context = await validateAdminApi();
-  if (!context) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!context) return ApiResponse.unauthorized();
 
   const { tenant } = context;
 
@@ -55,25 +120,25 @@ export async function DELETE(request: NextRequest) {
     const { ids } = await request.json();
 
     if (!Array.isArray(ids) || !ids.length) {
-      return Response.json({ error: "No items selected" }, { status: 400 });
+      return ApiResponse.badRequest("No items selected");
     }
 
     await deleteInventoryUseCase.execute({ ids });
 
     revalidatePath("/admin/inventory");
-    return Response.json({ success: true });
+    return ApiResponse.success({ success: true });
   } catch (error) {
     logger.error("Error deleting inventory items", error as Error, {
       tenantId: tenant.id,
       action: "delete_inventory",
     });
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+    return ApiResponse.serverError();
   }
 }
 
 export async function PATCH(request: NextRequest) {
   const context = await validateAdminApi();
-  if (!context) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!context) return ApiResponse.unauthorized();
 
   const { tenant } = context;
 
@@ -93,16 +158,16 @@ export async function PATCH(request: NextRequest) {
         quantity: quantity !== undefined ? Number(quantity) : undefined,
       });
     } else {
-      return Response.json({ error: "Invalid data" }, { status: 400 });
+      return ApiResponse.badRequest("Invalid data");
     }
 
     revalidatePath("/admin/inventory");
-    return Response.json({ success: true });
+    return ApiResponse.success({ success: true });
   } catch (error) {
     logger.error("Error updating inventory items", error as Error, {
       tenantId: tenant.id,
       action: "update_inventory",
     });
-    return Response.json({ error: "Internal server error" }, { status: 500 });
+    return ApiResponse.serverError();
   }
 }

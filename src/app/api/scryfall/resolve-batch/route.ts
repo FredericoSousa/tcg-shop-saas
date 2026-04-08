@@ -1,10 +1,43 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { scryfall } from "@/lib/scryfall";
 import { logger, createTimer } from "@/lib/logger";
 import { cardCache, generateCardCacheKey } from "@/lib/cache/card-cache";
 import type { BulkItemResult } from "@/lib/types/inventory";
 import { ScryfallCard } from "@/lib/types/scryfall";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
+/**
+ * @openapi
+ * /api/scryfall/resolve-batch:
+ *   post:
+ *     summary: Resolve a batch of card identifiers
+ *     description: Takes an array of card identifiers (name, set, number) and resolves them using Scryfall API.
+ *     tags: [External]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: array
+ *             items:
+ *               type: object
+ *               required: [cardName, quantity, condition, language, price]
+ *               properties:
+ *                 cardName: { type: string }
+ *                 setCode: { type: string }
+ *                 cardNumber: { type: string }
+ *                 quantity: { type: number }
+ *                 condition: { type: string }
+ *                 language: { type: string }
+ *                 price: { type: number }
+ *     responses:
+ *       200:
+ *         description: Array of resolved card results
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 export async function POST(request: NextRequest) {
   const timer = createTimer("resolveCardsBatch");
 
@@ -22,10 +55,7 @@ export async function POST(request: NextRequest) {
     }[] = await request.json();
 
     if (!Array.isArray(items) || !items.length) {
-      return NextResponse.json(
-        { error: "Array of items is required" },
-        { status: 400 },
-      );
+      return ApiResponse.badRequest("Array of items is required");
     }
 
     // Build identifiers for Scryfall batch lookup
@@ -115,16 +145,13 @@ export async function POST(request: NextRequest) {
       },
     );
 
-    return NextResponse.json(results);
+    return ApiResponse.success(results);
   } catch (error) {
     logger.warn("Batch card resolution failed", {
       action: "resolve_cards_batch",
       error: error instanceof Error ? error.message : String(error),
     });
-    return NextResponse.json(
-      { error: "Erro na busca em lote" },
-      { status: 500 },
-    );
+    return ApiResponse.serverError("Erro na busca em lote");
   } finally {
     timer.log({ action: "resolve_cards_batch" });
   }

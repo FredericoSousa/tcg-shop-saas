@@ -3,7 +3,30 @@ import { withAdminApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
 import { ListProductsUseCase } from "@/lib/application/use-cases/list-products.use-case";
 import { logger } from "@/lib/logger";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
+/**
+ * @openapi
+ * /api/admin/pos/search:
+ *   get:
+ *     summary: Search products for POS
+ *     description: Searches for products in the catalog for the POS system. Requires admin authentication.
+ *     tags: [POS]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema: { type: string }
+ *         description: Search query
+ *     responses:
+ *       200:
+ *         description: List of products
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
 export async function GET(request: NextRequest) {
   return withAdminApi(async ({ tenant }) => {
     try {
@@ -15,10 +38,10 @@ export async function GET(request: NextRequest) {
 
       const listProductsUseCase = container.resolve(ListProductsUseCase);
       const result = await listProductsUseCase.execute({ page, limit, search });
-      return Response.json(result.items);
+      return ApiResponse.success(result.items);
     } catch (error) {
       logger.error("Error in POS search API", error as Error, { tenantId: tenant.id });
-      return Response.json({ error: "Internal server error" }, { status: 500 });
+      return ApiResponse.serverError();
     }
   });
 }

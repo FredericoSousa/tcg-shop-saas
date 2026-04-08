@@ -20,9 +20,11 @@ export default function LoginPage() {
       try {
         const response = await fetch("/api/tenant/current");
         if (response.ok) {
-          const data = await response.json();
-          setTenantId(data.id);
-          setTenantName(data.name);
+          const result = await response.json();
+          if (result.success && result.data) {
+            setTenantId(result.data.id);
+            setTenantName(result.data.name);
+          }
         }
       } catch (err) {
         console.error("Failed to get tenant info:", err);
@@ -54,8 +56,8 @@ export default function LoginPage() {
 
       const result = await response.json();
 
-      if (!response.ok || result.error) {
-        setError(result.error || "An error occurred");
+      if (!result.success) {
+        setError(result.message || "An error occurred");
       } else {
         router.push("/admin");
       }

@@ -59,14 +59,14 @@ export function OrderStatusManager({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ orderId, status: newStatusValue }),
       });
-      const res = await response.json();
-      if (res.success) {
+      const result = await response.json();
+      if (result.success) {
         toast.success(
           `Status alterado para ${STATUS_OPTIONS.find((opt) => opt.value === newStatusValue)?.label}.`,
         );
         onStatusChange?.(newStatusValue);
       } else {
-        toast.error(res.error || "Erro ao atualizar status do pedido.");
+        toast.error(result.message || "Erro ao atualizar status do pedido.");
         setStatus(currentStatus);
       }
     });

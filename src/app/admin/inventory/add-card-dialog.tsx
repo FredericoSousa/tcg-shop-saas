@@ -53,8 +53,12 @@ export function AddCardDialog() {
     try {
       const response = await fetch(`/api/scryfall/search?q=${encodeURIComponent(query)}`);
       if (!response.ok) throw new Error("Search failed");
-      const cards = await response.json();
-      setResults(cards as Card[]);
+      const result = await response.json();
+      if (result.success && result.data) {
+        setResults(result.data as Card[]);
+      } else {
+        throw new Error(result.message || "Search failed");
+      }
     } catch {
       toast.error("Erro ao buscar o card.");
     } finally {
@@ -80,9 +84,10 @@ export function AddCardDialog() {
           body: JSON.stringify(body),
         });
 
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Erro ao salvar o card");
+        const result = await response.json();
+
+        if (!result.success) {
+          throw new Error(result.message || "Erro ao salvar o card");
         }
 
         toast.success("Card adicionado ao inventário!");

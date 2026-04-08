@@ -44,7 +44,8 @@ export function BulkActionsBar({
         body: JSON.stringify({ ids: selectedIds }),
       });
 
-      if (!response.ok) throw new Error("Failed to delete");
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message || "Failed to delete");
 
       toast.success(`${selectedCount} itens removidos com sucesso.`);
       setIsDeleteDialogOpen(false);
@@ -74,7 +75,8 @@ export function BulkActionsBar({
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to update");
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message || "Failed to update");
 
       toast.success(`${selectedCount} itens atualizados com sucesso.`);
       setIsUpdateDialogOpen(false);

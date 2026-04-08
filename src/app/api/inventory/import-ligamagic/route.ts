@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { getCollectionById } from "@/lib/liga-magic";
 import { logger, createTimer } from "@/lib/logger";
 import type { Condition } from "@prisma/client";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
 const LM_CONDITION_MAP: Record<string, Condition> = {
   M: "NM",
@@ -19,6 +20,34 @@ const LM_LANGUAGE_MAP: Record<string, string> = {
   ja: "JP",
 };
 
+/**
+ * @openapi
+ * /api/inventory/import-ligamagic:
+ *   post:
+ *     summary: Import LigaMagic collection
+ *     description: Imports a collection of cards from LigaMagic by collection ID. Requires admin authentication.
+ *     tags: [Inventory]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [collectionId]
+ *             properties:
+ *               collectionId: { type: string }
+ *     responses:
+ *       200:
+ *         description: List of imported cards
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: No cards found
+ */
 export async function POST(request: NextRequest) {
   const timer = createTimer("importLigaMagicCollection");
 
@@ -26,10 +55,7 @@ export async function POST(request: NextRequest) {
     const { collectionId } = await request.json();
 
     if (!collectionId || !collectionId.trim()) {
-      return NextResponse.json(
-        { error: "ID da coleção é obrigatório" },
-        { status: 400 },
-      );
+      return ApiResponse.badRequest("ID da coleção é obrigatório");
     }
 
     logger.info("Starting LigaMagic collection import", {
@@ -40,10 +66,7 @@ export async function POST(request: NextRequest) {
     const cards = await getCollectionById(collectionId.trim());
 
     if (!cards.length) {
-      return NextResponse.json(
-        { error: "Nenhum card encontrado na coleção" },
-        { status: 404 },
-      );
+      return ApiResponse.notFound("Nenhum card encontrado na coleção");
     }
 
     const results = cards.map((card) => {
@@ -65,7 +88,7 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    return NextResponse.json(results);
+    return ApiResponse.success(results);
   } catch (error) {
     logger.error(
       "Error importing LigaMagic collection",
@@ -74,10 +97,7 @@ export async function POST(request: NextRequest) {
         action: "import_ligamagic_collection",
       },
     );
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erro ao importar coleção" },
-      { status: 500 },
-    );
+    return ApiResponse.serverError(error instanceof Error ? error.message : "Erro ao importar coleção");
   } finally {
     timer.log({ action: "import_ligamagic_collection" });
   }

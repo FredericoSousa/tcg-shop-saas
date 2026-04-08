@@ -45,8 +45,10 @@ export function ProductSearch({ onSelect }: ProductSearchProps) {
     setLoading(true);
     try {
       const response = await fetch(`/api/admin/pos/search?q=${encodeURIComponent(searchQuery)}`);
-      const data = await response.json();
-      setResults(data);
+      const result = await response.json();
+      if (result.success && result.data) {
+        setResults(result.data);
+      }
     } catch (error) {
       console.error("Search error:", error);
     } finally {

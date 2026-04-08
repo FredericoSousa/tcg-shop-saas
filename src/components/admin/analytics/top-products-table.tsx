@@ -24,8 +24,10 @@ export function TopProductsTable() {
       try {
         const response = await fetch("/api/admin/reports/top-products?limit=5");
         if (response.ok) {
-          const json = await response.json();
-          setProducts(json);
+          const result = await response.json();
+          if (result.success && result.data) {
+            setProducts(result.data);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch top products", error);

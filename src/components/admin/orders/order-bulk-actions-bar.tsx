@@ -43,7 +43,8 @@ export function OrderBulkActionsBar({
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to update orders");
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message || "Failed to update orders");
 
       const statusLabels: Record<OrderStatus, string> = {
         PENDING: "Pendentes",

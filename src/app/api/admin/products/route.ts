@@ -4,10 +4,65 @@ import { container } from "@/lib/infrastructure/container";
 import { ListProductsUseCase } from "@/lib/application/use-cases/list-products.use-case";
 import { SaveProductUseCase } from "@/lib/application/use-cases/save-product.use-case";
 import { logger } from "@/lib/logger";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
 const listProductsUseCase = container.resolve(ListProductsUseCase);
 const saveProductUseCase = container.resolve(SaveProductUseCase);
 
+/**
+ * @openapi
+ * /api/admin/products:
+ *   get:
+ *     summary: List products
+ *     description: Returns a paginated list of products. Requires admin authentication.
+ *     tags: [Products]
+ *     security:
+ *       - cookieAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, default: 1 }
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 10 }
+ *       - in: query
+ *         name: search
+ *         schema: { type: string }
+ *       - in: query
+ *         name: categoryId
+ *         schema: { type: string }
+ *     responses:
+ *       200:
+ *         description: Paginated list of products
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *   post:
+ *     summary: Create or update product
+ *     description: Creates a new product or updates an existing one. Requires admin authentication.
+ *     tags: [Products]
+ *     security:
+ *       - cookieAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, price]
+ *             properties:
+ *               id: { type: string }
+ *               name: { type: string }
+ *               description: { type: string }
+ *               price: { type: number }
+ *               stock: { type: number }
+ *               categoryId: { type: string }
+ *               imageUrl: { type: string }
+ *     responses:
+ *       200:
+ *         description: Product saved
+ */
 export async function GET(request: NextRequest) {
   return withAdminApi(async ({ tenant }) => {
     try {
@@ -18,10 +73,10 @@ export async function GET(request: NextRequest) {
       const categoryId = searchParams.get("categoryId") || undefined;
 
       const result = await listProductsUseCase.execute({ page, limit, search, categoryId });
-      return Response.json(result);
+      return ApiResponse.success(result);
     } catch (error) {
       logger.error("Error fetching products", error as Error, { tenantId: tenant.id });
-      return Response.json({ error: "Internal server error" }, { status: 500 });
+      return ApiResponse.serverError();
     }
   });
 }
@@ -31,10 +86,10 @@ export async function POST(request: NextRequest) {
     try {
       const body = await request.json();
       const product = await saveProductUseCase.execute({ ...body });
-      return Response.json(product);
+      return ApiResponse.success(product);
     } catch (error) {
       logger.error("Error creating product", error as Error, { tenantId: tenant.id });
-      return Response.json({ error: "Internal server error" }, { status: 500 });
+      return ApiResponse.serverError();
     }
   });
 }
