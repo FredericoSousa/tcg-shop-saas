@@ -3,15 +3,16 @@ import { TOKENS } from "../../infrastructure/container";
 import type { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
 import { Customer } from "@/lib/domain/entities/customer";
 import { getTenantId } from "../../tenant-context";
+import { IUseCase } from "./use-case.interface";
 
-interface CreateCustomerRequest {
+export interface CreateCustomerRequest {
   name: string;
   phoneNumber: string;
   email?: string | null;
 }
 
 @injectable()
-export class CreateCustomerUseCase {
+export class CreateCustomerUseCase implements IUseCase<CreateCustomerRequest, Customer> {
   constructor(@inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository) {}
 
   async execute(request: CreateCustomerRequest): Promise<Customer> {

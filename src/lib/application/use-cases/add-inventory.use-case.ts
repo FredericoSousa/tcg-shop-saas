@@ -7,8 +7,9 @@ import type {
 import { scryfall } from "@/lib/scryfall";
 import type { ScryfallCard } from "@/lib/types/scryfall";
 import { getTenantId } from "../../tenant-context";
+import { IUseCase } from "./use-case.interface";
 
-interface AddInventoryRequest {
+export interface AddInventoryRequest {
   scryfallId: string;
   price: number;
   quantity: number;
@@ -17,14 +18,18 @@ interface AddInventoryRequest {
   extras?: string[];
 }
 
+export interface AddInventoryResponse {
+  success: boolean;
+}
+
 @injectable()
-export class AddInventoryUseCase {
+export class AddInventoryUseCase implements IUseCase<AddInventoryRequest, AddInventoryResponse> {
   constructor(
     @inject(TOKENS.InventoryRepository) private inventoryRepo: IInventoryRepository,
     @inject(TOKENS.CardTemplateRepository) private templateRepo: ICardTemplateRepository
   ) {}
 
-  async execute(request: AddInventoryRequest): Promise<{ success: boolean }> {
+  async execute(request: AddInventoryRequest): Promise<AddInventoryResponse> {
     const { 
       scryfallId, 
       price, 

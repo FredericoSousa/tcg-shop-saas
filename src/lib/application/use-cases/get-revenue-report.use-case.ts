@@ -2,15 +2,16 @@ import { injectable, inject } from "tsyringe";
 import { TOKENS } from "../../infrastructure/container";
 import { IReportsRepository } from "@/lib/domain/repositories/report.repository";
 import { RevenueReport } from "@/lib/domain/entities/report";
+import { IUseCase } from "./use-case.interface";
 
-interface GetRevenueReportRequest {
+export interface GetRevenueReportRequest {
   tenantId: string;
   startDate?: string;
   endDate?: string;
 }
 
 @injectable()
-export class GetRevenueReportUseCase {
+export class GetRevenueReportUseCase implements IUseCase<GetRevenueReportRequest, RevenueReport> {
   constructor(
     @inject(TOKENS.ReportsRepository)
     private reportsRepository: IReportsRepository

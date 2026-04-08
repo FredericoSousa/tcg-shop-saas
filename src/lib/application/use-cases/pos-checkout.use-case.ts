@@ -6,8 +6,9 @@ import type { ICustomerRepository } from "@/lib/domain/repositories/customer.rep
 import { Order } from "@/lib/domain/entities/order";
 import { prisma } from "@/lib/prisma";
 import { getTenantId } from "../../tenant-context";
+import { IUseCase } from "./use-case.interface";
 
-interface POSCheckoutRequest {
+export interface POSCheckoutRequest {
   items: {
     productId: string;
     quantity: number;
@@ -20,19 +21,22 @@ interface POSCheckoutRequest {
   };
 }
 
+export interface POSCheckoutResponse {
+  orderId: string;
+}
+
 @injectable()
-export class POSCheckoutUseCase {
+export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheckoutResponse> {
   constructor(
     @inject(TOKENS.OrderRepository) private orderRepo: IOrderRepository,
     @inject(TOKENS.ProductRepository) private productRepo: IProductRepository,
     @inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository
   ) {}
 
-  async execute(request: POSCheckoutRequest): Promise<{ orderId: string }> {
+  async execute(request: POSCheckoutRequest): Promise<POSCheckoutResponse> {
     const { items, customerData } = request;
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const orderId = await prisma.$transaction(async (_tx) => {
+    const orderId = await prisma.$transaction(async () => {
       // 1. Decrement stock for products
       for (const item of items) {
         await this.productRepo.decrementStock(item.productId, item.quantity);

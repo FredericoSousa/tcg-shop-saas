@@ -3,8 +3,9 @@ import { TOKENS } from "../../infrastructure/container";
 import type { IProductRepository } from "@/lib/domain/repositories/product.repository";
 import { Product } from "@/lib/domain/entities/product";
 import { getTenantId } from "../../tenant-context";
+import { IUseCase } from "./use-case.interface";
 
-interface SaveProductRequest {
+export interface SaveProductRequest {
   id?: string;
   name: string;
   description?: string | null;
@@ -16,7 +17,7 @@ interface SaveProductRequest {
 }
 
 @injectable()
-export class SaveProductUseCase {
+export class SaveProductUseCase implements IUseCase<SaveProductRequest, Product> {
   constructor(@inject(TOKENS.ProductRepository) private productRepo: IProductRepository) {}
 
   async execute(request: SaveProductRequest): Promise<Product> {

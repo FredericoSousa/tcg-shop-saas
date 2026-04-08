@@ -232,6 +232,7 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
 
     const customers = await this.prisma.customer.findMany({
       where: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         id: { in: results.map((r: any) => r.customerId) }
       }
     });

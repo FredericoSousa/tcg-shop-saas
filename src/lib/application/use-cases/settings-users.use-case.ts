@@ -4,12 +4,14 @@ import type { ITenantRepository, IUserRepository } from "@/lib/domain/repositori
 import { Tenant, User, UserRole } from "@/lib/domain/entities/tenant";
 import { hashPassword } from "@/lib/auth";
 import { getTenantId } from "../../tenant-context";
+import { IUseCase } from "./use-case.interface";
 
 @injectable()
-export class UpdateSettingsUseCase {
+export class UpdateSettingsUseCase implements IUseCase<{ id: string; data: Partial<Tenant> }, Tenant> {
   constructor(@inject(TOKENS.TenantRepository) private tenantRepo: ITenantRepository) {}
 
-  async execute(id: string, data: Partial<Tenant>): Promise<Tenant> {
+  async execute(request: { id: string; data: Partial<Tenant> }): Promise<Tenant> {
+    const { id, data } = request;
     const allowedFields: (keyof Tenant)[] = [
       "name", "logoUrl", "faviconUrl", "description", "address", 
       "phone", "email", "instagram", "whatsapp", "facebook", "twitter"
@@ -27,7 +29,7 @@ export class UpdateSettingsUseCase {
 }
 
 @injectable()
-export class ListUsersUseCase {
+export class ListUsersUseCase implements IUseCase<void, Partial<User>[]> {
   constructor(@inject(TOKENS.UserRepository) private userRepo: IUserRepository) {}
 
   async execute(): Promise<Partial<User>[]> {
@@ -41,7 +43,7 @@ export class ListUsersUseCase {
   }
 }
 
-interface SaveUserRequest {
+export interface SaveUserRequest {
   id?: string;
   username: string;
   password?: string;
@@ -49,7 +51,7 @@ interface SaveUserRequest {
 }
 
 @injectable()
-export class SaveUserUseCase {
+export class SaveUserUseCase implements IUseCase<SaveUserRequest, Partial<User>> {
   constructor(@inject(TOKENS.UserRepository) private userRepo: IUserRepository) {}
 
   async execute(request: SaveUserRequest): Promise<Partial<User>> {
