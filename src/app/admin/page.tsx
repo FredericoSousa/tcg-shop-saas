@@ -1,11 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
-import { LayoutDashboard, Package, ShoppingCart, DollarSign, TrendingUp, Calendar } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, DollarSign, TrendingUp, Calendar, PieChart as PieChartIcon, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getAdminContext } from "@/lib/tenant-server";
 import { DashboardChart } from "@/components/admin/dashboard-chart";
+import { RevenueDashboard } from "@/components/admin/analytics/revenue-dashboard";
+import { TopProductsTable } from "@/components/admin/analytics/top-products-table";
+import { TopBuyersCard } from "@/components/admin/analytics/top-buyers-card";
+
 
 export default async function AdminDashboardPage() {
   const { tenant } = await getAdminContext();
@@ -94,16 +98,22 @@ export default async function AdminDashboardPage() {
   ];
 
   return (
-    <div className="flex flex-col gap-8 w-full animate-in fade-in duration-700">
+    <div className="flex flex-col gap-10 w-full animate-in fade-in duration-700">
       <PageHeader
         title="Painel de Controle"
         description="Monitoramento centralizado da sua operação TCG"
         icon={LayoutDashboard}
         actions={
-          <Button variant="outline" size="sm" className="gap-2 h-9">
-            <Calendar className="h-4 w-4" />
-            Últimos 30 dias
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-2 h-9 rounded-xl">
+              <Calendar className="h-4 w-4" />
+              Últimos 30 dias
+            </Button>
+            <Button size="sm" className="gap-2 h-9 rounded-xl shadow-md">
+              <TrendingUp className="h-4 w-4" />
+              Relatório Completo
+            </Button>
+          </div>
         }
       />
 
@@ -146,8 +156,33 @@ export default async function AdminDashboardPage() {
         ))}
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Chart Column */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between px-1">
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+              <PieChartIcon className="h-5 w-5 text-primary" />
+              Inteligência de Vendas
+            </h2>
+            <p className="text-sm text-muted-foreground font-medium">
+              Análise estratégica de faturamento e performance
+            </p>
+          </div>
+        </div>
+        <RevenueDashboard />
+      </section>
+
+      <div className="grid gap-8 lg:grid-cols-4">
+        {/* Top Products Section */}
+        <div className="lg:col-span-1">
+          <TopProductsTable />
+        </div>
+
+        {/* Top Buyers Section */}
+        <div className="lg:col-span-1">
+          <TopBuyersCard tenantId={tenant.id} />
+        </div>
+
+        {/* Trend Chart */}
         <div className="lg:col-span-2">
           <DashboardChart 
             title="Tendência de Faturamento" 
@@ -155,29 +190,8 @@ export default async function AdminDashboardPage() {
             data={chartData} 
           />
         </div>
-
-        {/* Recent Orders Column/Summary */}
-        <div className="lg:col-span-1 flex flex-col gap-4">
-           <div className="bg-card/40 border shadow-sm backdrop-blur-sm rounded-xl p-5 flex-1">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Desempenho Semanal</h2>
-                <TrendingUp className="h-4 w-4 text-emerald-500" />
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Meta de Vendas</span>
-                  <span className="font-bold">75%</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
-                  <div className="bg-primary h-full rounded-full transition-all duration-1000" style={{ width: '75%' }} />
-                </div>
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  Você está 15% acima da média da semana passada. Continue assim!
-                </p>
-              </div>
-           </div>
-        </div>
       </div>
+
 
       {/* Recent Orders Section */}
       <div className="flex flex-col gap-6">

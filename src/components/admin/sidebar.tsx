@@ -12,12 +12,14 @@ import {
   UserCog,
   Monitor,
   ShoppingBag,
+  TrendingUp,
 } from "lucide-react";
 import { Tenant } from "@prisma/client";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "PDV", href: "/admin/pos", icon: Monitor },
+
   { name: "Singles", href: "/admin/inventory", icon: Package },
   { name: "Vendas", href: "/admin/orders", icon: ShoppingCart },
   { name: "Produtos", href: "/admin/products", icon: ShoppingBag },
@@ -25,6 +27,7 @@ const sidebarItems = [
   { name: "Usuários", href: "/admin/users", icon: UserCog },
   { name: "Configurações", href: "/admin/settings", icon: Settings },
 ];
+
 
 interface SidebarProps {
   tenant: Tenant;

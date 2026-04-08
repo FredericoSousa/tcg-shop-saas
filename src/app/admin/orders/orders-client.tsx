@@ -3,7 +3,7 @@
 import { OrderStatusManager } from "@/components/admin/order-status-manager";
 import { OrderStatus } from "@prisma/client";
 import Link from "next/link";
-import { ArrowRight, FilterIcon } from "lucide-react";
+import { ArrowRight, FilterIcon, Check } from "lucide-react";
 import * as React from "react";
 import {
   Select,
@@ -16,6 +16,17 @@ import { CustomerSelector, CustomerType } from "@/components/admin/pos/customer-
 import { useTableState } from "@/lib/hooks/use-table-state";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { TableSearch } from "@/components/admin/table-search";
+import { Button } from "@/components/ui/button";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { OrderBulkActionsBar } from "@/components/admin/orders/order-bulk-actions-bar";
+import { Badge } from "@/components/ui/badge";
 
 export type OrderItemType = {
   id: string;
@@ -50,75 +61,103 @@ export type OrderType = {
   items: OrderItemType[];
 };
 
-const OrderList = ({ items }: { items: OrderType[] }) => (
-  <div className="space-y-6">
-    {items.length === 0 ? (
-      <div className="text-center py-12 bg-muted/10 rounded-xl border border-dashed text-muted-foreground">
-        <p>Nenhum pedido encontrado com os filtros atuais.</p>
-      </div>
-    ) : (
-      items.map((order) => (
-        <div
-          key={order.id}
-          className="bg-card border hover:border-muted transition-colors rounded-xl shadow-sm overflow-hidden"
-        >
-          <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-muted/20 border-b">
-            <div>
-              <div className="flex items-center gap-3 mb-1.5">
-                <h3 className="font-extrabold text-lg tracking-tight">
-                  {order.customer.name}
-                </h3>
-                <span className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full border ${order.source === "POS"
-                    ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
-                    : "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
-                  }`}>
-                  {order.source === "POS" ? "PDV" : "E-commerce"}
-                </span>
-              </div>
-              <div className="text-sm text-muted-foreground font-medium flex flex-wrap items-center gap-2">
-                <span>{order.customer.phoneNumber}</span>
-                <span className="opacity-50">•</span>
-                <span>{new Date(order.createdAt).toLocaleString("pt-BR")}</span>
-                <span className="opacity-50">•</span>
-                <span className="font-mono text-xs bg-muted/50 text-muted-foreground font-bold px-2 py-0.5 rounded border">
-                  #{order.id.slice(-8).toUpperCase()}
-                </span>
-              </div>
-            </div>
 
-            <div className="flex items-center gap-6 shrink-0 md:justify-end">
-              <div className="text-right">
-                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest mb-0.5">
-                  Total
-                </p>
-                <p className="font-black text-2xl text-primary leading-none">
-                  {new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  }).format(order.totalAmount)}
-                </p>
-              </div>
 
-              <OrderStatusManager
-                orderId={order.id}
-                currentStatus={order.status}
-                variant="select"
-              />
-            </div>
-          </div>
-
-          <div className="p-3 bg-card border-t border-muted/50 flex justify-end">
-            <Link
-              href={`/admin/orders/${order.id}`}
-              className="text-sm font-bold text-primary hover:text-primary/80 transition-colors px-4 py-2 bg-primary/10 hover:bg-primary/20 rounded-lg flex items-center gap-2"
-            >
-              Ver Detalhes
-              <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        </div>
-      ))
-    )}
+const OrderTableView = ({ 
+  items, 
+  selectedIds, 
+  onSelect,
+  onSelectAll 
+}: { 
+  items: OrderType[]; 
+  selectedIds: string[]; 
+  onSelect: (id: string) => void;
+  onSelectAll: () => void;
+}) => (
+  <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
+    <Table>
+      <TableHeader className="bg-muted/30">
+        <TableRow>
+          <TableHead className="w-[50px]">
+            <input
+              type="checkbox"
+              checked={items.length > 0 && selectedIds.length === items.length}
+              onChange={onSelectAll}
+              className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+            />
+          </TableHead>
+          <TableHead className="font-bold">ID / Data</TableHead>
+          <TableHead className="font-bold">Cliente</TableHead>
+          <TableHead className="font-bold text-center">Origem</TableHead>
+          <TableHead className="font-bold text-right">Itens</TableHead>
+          <TableHead className="font-bold text-right">Total</TableHead>
+          <TableHead className="font-bold">Status</TableHead>
+          <TableHead className="w-[50px]"></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {items.length === 0 ? (
+          <TableRow>
+            <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+              Nenhum pedido encontrado.
+            </TableCell>
+          </TableRow>
+        ) : (
+          items.map((order) => (
+            <TableRow key={order.id} className={selectedIds.includes(order.id) ? "bg-primary/5" : ""}>
+              <TableCell>
+                <input
+                  type="checkbox"
+                  checked={selectedIds.includes(order.id)}
+                  onChange={() => onSelect(order.id)}
+                  className="h-4 w-4 rounded border-gray-300 accent-primary cursor-pointer"
+                />
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-col">
+                  <span className="font-mono text-[10px] font-bold text-muted-foreground">#{order.id.slice(-8).toUpperCase()}</span>
+                  <span className="text-xs font-medium">{new Date(order.createdAt).toLocaleDateString("pt-BR")}</span>
+                </div>
+              </TableCell>
+              <TableCell>
+                <div className="flex flex-col">
+                  <span className="font-bold text-sm tracking-tight">{order.customer.name}</span>
+                  <span className="text-[10px] text-muted-foreground">{order.customer.phoneNumber}</span>
+                </div>
+              </TableCell>
+              <TableCell className="text-center">
+                <Badge variant="outline" className={`text-[9px] font-black uppercase tracking-tighter ${
+                  order.source === "POS" ? "bg-blue-100/50 text-blue-700" : "bg-emerald-100/50 text-emerald-700"
+                }`}>
+                  {order.source === "POS" ? "PDV" : "E-COM"}
+                </Badge>
+              </TableCell>
+              <TableCell className="text-right font-bold text-sm">
+                {order.items.reduce((acc, item) => acc + item.quantity, 0)}
+              </TableCell>
+              <TableCell className="text-right font-black text-primary">
+                {new Intl.NumberFormat("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                }).format(order.totalAmount)}
+              </TableCell>
+              <TableCell>
+                <OrderStatusManager
+                  orderId={order.id}
+                  currentStatus={order.status}
+                  variant="select"
+                />
+              </TableCell>
+              <TableCell className="text-right">
+                <Link href={`/admin/orders/${order.id}`} className="hover:text-primary">
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </TableCell>
+            </TableRow>
+          ))
+        )}
+      </TableBody>
+    </Table>
   </div>
 );
 
@@ -148,6 +187,8 @@ export function OrdersClient({
   const customerPhone = getFilter("customerPhone");
 
   const [selectedCustomer, setSelectedCustomer] = React.useState<CustomerType | null>(null);
+  const [selectedIds, setSelectedIds] = React.useState<string[]>([]);
+
 
   // Sync selectedCustomer state if customerPhone is in URL
   React.useEffect(() => {
@@ -161,6 +202,22 @@ export function OrdersClient({
     setFilter("customerPhone", customer?.phoneNumber || null);
   };
 
+  const handleSelectOrder = (id: string) => {
+    setSelectedIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === initialOrders.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(initialOrders.map(o => o.id));
+    }
+  };
+
+  const clearSelection = () => setSelectedIds([]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center gap-4 bg-card p-4 rounded-xl border shadow-sm overflow-visible">
@@ -168,8 +225,9 @@ export function OrdersClient({
           <div className="bg-primary/10 p-2 rounded-lg">
             <FilterIcon className="w-4 h-4 text-primary" />
           </div>
-          <span className="text-sm font-bold text-muted-foreground whitespace-nowrap hidden sm:inline">Filtrar:</span>
+          <span className="text-sm font-bold text-muted-foreground whitespace-nowrap">Filtrar:</span>
         </div>
+
         
         <div className="flex flex-col sm:flex-row items-center gap-3 flex-1 overflow-visible">
           <TableSearch 
@@ -220,8 +278,9 @@ export function OrdersClient({
       </div>
 
       <div className={isPending ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
-        <OrderList items={initialOrders} />
+        <OrderTableView items={initialOrders} selectedIds={selectedIds} onSelect={handleSelectOrder} onSelectAll={handleSelectAll} />
       </div>
+
 
       <DataTablePagination 
         page={page}
@@ -231,6 +290,20 @@ export function OrdersClient({
         onPageChange={setPage}
         onLimitChange={setLimit}
       />
+
+      {selectedIds.length > 0 && (
+        <OrderBulkActionsBar
+          selectedCount={selectedIds.length}
+          selectedIds={selectedIds}
+          onClearSelection={clearSelection}
+          onActionComplete={() => {
+            clearSelection();
+            // The status update API revalidates path, 
+            // but we might need a router refresh or just trust revalidation
+            window.location.reload(); 
+          }}
+        />
+      )}
     </div>
   );
 }

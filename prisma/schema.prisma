@@ -168,9 +168,10 @@ model Order {
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime?   @updatedAt @map("updated_at")
 
-  tenant   Tenant      @relation(fields: [tenantId], references: [id])
-  customer Customer    @relation(fields: [customerId], references: [id])
-  items    OrderItem[]
+  staffNotes  String?     @map("staff_notes")
+  tenant      Tenant      @relation(fields: [tenantId], references: [id])
+  customer    Customer    @relation(fields: [customerId], references: [id])
+  items       OrderItem[]
 
   @@index([tenantId])
   @@map("orders")

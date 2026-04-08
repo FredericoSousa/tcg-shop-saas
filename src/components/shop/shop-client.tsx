@@ -35,6 +35,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 import Image from "next/image";
+import { QuickAddButton } from "@/components/shop/quick-add-button";
 
 
 type ShopItem = {
@@ -820,7 +821,7 @@ export function ShopClient({
                   >
                     <div className="aspect-[2/3] w-full bg-muted/30 relative overflow-hidden flex items-center justify-center group-hover:bg-muted/50 transition-colors">
                       {item.cardTemplate?.imageUrl ? (
-                        <>
+                        <div className="relative h-full w-full group/image overflow-hidden">
                           {!imageLoaded[item.id] && (
                             <Skeleton className="absolute inset-0 z-0 bg-muted-foreground/10 animate-pulse" />
                           )}
@@ -834,7 +835,7 @@ export function ShopClient({
                             alt={item.cardTemplate.name}
                             fill
                             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                            className={`object-cover w-full h-full transition-opacity duration-300 ${imageLoaded[item.id] ? "opacity-100 z-10" : "opacity-0"}`}
+                            className={`object-cover w-full h-full transition-all duration-500 group-hover/image:scale-110 ${imageLoaded[item.id] ? "opacity-100 z-10" : "opacity-0"}`}
                             loading="lazy"
                             onLoad={() =>
                               setImageLoaded((prev) => ({
@@ -843,6 +844,19 @@ export function ShopClient({
                               }))
                             }
                           />
+                          
+                          {/* Premium Overlay on Hover */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 z-20" />
+
+                          <QuickAddButton item={{
+                            inventoryId: item.id,
+                            name: item.cardTemplate.name,
+                            set: item.cardTemplate.set,
+                            imageUrl: item.cardTemplate.imageUrl,
+                            price: item.price,
+                            maxStock: item.quantity
+                          }} />
+
                           {item.cardTemplate.backImageUrl && (
                             <button
                               onClick={() =>
@@ -851,7 +865,7 @@ export function ShopClient({
                                   [item.id]: !prev[item.id],
                                 }))
                               }
-                              className="absolute bottom-2 right-2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full transition-all duration-200 z-20 opacity-0 group-hover:opacity-100"
+                              className="absolute top-2 left-2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full transition-all duration-200 z-30 opacity-0 group-hover:opacity-100 shadow-lg backdrop-blur-sm"
                               title={
                                 flippedCards[item.id]
                                   ? "Ver frente"
@@ -866,7 +880,7 @@ export function ShopClient({
                               <RotateCcw className="h-3.5 w-3.5" />
                             </button>
                           )}
-                        </>
+                        </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60 text-xs font-medium space-y-2">
                           <div className="w-12 h-16 border-2 border-dashed border-muted-foreground/30 rounded flex items-center justify-center">
@@ -876,14 +890,14 @@ export function ShopClient({
                         </div>
                       )}
                       {item.cardTemplate?.metadata?.foil && (
-                        <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-300 to-amber-500 text-black text-[10px] font-bold px-2 py-0.5 rounded shadow z-10">
+                        <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-100 via-amber-400 to-yellow-100 text-black text-[9px] font-black px-2 py-0.5 rounded shadow-lg z-30 animate-pulse border border-amber-200">
                           FOIL
                         </div>
                       )}
                     </div>
-                    <div className="p-4 flex flex-col gap-1.5 flex-1">
+                    <div className="p-4 flex flex-col gap-1.5 flex-1 relative z-10">
                       <h3
-                        className="font-bold text-sm leading-tight min-h-[2.5rem]"
+                        className="font-bold text-sm leading-tight min-h-[2.5rem] group-hover:text-primary transition-colors"
                         title={item.cardTemplate?.name}
                       >
                         {item.cardTemplate?.name?.includes(" // ") ? (
@@ -903,7 +917,7 @@ export function ShopClient({
                       </h3>
                       <div className="flex items-center flex-wrap gap-1 mt-auto">
                         <span
-                          className="text-[10px] font-semibold px-1 py-0.5 bg-muted rounded border border-gray-200 truncate max-w-[100px] flex items-center justify-center cursor-default"
+                          className="text-[10px] font-semibold px-1 py-0.5 bg-muted/50 rounded border border-muted truncate max-w-[100px] flex items-center justify-center cursor-default"
                           title={
                             (item.cardTemplate?.metadata as unknown as Record<string, string>)?.set_name ||
                             item.cardTemplate?.set ||
@@ -912,20 +926,24 @@ export function ShopClient({
                         >
                           <SetBadge
                             setCode={item.cardTemplate?.set || ""}
-                            className="gap-1"
+                            className="gap-1 shadow-none"
                             iconClassName="h-3 w-3"
                             textClassName="text-[10px] font-semibold text-foreground tracking-normal m-0 p-0"
                           />
                         </span>
                         <span
-                          className="text-[10px] font-semibold px-1.5 py-0.5 bg-muted rounded border border-gray-200"
+                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
+                            item.condition === 'NM' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
+                            item.condition === 'SP' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                            'bg-muted/50 text-muted-foreground border-muted'
+                          }`}
                           title="Condição"
                         >
                           {item.condition}
                         </span>
                         <LanguageBadge 
                           language={item.language} 
-                          className="bg-muted border-gray-200" 
+                          className="bg-muted/50 border-muted" 
                         />
                         {item.extras &&
                           item.extras.length > 0 &&
@@ -940,7 +958,7 @@ export function ShopClient({
                       </div>
                       <div className="mt-2 pt-2 border-t flex flex-col gap-3">
                         <div className="flex flex-col">
-                          <span className="font-extrabold text-lg text-primary leading-none mb-1">
+                          <span className="font-black text-xl text-primary leading-none mb-1 tracking-tight">
                             {new Intl.NumberFormat("pt-BR", {
                               style: "currency",
                               currency: "BRL",
@@ -955,7 +973,7 @@ export function ShopClient({
                         <Button
                           size="sm"
                           variant={addedItems[item.id] ? "default" : "default"}
-                          className={`w-full font-bold text-xs h-8 transition-all duration-300 ease-out hover:scale-105 active:scale-95 ${addedItems[item.id] ? "bg-green-600 hover:bg-green-700 text-white shadow-md" : "hover:shadow-md"}`}
+                          className={`w-full font-bold text-xs h-9 transition-all duration-300 ease-out hover:scale-[1.02] active:scale-95 shadow-sm hover:shadow-md ${addedItems[item.id] ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
                           onClick={() => handleAddToCart(item)}
                           aria-label={
                             addedItems[item.id]
@@ -964,7 +982,7 @@ export function ShopClient({
                           }
                         >
                           {addedItems[item.id] ? (
-                            <span className="flex items-center gap-1.5 animate-in fade-in duration-300">
+                            <span className="flex items-center gap-1.5 animate-in fade-in zoom-in duration-300">
                               <Check className="w-3.5 h-3.5" />
                               <span>Adicionado</span>
                             </span>
