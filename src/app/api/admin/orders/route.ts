@@ -49,8 +49,8 @@ export async function GET(request: NextRequest) {
       const page = parseInt(searchParams.get("page") || "1");
       const limit = parseInt(searchParams.get("limit") || "10");
       const search = searchParams.get("search") || undefined;
-      const source = (searchParams.get("source") as "POS" | "ECOMMERCE" | "all") || "all";
-      const status = (searchParams.get("status") as OrderStatus | "all") || "all";
+      const source = (searchParams.get("source")?.toUpperCase() as "POS" | "ECOMMERCE" | "all") || "all";
+      const status = (searchParams.get("status")?.toUpperCase() as OrderStatus | "all") || "all";
       const customerPhone = searchParams.get("customerPhone") || undefined;
 
       const listOrdersUseCase = container.resolve(ListOrdersUseCase);

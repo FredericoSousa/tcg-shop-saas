@@ -38,6 +38,14 @@ const VALID_EXTRAS = [
   { value: "MISCUT", label: "Miscut" },
 ];
 
+const CONDITION_LABELS = {
+  NM: "Near Mint (NM)",
+  SP: "Slightly Played (SP)",
+  MP: "Moderately Played (MP)",
+  HP: "Heavily Played (HP)",
+  D: "Damaged (D)",
+};
+
 type Card = ScryfallCard;
 
 export function AddCardDialog() {
@@ -46,6 +54,8 @@ export function AddCardDialog() {
   const [results, setResults] = useState<Card[]>([]);
   const [selectedCardId, setSelectedCardId] = useState<string>("");
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
+  const [conditionState, setConditionState] = useState("NM");
+  const [languageState, setLanguageState] = useState("EN");
   const [isPending, startTransition] = useTransition();
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
@@ -308,12 +318,14 @@ export function AddCardDialog() {
                     >
                       Estado de Conservação
                     </label>
-                    <Select name="condition" defaultValue="NM" required>
+                    <Select name="condition" defaultValue="NM" required onValueChange={(val) => setConditionState(val)}>
                       <SelectTrigger
                         id="condition"
                         className="h-12 transition-all duration-300 focus-visible:ring-2 rounded-xl font-medium"
                       >
-                        <SelectValue placeholder="Selecione..." />
+                        <SelectValue placeholder="Selecione...">
+                          {CONDITION_LABELS[conditionState as keyof typeof CONDITION_LABELS] || "Near Mint (NM)"}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
                         <SelectItem value="NM">Near Mint (NM) · <span className="text-[10px] text-emerald-500 font-bold uppercase">Impecável</span></SelectItem>
@@ -332,12 +344,14 @@ export function AddCardDialog() {
                     >
                       Idioma Original
                     </label>
-                    <Select name="language" defaultValue="EN" required>
+                    <Select name="language" defaultValue="EN" required onValueChange={(val) => setLanguageState(val)}>
                       <SelectTrigger
                         id="language"
                         className="h-12 transition-all duration-300 focus-visible:ring-2 rounded-xl font-medium"
                       >
-                        <SelectValue placeholder="Selecione..." />
+                        <SelectValue placeholder="Selecione...">
+                          {languageState === "EN" ? "Inglês (EN)" : languageState === "PT" ? "Português (PT)" : languageState === "JP" ? "Japonês (JP)" : "Inglês (EN)"}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
                         <SelectItem value="EN"><LanguageBadge language="EN" className="bg-transparent border-0 p-0 shadow-none text-sm font-bold" /></SelectItem>

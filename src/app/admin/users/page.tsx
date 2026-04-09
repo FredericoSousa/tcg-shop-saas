@@ -31,6 +31,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { useTableState } from "@/lib/hooks/use-table-state";
+import { FilterSection } from "@/components/admin/filter-section";
+import { TableSearch } from "@/components/admin/table-search";
 
 interface User {
   id: string;
@@ -40,6 +43,12 @@ interface User {
 }
 
 export default function UsersPage() {
+  const {
+    search,
+    setSearch,
+    isPending,
+  } = useTableState();
+
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -50,12 +59,15 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [search]);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const response = await fetch("/api/admin/users");
+      const queryParams = new URLSearchParams();
+      if (search) queryParams.append("search", search);
+      
+      const response = await fetch(`/api/admin/users?${queryParams}`);
       if (!response.ok) throw new Error("Failed to fetch users");
       const data = await response.json();
       setUsers(data);
@@ -176,7 +188,9 @@ export default function UsersPage() {
                       onValueChange={(value) => setNewRole(value as "ADMIN" | "USER")}
                     >
                       <SelectTrigger id="role">
-                        <SelectValue placeholder="Selecione o nível" />
+                        <SelectValue placeholder="Selecione o nível">
+                          {newRole === "ADMIN" ? "Administrador" : "Usuário Comum"}
+                        </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="USER">Usuário Comum</SelectItem>
@@ -196,6 +210,15 @@ export default function UsersPage() {
           </Dialog>
         }
       />
+
+      <FilterSection resultsCount={users.length}>
+        <TableSearch
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por usuário..."
+          isLoading={loading || isPending}
+        />
+      </FilterSection>
 
       <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden p-0">
         <div className="p-0">

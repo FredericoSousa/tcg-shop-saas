@@ -34,6 +34,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useTableState } from "@/lib/hooks/use-table-state";
+import { FilterSection } from "@/components/admin/filter-section";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { TableSearch } from "@/components/admin/table-search";
 
@@ -220,14 +221,14 @@ export default function CustomersPage() {
         }
       />
 
-      <div className="flex items-center gap-4 bg-card/40 p-4 rounded-xl border shadow-sm backdrop-blur-sm">
+      <FilterSection resultsCount={total}>
         <TableSearch
           value={search}
           onChange={setSearch}
           placeholder="Buscar por nome, email ou telefone..."
           isLoading={loading || isPending}
         />
-      </div>
+      </FilterSection>
 
       <div className={`overflow-hidden rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm ${(loading || isPending) ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}`}>
         <Table>

@@ -48,6 +48,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTableState } from "@/lib/hooks/use-table-state";
+import { FilterSection } from "@/components/admin/filter-section";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { TableSearch } from "@/components/admin/table-search";
 import { BulkActionsBar } from "@/components/admin/inventory/bulk-actions-bar";
@@ -173,8 +174,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4 w-full">
-      {/* Filters Section */}
-      <div className="flex flex-wrap items-center gap-2 pb-4 border-b border-border/50">
+      <FilterSection resultsCount={serverTotal || data.length}>
         <TableSearch 
           value={search} 
           onChange={setSearch} 
@@ -188,10 +188,12 @@ export function DataTable<TData, TValue>({
             onValueChange={(value) => setFilter("cardTemplate_set", value === "all" ? null : value)}
           >
             <SelectTrigger
-              className="w-[140px] h-9 text-xs transition-all duration-200 hover:border-primary/50"
+              className="w-full sm:w-[150px] font-bold"
               aria-label="Filtrar por edição"
             >
-              <SelectValue placeholder="Edição" />
+              <SelectValue placeholder="Edição">
+                {getFilter("cardTemplate_set") || "Todas Edições"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas Edições</SelectItem>
@@ -208,10 +210,12 @@ export function DataTable<TData, TValue>({
             onValueChange={(value) => setFilter("condition", value === "all" ? null : value)}
           >
             <SelectTrigger
-              className="w-[130px] h-9 text-xs transition-all duration-200 hover:border-primary/50"
+              className="w-full sm:w-[150px] font-bold"
               aria-label="Filtrar por condição"
             >
-              <SelectValue placeholder="Condição" />
+              <SelectValue placeholder="Condição">
+                {getFilter("condition") || "Todas Condições"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todas Condições</SelectItem>
@@ -228,10 +232,12 @@ export function DataTable<TData, TValue>({
             onValueChange={(value) => setFilter("language", value === "all" ? null : value)}
           >
             <SelectTrigger
-              className="w-[110px] h-9 text-xs transition-all duration-200 hover:border-primary/50"
+              className="w-full sm:w-[120px] font-bold"
               aria-label="Filtrar por idioma"
             >
-              <SelectValue placeholder="Idioma" />
+              <SelectValue placeholder="Idioma">
+                {getFilter("language") || "Idiomas"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Idiomas</SelectItem>
@@ -248,10 +254,12 @@ export function DataTable<TData, TValue>({
             onValueChange={(value) => setFilter("extras", value === "all" ? null : value)}
           >
             <SelectTrigger
-              className="w-[120px] h-9 text-xs transition-all duration-200 hover:border-primary/50"
+              className="w-full sm:w-[150px] font-bold"
               aria-label="Filtrar por extras"
             >
-              <SelectValue placeholder="Extras" />
+              <SelectValue placeholder="Extras">
+                {getFilter("extras") || "Todos Extras"}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos Extras</SelectItem>
@@ -276,7 +284,7 @@ export function DataTable<TData, TValue>({
             </Button>
           )}
         </div>
-      </div>
+      </FilterSection>
 
       {selectedCount > 0 && (
         <BulkActionsBar

@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useTableState } from "@/lib/hooks/use-table-state";
+import { FilterSection } from "@/components/admin/filter-section";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { TableSearch } from "@/components/admin/table-search";
 
@@ -81,7 +82,7 @@ export function DataTable<TData extends { id: string }>({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+      <FilterSection resultsCount={serverTotal || (data.length > 0 ? page * limit : 0)}>
         <TableSearch 
           value={search} 
           onChange={setSearch} 
@@ -89,7 +90,7 @@ export function DataTable<TData extends { id: string }>({
           isLoading={isPending}
         />
         
-        <div className="flex items-center gap-2 w-full sm:w-auto">
+        <div className="flex items-center gap-2">
           <Select 
             value={currentCategory} 
             onValueChange={(val) => setFilter("category", val === "all" ? null : val)}
@@ -123,7 +124,7 @@ export function DataTable<TData extends { id: string }>({
             </Button>
           )}
         </div>
-      </div>
+      </FilterSection>
 
       <div className={`rounded-md border bg-card ${isPending ? "opacity-50 pointer-events-none" : ""}`}>
         <Table>

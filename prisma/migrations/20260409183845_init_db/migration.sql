@@ -10,6 +10,9 @@ CREATE TYPE "UserRole" AS ENUM ('ADMIN', 'USER');
 -- CreateEnum
 CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'PAID', 'SHIPPED', 'CANCELLED');
 
+-- CreateEnum
+CREATE TYPE "OrderSource" AS ENUM ('POS', 'ECOMMERCE');
+
 -- CreateTable
 CREATE TABLE "tenants" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -78,6 +81,10 @@ CREATE TABLE "product_categories" (
     "name" TEXT NOT NULL,
     "description" TEXT,
     "show_on_ecommerce" BOOLEAN NOT NULL DEFAULT true,
+    "tenant_id" UUID NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
 
     CONSTRAINT "product_categories_pkey" PRIMARY KEY ("id")
 );
@@ -89,7 +96,13 @@ CREATE TABLE "products" (
     "description" TEXT,
     "image_url" TEXT,
     "price" DECIMAL(65,30) NOT NULL,
+    "stock" INTEGER NOT NULL DEFAULT 0,
     "category_id" UUID NOT NULL,
+    "tenant_id" UUID NOT NULL,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
 
     CONSTRAINT "products_pkey" PRIMARY KEY ("id")
 );
@@ -101,8 +114,10 @@ CREATE TABLE "orders" (
     "customer_id" UUID NOT NULL,
     "total_amount" DECIMAL(65,30) NOT NULL,
     "status" "OrderStatus" NOT NULL DEFAULT 'PENDING',
+    "source" "OrderSource" NOT NULL DEFAULT 'ECOMMERCE',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3),
+    "staff_notes" TEXT,
 
     CONSTRAINT "orders_pkey" PRIMARY KEY ("id")
 );
@@ -123,10 +138,12 @@ CREATE TABLE "order_items" (
 CREATE TABLE "customers" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "name" TEXT NOT NULL,
+    "email" TEXT,
     "phone_number" TEXT NOT NULL,
     "tenant_id" UUID NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "deleted_at" TIMESTAMP(3),
 
     CONSTRAINT "customers_pkey" PRIMARY KEY ("id")
 );
@@ -153,13 +170,28 @@ CREATE INDEX "inventory_items_tenant_id_quantity_idx" ON "inventory_items"("tena
 CREATE INDEX "inventory_items_card_template_id_idx" ON "inventory_items"("card_template_id");
 
 -- CreateIndex
+CREATE INDEX "product_categories_tenant_id_idx" ON "product_categories"("tenant_id");
+
+-- CreateIndex
+CREATE INDEX "product_categories_deleted_at_idx" ON "product_categories"("deleted_at");
+
+-- CreateIndex
 CREATE INDEX "products_name_idx" ON "products"("name");
+
+-- CreateIndex
+CREATE INDEX "products_tenant_id_idx" ON "products"("tenant_id");
+
+-- CreateIndex
+CREATE INDEX "products_deleted_at_idx" ON "products"("deleted_at");
 
 -- CreateIndex
 CREATE INDEX "orders_tenant_id_idx" ON "orders"("tenant_id");
 
 -- CreateIndex
 CREATE INDEX "customers_tenant_id_idx" ON "customers"("tenant_id");
+
+-- CreateIndex
+CREATE INDEX "customers_deleted_at_idx" ON "customers"("deleted_at");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "customers_phone_number_tenant_id_key" ON "customers"("phone_number", "tenant_id");
@@ -172,6 +204,12 @@ ALTER TABLE "inventory_items" ADD CONSTRAINT "inventory_items_tenant_id_fkey" FO
 
 -- AddForeignKey
 ALTER TABLE "inventory_items" ADD CONSTRAINT "inventory_items_card_template_id_fkey" FOREIGN KEY ("card_template_id") REFERENCES "card_templates"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "product_categories" ADD CONSTRAINT "product_categories_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "products" ADD CONSTRAINT "products_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "products" ADD CONSTRAINT "products_category_id_fkey" FOREIGN KEY ("category_id") REFERENCES "product_categories"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

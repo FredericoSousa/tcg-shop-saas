@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { getTenantBySlug } from "./lib/services/tenant.service";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "your-secret-key-change-in-production",
@@ -34,17 +35,20 @@ export async function proxy(request: NextRequest) {
   }
 
   // If user is logged in and tries to access login page, redirect to admin
-  if (pathname === "/login" && token) {
-    try {
-      await jwtVerify(token, JWT_SECRET);
-      return NextResponse.redirect(new URL("/admin", request.url));
-    } catch {
-      // Token is invalid, allow access to login page
+  if (pathname === "/login") {
+    if (token) {
+      try {
+        await jwtVerify(token, JWT_SECRET);
+        return NextResponse.redirect(new URL("/admin", request.url));
+      } catch {
+        // Token is invalid, allow access to login page
+      }
     }
   }
 
   // Multi-tenant subdomain routing
   const subdomain = hostname.split(".")[0];
+  console.log(`[Proxy] hostname: ${hostname}, subdomain: ${subdomain}, pathname: ${pathname}`);
 
   if (
     !subdomain ||
@@ -52,25 +56,22 @@ export async function proxy(request: NextRequest) {
     subdomain === "localhost" ||
     subdomain.includes(":")
   ) {
+    console.log(`[Proxy] Skipping tenant lookup for subdomain: ${subdomain}`);
     return NextResponse.next();
   }
 
   try {
-    const tenantRes = await fetch(`${url.origin}/api/tenant?slug=${subdomain}`);
+    const tenantRes = await getTenantBySlug(subdomain);
 
-    if (tenantRes.ok) {
-      const tenant = await tenantRes.json();
+    if (tenantRes && tenantRes.id) {
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set("x-tenant-id", tenantRes.id);
 
-      if (tenant && tenant.id) {
-        const requestHeaders = new Headers(request.headers);
-        requestHeaders.set("x-tenant-id", tenant.id);
-
-        return NextResponse.next({
-          request: {
-            headers: requestHeaders,
-          },
-        });
-      }
+      return NextResponse.next({
+        request: {
+          headers: requestHeaders,
+        },
+      });
     }
   } catch (err) {
     console.error("Proxy tenant lookup error:", err);

@@ -23,8 +23,8 @@ export default async function OrdersPage({
   const page = Number(params.page) || 1;
   const limit = Number(params.limit) || 8;
   const search = params.search;
-  const source = params.source as "POS" | "ECOMMERCE" | "all";
-  const status = params.status as OrderStatus | "all";
+  const source = (params.source?.toUpperCase() as "POS" | "ECOMMERCE" | "all") || "all";
+  const status = (params.status?.toUpperCase() as OrderStatus | "all") || "all";
   const customerPhone = params.customerPhone;
 
   // Resolve use case from container

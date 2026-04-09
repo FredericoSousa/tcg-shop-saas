@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { CustomerSelector, CustomerType } from "@/components/admin/pos/customer-selector";
 import { useTableState } from "@/lib/hooks/use-table-state";
+import { FilterSection } from "@/components/admin/filter-section";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { TableSearch } from "@/components/admin/table-search";
 import { Button } from "@/components/ui/button";
@@ -220,62 +221,52 @@ export function OrdersClient({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-center gap-4 bg-card p-4 rounded-xl border shadow-sm overflow-visible">
-        <div className="flex items-center gap-3">
-          <div className="bg-primary/10 p-2 rounded-lg">
-            <FilterIcon className="w-4 h-4 text-primary" />
-          </div>
-          <span className="text-sm font-bold text-muted-foreground whitespace-nowrap">Filtrar:</span>
-        </div>
+      <FilterSection resultsCount={total}>
+        <TableSearch 
+          value={search} 
+          onChange={setSearch} 
+          placeholder="Buscar por ID ou cliente..."
+          isLoading={isPending}
+        />
 
-        
-        <div className="flex flex-col sm:flex-row items-center gap-3 flex-1 overflow-visible">
-          <TableSearch 
-            value={search} 
-            onChange={setSearch} 
-            placeholder="Buscar por ID ou cliente..."
-            isLoading={isPending}
+        <Select value={currentSource || "all"} onValueChange={(val) => setFilter("source", val === "all" ? null : val)}>
+          <SelectTrigger className="w-full sm:w-[150px] font-bold">
+            <SelectValue placeholder="Origem">
+              {currentSource === "ECOMMERCE" ? "E-commerce" : currentSource === "POS" ? "PDV (Comandas)" : "Todas as Origens"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todas as Origens</SelectItem>
+            <SelectItem value="ECOMMERCE">E-commerce</SelectItem>
+            <SelectItem value="POS">PDV (Comandas)</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={currentStatus || "all"} onValueChange={(val) => setFilter("status", val === "all" ? null : val)}>
+          <SelectTrigger className="w-full sm:w-[150px] font-bold">
+            <SelectValue placeholder="Status">
+              {currentStatus === "all" || !currentStatus ? "Todos Status" : currentStatus}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos Status</SelectItem>
+            {Object.values(OrderStatus).map(status => (
+              <SelectItem key={status} value={status}>
+                {status}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        <div className="flex-1 w-full overflow-visible">
+          <CustomerSelector 
+            selectedCustomer={selectedCustomer} 
+            onSelect={handleCustomerSelect} 
+            hideLabel 
+            size="sm" 
           />
-
-          <Select value={currentSource || "all"} onValueChange={(val) => setFilter("source", val === "all" ? null : val)}>
-            <SelectTrigger className="w-full sm:w-[150px] font-bold">
-              <SelectValue placeholder="Origem" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas as Origens</SelectItem>
-              <SelectItem value="ecommerce">E-commerce</SelectItem>
-              <SelectItem value="pos">PDV (Comandas)</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={currentStatus || "all"} onValueChange={(val) => setFilter("status", val === "all" ? null : val)}>
-            <SelectTrigger className="w-full sm:w-[150px] font-bold">
-              <SelectValue placeholder="Status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos Status</SelectItem>
-              {Object.values(OrderStatus).map(status => (
-                <SelectItem key={status} value={status}>
-                  {status}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="flex-1 w-full overflow-visible">
-            <CustomerSelector 
-              selectedCustomer={selectedCustomer} 
-              onSelect={handleCustomerSelect} 
-              hideLabel 
-              size="sm" 
-            />
-          </div>
         </div>
-
-        <div className="text-xs text-muted-foreground font-medium bg-muted/30 px-3 py-1.5 rounded-full border self-start lg:self-center">
-          <span className="font-bold text-primary">{total}</span> resultados
-        </div>
-      </div>
+      </FilterSection>
 
       <div className={isPending ? "opacity-50 pointer-events-none transition-opacity" : "transition-opacity"}>
         <OrderTableView items={initialOrders} selectedIds={selectedIds} onSelect={handleSelectOrder} onSelectAll={handleSelectAll} />
