@@ -27,7 +27,7 @@ async function AuthenticatedContent({ children }: { children: ReactNode }) {
 
   return (
     <AdminLayoutShell
-      sidebar={<Sidebar tenant={tenant!} />}
+      sidebar={<Sidebar tenant={tenant!} username={session.username} />}
       navbar={<Navbar username={session.username} />}
       footer={<Footer />}
     >

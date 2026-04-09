@@ -30,6 +30,7 @@ export async function GET() {
       id: tenant.id,
       name: tenant.name,
       slug: tenant.slug,
+      logoUrl: tenant.logoUrl,
     });
   } catch (error) {
     console.error("Error fetching current tenant:", error);

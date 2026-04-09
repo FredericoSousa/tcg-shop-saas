@@ -25,9 +25,9 @@ export function AdminLayoutShell({
       }`}
     >
       {sidebar}
-      <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-muted/5 overflow-hidden">
+      <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-muted/5 w-full overflow-hidden">
         {navbar}
-        <main className="flex-1 flex flex-col gap-5 p-3 md:p-4 lg:p-6 w-full overflow-x-hidden">
+        <main className="flex-1 flex flex-col gap-5 p-3 md:p-4 lg:p-6 w-full">
           {children}
         </main>
         {footer}

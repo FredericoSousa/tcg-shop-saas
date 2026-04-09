@@ -2,15 +2,19 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+
 import { toast } from "sonner";
-import { Loader2, ShieldCheck, LayoutDashboard } from "lucide-react";
+import { Loader2, ArrowRight, Sparkles } from "lucide-react";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
   const [tenantId, setTenantId] = useState("");
   const [tenantName, setTenantName] = useState("");
+  const [tenantLogo, setTenantLogo] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -25,6 +29,7 @@ export default function LoginPage() {
           if (result.success && result.data) {
             setTenantId(result.data.id);
             setTenantName(result.data.name);
+            setTenantLogo(result.data.logoUrl);
           }
         }
       } catch (err) {
@@ -76,51 +81,77 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-slate-950">
-      {/* Background Decorative Elements */}
-      <div className="absolute top-0 right-0 -mr-32 -mt-32 w-[600px] h-[600px] rounded-full bg-primary/20 blur-[120px]" />
-      <div className="absolute bottom-0 left-0 -ml-32 -mb-32 w-[500px] h-[500px] rounded-full bg-blue-500/10 blur-[100px]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-violet-500/5 blur-[80px]" />
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 font-sans selection:bg-blue-100 selection:text-blue-900">
+      {/* Left Column: Branding & Info */}
+      <div className="hidden lg:flex flex-col justify-center bg-slate-950 p-16 text-white relative overflow-hidden">
+        {/* Subtle Decorative elements */}
+        <div className="absolute top-0 right-0 -mr-32 -mt-32 w-96 h-96 rounded-full bg-blue-600/10 blur-[120px]" />
 
-      <div className="w-full max-w-md relative z-10 px-6 animate-in fade-in zoom-in duration-500">
-        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl p-8 md:p-10">
-          <div className="flex flex-col items-center mb-10 text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-primary to-blue-600 rounded-2xl flex items-center justify-center shadow-lg mb-6 transform -rotate-6 hover:rotate-0 transition-transform duration-500">
-              <ShieldCheck className="h-10 w-10 text-white" />
+        <div className="relative z-10 space-y-12">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Sparkles className="h-7 w-7 text-white" />
             </div>
-            <h1 className="text-3xl font-black text-white font-heading tracking-tight mb-2">
-              Painel Administrativo
+            <span className="text-2xl font-bold tracking-tight">TCG Shop SaaS</span>
+          </div>
+
+          <div className="space-y-6">
+            <h1 className="text-6xl font-black leading-tight tracking-tighter">
+              Gestão inteligente <br />
+              para sua loja.
             </h1>
-            {tenantName ? (
-              <div className="flex items-center gap-2 px-4 py-1.5 bg-white/10 rounded-full border border-white/5">
-                <LayoutDashboard className="h-3.5 w-3.5 text-blue-400" />
-                <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">
-                  {tenantName}
-                </span>
-              </div>
-            ) : (
-              <div className="h-6 w-32 bg-white/5 rounded-full animate-pulse" />
-            )}
+            <p className="text-slate-400 text-xl leading-relaxed max-w-md">
+              A plataforma completa para gerenciar seu inventário, vendas e clientes em um único lugar.
+            </p>
+          </div>
+        </div>
+
+        <div className="absolute bottom-12 left-16 z-10 flex items-center gap-6 text-slate-500 text-xs">
+          <p>© 2026 TCG Shop SaaS</p>
+          <div className="flex gap-4">
+            <Link href="#" className="hover:text-white transition-colors">Privacidade</Link>
+            <Link href="#" className="hover:text-white transition-colors">Termos</Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Column: Login Form */}
+      <div className="flex flex-col justify-center items-center bg-white p-8 md:p-12 lg:p-24 animate-in fade-in duration-700 lg:animate-none">
+        <div className="w-full max-w-sm">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex flex-col items-center mb-10 text-center">
+            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg mb-4">
+              <Sparkles className="h-10 w-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900">TCG Shop SaaS</h2>
+          </div>
+
+          {/* Form Header */}
+          <div className="mb-10 lg:text-center text-center">
+            <h1 className="text-4xl font-bold text-slate-900 tracking-tight mb-2">
+              {tenantName}
+            </h1>
+            <p className="text-slate-500">Faça login para continuar</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
-                Usuário
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-700">
+                Username
               </label>
               <Input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="nome.sobrenome"
+                placeholder="Username"
                 disabled={loading || !tenantId}
                 required
-                className="bg-white/5 border-white/10 text-white h-12 rounded-xl focus:ring-primary/50 transition-all placeholder:text-slate-600"
+                className="h-12 border-slate-200 rounded-lg focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 text-slate-900"
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest ml-1">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium text-slate-700">
                 Senha
               </label>
               <Input
@@ -130,37 +161,50 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 disabled={loading || !tenantId}
                 required
-                className="bg-white/5 border-white/10 text-white h-12 rounded-xl focus:ring-primary/50 transition-all placeholder:text-slate-600"
+                className="h-12 border-slate-200 rounded-lg focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-slate-400 text-slate-900"
               />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <input
+                  id="remember"
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                />
+                <label
+                  htmlFor="remember"
+                  className="text-sm font-medium leading-none text-slate-600 cursor-pointer"
+                >
+                  Lembrar-me
+                </label>
+              </div>
             </div>
 
             <Button
               type="submit"
               disabled={loading || !tenantId}
-              className="w-full h-12 rounded-xl font-bold text-sm bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 transition-all active:scale-95 disabled:opacity-50"
+              className="w-full h-12 rounded-lg font-bold text-sm bg-slate-900 hover:bg-slate-800 text-white shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {loading ? (
-                <div className="flex items-center gap-2">
+                <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span>Autenticando...</span>
-                </div>
+                  <span>Carregando...</span>
+                </>
               ) : (
-                "Entrar no Sistema"
+                <>
+                  <span>Entrar</span>
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </>
               )}
             </Button>
-
-            {!tenantId && (
-              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                <p className="text-[10px] text-amber-200 font-medium text-center leading-relaxed">
-                  Aguardando identificação da loja pelo subdomínio. Se persistir, verifique sua conexão.
-                </p>
-              </div>
-            )}
           </form>
 
-          <p className="mt-8 text-center text-slate-500 text-[10px] font-medium uppercase tracking-widest">
-            Powered by TCG Shop SaaS · &copy; 2026
-          </p>
+          {/* Footer Info */}
+          <div className="mt-10 text-center space-y-6">
+
+          </div>
+
         </div>
       </div>
     </div>

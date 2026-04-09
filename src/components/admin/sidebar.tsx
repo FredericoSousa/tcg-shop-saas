@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import Image from "next/image";
 import {
   LayoutDashboard,
   Package,
@@ -12,14 +11,15 @@ import {
   UserCog,
   Monitor,
   ShoppingBag,
-  TrendingUp,
+  LogOut,
 } from "lucide-react";
 import { Tenant } from "@prisma/client";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRouter } from "next/navigation";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "PDV", href: "/admin/pos", icon: Monitor },
-
   { name: "Singles", href: "/admin/inventory", icon: Package },
   { name: "Vendas", href: "/admin/orders", icon: ShoppingCart },
   { name: "Produtos", href: "/admin/products", icon: ShoppingBag },
@@ -31,52 +31,41 @@ const sidebarItems = [
 
 interface SidebarProps {
   tenant: Tenant;
+  username?: string;
 }
 
 import { useSidebar } from "./sidebar-provider";
 
-export function Sidebar({ tenant }: SidebarProps) {
+export function Sidebar({ tenant, username }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { isCollapsed } = useSidebar();
 
   return (
-    <div className={`hidden border-r border-border/50 bg-gradient-to-b from-background via-background to-background/80 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 md:flex flex-shrink-0 h-full flex-col transition-all duration-300 ease-in-out ${
-      isCollapsed ? "w-[70px]" : "w-[260px]"
-    }`}>
-      <div className={`flex h-16 items-center border-b border-border/50 dark:border-slate-800 lg:h-[70px] transition-all duration-300 ${
-        isCollapsed ? "px-4 justify-center" : "px-6"
+    <div className={`hidden border-r border-border/50 bg-gradient-to-b from-background via-background to-background/80 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 md:flex flex-shrink-0 h-screen sticky top-0 flex-col transition-all duration-300 ease-in-out ${isCollapsed ? "w-[70px]" : "w-[260px]"
       }`}>
+      <div className={`flex h-16 items-center border-b border-border/50 dark:border-slate-800 lg:h-[70px] transition-all duration-300 ${isCollapsed ? "px-4 justify-center" : "px-6"
+        }`}>
         <Link
           href="/admin"
           className="flex items-center gap-3 font-bold text-lg tracking-tight group overflow-hidden"
         >
-          {tenant.logoUrl ? (
-            <div className="flex flex-col gap-0.5 shrink-0">
-              <Image
-                src={tenant.logoUrl}
-                alt={tenant.name}
-                width={isCollapsed ? 32 : 48}
-                height={32}
-                className={isCollapsed ? "h-8 w-8 object-contain" : "h-7 w-auto object-contain"}
-              />
+
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold shadow-sm">
+              {tenant.name?.charAt(0) || "T"}
             </div>
-          ) : (
-            <div className="flex items-center gap-3 shrink-0">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold shadow-sm">
-                {tenant.name?.charAt(0) || "T"}
+            {!isCollapsed && (
+              <div className="flex flex-col gap-0.5 whitespace-nowrap animate-in fade-in duration-500">
+                <span className="text-foreground dark:text-white font-semibold">
+                  {tenant.name || "TCG Admin"}
+                </span>
+                <span className="text-xs text-muted-foreground dark:text-slate-300 font-normal">
+                  Painel de Controle
+                </span>
               </div>
-              {!isCollapsed && (
-                <div className="flex flex-col gap-0.5 whitespace-nowrap animate-in fade-in duration-500">
-                  <span className="text-foreground dark:text-white font-semibold">
-                    {tenant.name || "TCG Admin"}
-                  </span>
-                  <span className="text-xs text-muted-foreground dark:text-slate-300 font-normal">
-                    Painel de Controle
-                  </span>
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </Link>
       </div>
 
@@ -93,11 +82,10 @@ export function Sidebar({ tenant }: SidebarProps) {
                 key={item.href}
                 href={item.href}
                 title={isCollapsed ? item.name : ""}
-                className={`group flex items-center rounded-lg transition-all duration-200 ${
-                  isCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3.5 py-2.5"
-                } ${isStrictActive
-                  ? "bg-primary text-white shadow-md hover:shadow-lg hover:bg-primary/90 dark:bg-primary dark:text-slate-950 dark:hover:bg-primary/95"
-                  : "text-muted-foreground dark:text-slate-50 hover:text-foreground dark:hover:text-white hover:bg-muted/50 dark:hover:bg-slate-700/60"
+                className={`group flex items-center rounded-lg transition-all duration-200 ${isCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3.5 py-2.5"
+                  } ${isStrictActive
+                    ? "bg-primary text-white shadow-md hover:shadow-lg hover:bg-primary/90 dark:bg-primary dark:text-slate-950 dark:hover:bg-primary/95"
+                    : "text-muted-foreground dark:text-slate-50 hover:text-foreground dark:hover:text-white hover:bg-muted/50 dark:hover:bg-slate-700/60"
                   }`}
               >
                 <item.icon className={`${isCollapsed ? "h-5.5 w-5.5" : "h-4.5 w-4.5"} shrink-0`} />
@@ -111,6 +99,41 @@ export function Sidebar({ tenant }: SidebarProps) {
           })}
         </div>
       </nav>
+
+      {/* User Controls Footer */}
+      <div className="p-3 border-t border-border/50 dark:border-slate-800">
+        <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center" : "justify-between"}`}>
+          <Avatar className="h-9 w-9 border-2 border-primary/10 shrink-0">
+            <AvatarImage src="" />
+            <AvatarFallback className="bg-primary/15 text-primary font-bold">
+              {username?.charAt(0).toUpperCase() || "U"}
+            </AvatarFallback>
+          </Avatar>
+          {!isCollapsed && (
+            <div className="flex flex-col text-left overflow-hidden animate-in fade-in slide-in-from-left-1 duration-300">
+              <span className="text-sm font-semibold truncate dark:text-white">
+                {username || "Usuário"}
+              </span>
+              <span className="text-[10px] text-muted-foreground uppercase tracking-widest leading-tight">
+                Administrador
+              </span>
+            </div>
+          )}
+
+
+          <button
+            onClick={async () => {
+              await fetch("/api/auth/logout", { method: "POST" });
+              router.push("/login");
+            }}
+            className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-all"
+            title="Sair"
+          >
+            <LogOut className="h-4.5 w-4.5" />
+          </button>
+
+        </div>
+      </div>
     </div>
   );
 }
