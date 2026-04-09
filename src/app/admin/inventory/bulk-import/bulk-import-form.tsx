@@ -197,7 +197,10 @@ export function BulkImportForm() {
         body: JSON.stringify(chunk),
       });
       if (!response.ok) throw new Error("Erro na resolução em lote");
-      const chunkResults = await response.json();
+      const apiResponse = await response.json();
+      if (!apiResponse.success) throw new Error(apiResponse.message || "Erro na resolução em lote");
+      
+      const chunkResults = apiResponse.data || [];
       results = results.concat(chunkResults);
       setProcessProgress({
         current: Math.min(i + CHUNK_SIZE, batchRequest.length),
@@ -309,9 +312,14 @@ export function BulkImportForm() {
                   throw new Error(errData.error || "Erro ao importar coleção");
                 }
 
-                const cards: (BulkItemResult & { originalLine: string })[] = await importResponse.json();
+                const apiResponse = await importResponse.json();
+                if (!apiResponse.success) {
+                  throw new Error(apiResponse.message || "Erro ao importar coleção");
+                }
 
-                if (!cards.length) {
+                const cards: (BulkItemResult & { originalLine: string })[] = apiResponse.data || [];
+
+                if (!cards || cards.length === 0) {
                   toast.error("Nenhum card encontrado na coleção.");
                   setIsStreamingProgress(false);
                   return;
@@ -481,7 +489,12 @@ export function BulkImportForm() {
 
           if (!bulkResponse.ok) throw new Error("Erro ao salvar lote");
 
-          const results: { cardName: string; status: "success" | "error"; error?: string }[] = await bulkResponse.json();
+          const apiResponse = await bulkResponse.json();
+          if (!apiResponse.success) {
+            throw new Error(apiResponse.message || "Erro ao salvar lote");
+          }
+
+          const results: { cardName: string; status: "success" | "error"; error?: string }[] = apiResponse.data || [];
 
           totalSuccesses += results.filter(
             (r) => r.status === "success",

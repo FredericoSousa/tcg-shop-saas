@@ -40,10 +40,18 @@ export class PrismaCardTemplateRepository extends BasePrismaRepository implement
     return item ? this.mapToDomain(item) : null;
   }
 
+  async findByIds(ids: string[]): Promise<DomainCardTemplate[]> {
+    const items = await this.prisma.cardTemplate.findMany({
+      where: { id: { in: ids } },
+    });
+    return items.map(this.mapToDomain.bind(this));
+  }
+
   async save(template: DomainCardTemplate): Promise<DomainCardTemplate> {
     const saved = await this.prisma.cardTemplate.upsert({
       where: { id: template.id },
       create: {
+        id: template.id,
         name: template.name,
         set: template.set,
         imageUrl: template.imageUrl ?? null,
@@ -62,5 +70,20 @@ export class PrismaCardTemplateRepository extends BasePrismaRepository implement
     });
 
     return this.mapToDomain(saved);
+  }
+
+  async createMany(templates: DomainCardTemplate[]): Promise<void> {
+    await this.prisma.cardTemplate.createMany({
+      data: templates.map((t) => ({
+        id: t.id,
+        name: t.name,
+        set: t.set,
+        imageUrl: t.imageUrl ?? null,
+        backImageUrl: t.backImageUrl ?? null,
+        game: t.game as PrismaGame,
+        metadata: t.metadata as Prisma.InputJsonValue,
+      })),
+      skipDuplicates: true,
+    });
   }
 }

@@ -49,7 +49,7 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
       where: {
         cardTemplateId: templateId,
         price: filters.price ? new Prisma.Decimal(filters.price) : undefined,
-        condition: filters.condition as Prisma.EnumConditionFilter,
+        condition: filters.condition as PrismaCondition,
         language: filters.language,
         extras: filters.extras ? { equals: filters.extras } : undefined,
       },
@@ -57,9 +57,21 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
     return item ? this.mapToDomain(item) : null;
   }
 
+  async findManyByTemplates(
+    templateIds: string[], 
+    tenantId: string
+  ): Promise<DomainInventoryItem[]> {
+    const items = await this.prisma.inventoryItem.findMany({
+      where: {
+        tenantId,
+        cardTemplateId: { in: templateIds },
+      },
+    });
+    return items.map(this.mapToDomain.bind(this));
+  }
+
   async save(item: DomainInventoryItem): Promise<DomainInventoryItem> {
     const data = {
-      id: item.id,
       cardTemplateId: item.cardTemplateId,
       price: new Prisma.Decimal(item.price),
       quantity: item.quantity,
@@ -76,6 +88,21 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
     });
 
     return this.mapToDomain(saved);
+  }
+
+  async createMany(items: DomainInventoryItem[]): Promise<void> {
+    await this.prisma.inventoryItem.createMany({
+      data: items.map((item) => ({
+        tenantId: item.tenantId,
+        cardTemplateId: item.cardTemplateId,
+        price: new Prisma.Decimal(item.price),
+        quantity: item.quantity,
+        condition: item.condition as PrismaCondition,
+        language: item.language,
+        active: item.active,
+        extras: item.extras,
+      })),
+    });
   }
 
   async update(id: string, data: Partial<DomainInventoryItem>): Promise<DomainInventoryItem> {

@@ -76,9 +76,9 @@ function extractCardsFromHtml(cardsHtml: string): CollectionCard[] {
             ?.split("_")[0] ?? "";
 
         // Check for special set types
-        const isStoreChampionship = /SC\d*/g.test(setCode?.toUpperCase() ?? "");
-        const isPlayNetwork = /PW\d*/g.test(setCode?.toUpperCase() ?? "");
-        const isMysteryBooster = /MB\d*/g.test(setCode?.toUpperCase() ?? "");
+        const isStoreChampionship = /SC\d+/g.test(setCode?.toUpperCase() ?? "");
+        const isPlayNetwork = /PW\d+/g.test(setCode?.toUpperCase() ?? "");
+        const isMysteryBooster = /MB\d+/g.test(setCode?.toUpperCase() ?? "");
 
         const finalSetCode = convertSetCode(
           setCode,
@@ -349,7 +349,7 @@ export async function getCollectionById(
           });
         } finally {
           // Close pages to free memory
-          await Promise.all(pages.map((p) => p.close().catch(() => {})));
+          await Promise.all(pages.map((p) => p.close().catch(() => { })));
         }
       }
     }
@@ -371,7 +371,7 @@ export async function getCollectionById(
     return [];
   } finally {
     if (browser) {
-      await browser.close().catch(() => {});
+      await browser.close().catch(() => { });
     }
   }
 }

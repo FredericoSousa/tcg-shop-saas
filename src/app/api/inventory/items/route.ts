@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { validateAdminApi } from "@/lib/tenant-server";
+import { runWithTenant } from "@/lib/tenant-context";
 import { container } from "@/lib/infrastructure/container";
 import { AddInventoryUseCase } from "@/lib/application/use-cases/add-inventory.use-case";
 import { UpdateInventoryUseCase } from "@/lib/application/use-cases/update-inventory.use-case";
@@ -90,14 +91,14 @@ export async function POST(request: NextRequest) {
   try {
     const { scryfallId, price, quantity, condition, language, extras = [] } = await request.json();
 
-    await addInventoryUseCase.execute({
+    await runWithTenant(tenant.id, () => addInventoryUseCase.execute({
       scryfallId,
       price: Number(price),
       quantity: Number(quantity),
       condition,
       language,
       extras,
-    });
+    }));
 
     revalidatePath("/admin/inventory");
     return ApiResponse.success({ success: true });
@@ -123,7 +124,7 @@ export async function DELETE(request: NextRequest) {
       return ApiResponse.badRequest("No items selected");
     }
 
-    await deleteInventoryUseCase.execute({ ids });
+    await runWithTenant(tenant.id, () => deleteInventoryUseCase.execute({ ids }));
 
     revalidatePath("/admin/inventory");
     return ApiResponse.success({ success: true });
@@ -146,17 +147,17 @@ export async function PATCH(request: NextRequest) {
     const { id, ids, price, quantity } = await request.json();
 
     if (ids && Array.isArray(ids)) {
-      await bulkUpdateInventoryUseCase.execute({
+      await runWithTenant(tenant.id, () => bulkUpdateInventoryUseCase.execute({
         ids,
         price: price !== undefined ? Number(price) : undefined,
         quantity: quantity !== undefined ? Number(quantity) : undefined,
-      });
+      }));
     } else if (id) {
-      await updateInventoryUseCase.execute({
+      await runWithTenant(tenant.id, () => updateInventoryUseCase.execute({
         id,
         price: price !== undefined ? Number(price) : undefined,
         quantity: quantity !== undefined ? Number(quantity) : undefined,
-      });
+      }));
     } else {
       return ApiResponse.badRequest("Invalid data");
     }
