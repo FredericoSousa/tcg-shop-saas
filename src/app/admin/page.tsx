@@ -94,7 +94,7 @@ export default async function AdminDashboardPage() {
         {kpis.map((kpi, idx) => (
           <div
             key={kpi.title}
-            className="group relative overflow-hidden rounded-2xl bg-card/40 border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm backdrop-blur-md bg-gradient-to-br from-card/80 to-card/40 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/30 p-6"
+            className="group relative overflow-hidden rounded-2xl bg-card/40 border border-zinc-200/50 shadow-sm backdrop-blur-md bg-gradient-to-br from-card/80 to-card/40 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/30 p-6"
             style={{
               animation: `fadeInUp 0.6s ease-out ${idx * 0.15}s both`,
             }}
@@ -181,14 +181,14 @@ export default async function AdminDashboardPage() {
             <Button
               variant="outline"
               size="sm"
-              className="transition-all duration-300 hover:bg-muted/80 hover:shadow-sm h-9 px-4 rounded-xl border-zinc-200 dark:border-zinc-800"
+              className="transition-all duration-300 hover:bg-muted/80 hover:shadow-sm h-9 px-4 rounded-xl border-zinc-200"
             >
               Ver Todas
             </Button>
           </Link>
         </div>
 
-        <div className="rounded-2xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden border-zinc-200/50 dark:border-zinc-800/50">
+        <div className="rounded-2xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden border-zinc-200/50">
           {!recentOrders || recentOrders.length === 0 ? (
             <div className="text-center py-20 px-4 text-muted-foreground">
               <div className="mb-4 flex justify-center">

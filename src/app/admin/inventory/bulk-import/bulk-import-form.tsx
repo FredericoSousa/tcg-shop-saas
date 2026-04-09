@@ -516,12 +516,12 @@ export function BulkImportForm() {
       {step === "input" && (
         <div className="flex flex-col">
           {/* Enhanced Tab switcher */}
-          <div className="flex border-b bg-muted/30 dark:bg-muted/10 p-1">
+          <div className="flex border-b bg-muted/30 p-1">
             <button
               onClick={() => setImportMode("text")}
               className={`flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 px-6 py-3.5 text-sm font-semibold transition-all rounded-lg mx-1 ${importMode === "text"
                   ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/20"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
             >
               <FileText className="h-4 w-4" />
@@ -532,7 +532,7 @@ export function BulkImportForm() {
               onClick={() => setImportMode("ligamagic")}
               className={`flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 px-6 py-3.5 text-sm font-semibold transition-all rounded-lg mx-1 ${importMode === "ligamagic"
                   ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50 dark:hover:bg-muted/20"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
             >
               <Globe className="h-4 w-4" />
@@ -545,17 +545,17 @@ export function BulkImportForm() {
           {importMode === "text" && (
             <div className="p-6 md:p-8 flex flex-col gap-6">
               {/* Info box with better styling */}
-              <div className="flex gap-4 p-4 md:p-5 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/50 rounded-xl">
-                <FileText className="h-6 w-6 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+              <div className="flex gap-4 p-4 md:p-5 bg-blue-50 border border-blue-200 rounded-xl">
+                <FileText className="h-6 w-6 text-blue-600 shrink-0 mt-0.5" />
                 <div className="text-sm space-y-2">
-                  <p className="font-semibold text-blue-900 dark:text-blue-100">
+                  <p className="font-semibold text-blue-900">
                     Formato esperado (uma linha por card):
                   </p>
-                  <code className="text-xs bg-background dark:bg-background/50 px-3 py-2 rounded-lg font-mono block border border-blue-200 dark:border-blue-800/30">
+                  <code className="text-xs bg-background px-3 py-2 rounded-lg font-mono block border border-blue-200">
                     &lt;quantidade&gt; &lt;nome do card&gt; [SET] #Nº
                     &lt;condição&gt; &lt;idioma&gt; &lt;preço&gt;
                   </code>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-800 dark:text-blue-200">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-800">
                     <div>
                       <span className="font-semibold">[SET]:</span> obrigatório
                       (ex: [M25])
@@ -572,13 +572,13 @@ export function BulkImportForm() {
                       <span className="font-semibold">Idiomas:</span> EN, PT, JP
                     </div>
                   </div>
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                  <p className="text-xs text-blue-700">
                     Linhas iniciando com{" "}
-                    <code className="bg-background dark:bg-background/50 px-1 rounded">
+                    <code className="bg-background px-1 rounded">
                       #
                     </code>{" "}
                     ou{" "}
-                    <code className="bg-background dark:bg-background/50 px-1 rounded">
+                    <code className="bg-background px-1 rounded">
                       {"//"}
                     </code>{" "}
                     são ignoradas.
@@ -602,7 +602,7 @@ export function BulkImportForm() {
                   </Button>
                 </div>
                 <textarea
-                  className="w-full min-h-[320px] rounded-xl border bg-background dark:bg-background/50 p-4 text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-muted-foreground/50 dark:placeholder:text-muted-foreground/30"
+                  className="w-full min-h-[320px] rounded-xl border bg-background p-4 text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all placeholder:text-muted-foreground/50"
                   placeholder={`# Exemplo:\n4 Lightning Bolt [M25] #169 NM EN 2.50\n2 Counterspell [TMP] SP PT 5.00\n1 Sol Ring [C21] MP EN 15.00`}
                   value={textInput}
                   onChange={(e) => setTextInput(e.target.value)}
@@ -662,19 +662,19 @@ export function BulkImportForm() {
               )}
 
               {/* Info box */}
-              <div className="flex gap-4 p-4 md:p-5 bg-purple-50 dark:bg-purple-950/20 border border-purple-200 dark:border-purple-800/50 rounded-xl">
-                <Globe className="h-6 w-6 text-purple-600 dark:text-purple-400 shrink-0 mt-0.5" />
+              <div className="flex gap-4 p-4 md:p-5 bg-purple-50 border border-purple-200 rounded-xl">
+                <Globe className="h-6 w-6 text-purple-600 shrink-0 mt-0.5" />
                 <div className="text-sm space-y-2">
-                  <p className="font-semibold text-purple-900 dark:text-purple-100">
+                  <p className="font-semibold text-purple-900">
                     Importar da Liga Magic
                   </p>
-                  <p className="text-purple-800 dark:text-purple-200">
+                  <p className="text-purple-800">
                     Informe o ID da coleção para importar automaticamente todos
                     os cards.
                   </p>
-                  <p className="text-xs text-purple-700 dark:text-purple-300">
+                  <p className="text-xs text-purple-700">
                     O ID pode ser encontrado na URL:{" "}
-                    <code className="bg-background dark:bg-background/50 px-2 py-1 rounded font-mono">
+                    <code className="bg-background px-2 py-1 rounded font-mono">
                       ligamagic.com.br/?view=colecao/colecao&id=
                       <strong>123456</strong>
                     </code>
@@ -727,27 +727,27 @@ export function BulkImportForm() {
       {step === "preview" && (
         <div className="flex flex-col">
           {/* Summary bar */}
-          <div className="p-4 md:p-6 border-b bg-gradient-to-r from-muted/50 to-muted/30 dark:from-muted/20 dark:to-muted/10 flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
+          <div className="p-4 md:p-6 border-b bg-gradient-to-r from-muted/50 to-muted/30 flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
             <div className="flex flex-wrap items-center gap-6">
               <div className="flex items-center gap-3 text-sm font-semibold">
-                <div className="flex items-center justify-center h-8 w-8 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                <div className="flex items-center justify-center h-8 w-8 bg-emerald-100 rounded-lg">
+                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Encontrados</p>
-                  <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                  <p className="text-lg font-bold text-emerald-600">
                     {successItems.length}
                   </p>
                 </div>
               </div>
               {errorItems.length > 0 && (
                 <div className="flex items-center gap-3 text-sm font-semibold">
-                  <div className="flex items-center justify-center h-8 w-8 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                    <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  <div className="flex items-center justify-center h-8 w-8 bg-red-100 rounded-lg">
+                    <XCircle className="h-5 w-5 text-red-600" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Com erro</p>
-                    <p className="text-lg font-bold text-red-600 dark:text-red-400">
+                    <p className="text-lg font-bold text-red-600">
                       {errorItems.length}
                     </p>
                   </div>
@@ -794,7 +794,7 @@ export function BulkImportForm() {
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/50 dark:bg-muted/20">
+                <tr className="border-b bg-muted/50">
                   <th className="py-3 px-4 text-left font-semibold text-muted-foreground uppercase text-xs tracking-wide">
                     Status
                   </th>
@@ -829,19 +829,19 @@ export function BulkImportForm() {
                 {items.map((item, index) => (
                   <tr
                     key={index}
-                    className={`border-b transition-colors hover:bg-muted/50 dark:hover:bg-muted/20 ${item.status === "error"
-                        ? "bg-red-50/50 dark:bg-red-950/20"
-                        : "bg-background dark:bg-background"
+                    className={`border-b transition-colors hover:bg-muted/50 ${item.status === "error"
+                        ? "bg-red-50/50"
+                        : "bg-background"
                       }`}
                   >
                     <td className="py-3 px-4">
                       {item.status === "success" ? (
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
+                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
                       ) : (
                         <div className="flex items-center gap-2">
-                          <XCircle className="h-5 w-5 text-red-500 dark:text-red-400 shrink-0" />
+                          <XCircle className="h-5 w-5 text-red-500 shrink-0" />
                           <span
-                            className="text-xs text-red-600 dark:text-red-400 max-w-[120px] truncate"
+                            className="text-xs text-red-600 max-w-[120px] truncate"
                             title={item.error}
                           >
                             {item.error}

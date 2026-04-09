@@ -60,8 +60,8 @@ export default async function OrderDetailsPage({
             <div className="flex items-center gap-3">
               <span className={`text-[10px] uppercase font-black px-2 py-1 rounded-md border ${
                 order.source === "POS" 
-                  ? "bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
-                  : "bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
+                  ? "bg-blue-100 text-blue-700 border-blue-200"
+                  : "bg-emerald-100 text-emerald-700 border-emerald-200"
               }`}>
                 {order.source === "POS" ? "PDV" : "E-commerce"}
               </span>
@@ -121,7 +121,7 @@ export default async function OrderDetailsPage({
                     <>
                       <SetBadge
                         setCode={item.inventoryItem.cardTemplate?.set || ""}
-                        iconClassName="h-4 w-4 dark:invert"
+                        iconClassName="h-4 w-4"
                         textClassName="text-xs m-0 leading-none text-foreground"
                       />
                       <span className="text-xs font-semibold text-muted-foreground uppercase tracking-tight flex items-center gap-1">

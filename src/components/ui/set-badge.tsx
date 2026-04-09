@@ -37,7 +37,7 @@ export function SetBadge({
         src={imgSrc}
         alt={`${setCode} set icon`}
         title={`Set: ${setCode}`}
-        className={cn("h-3.5 w-3.5 dark:invert shrink-0", iconClassName)}
+        className={cn("h-3.5 w-3.5 shrink-0", iconClassName)}
         onError={(e) => {
           e.currentTarget.src = "https://svgs.scryfall.io/sets/star.svg"
           e.currentTarget.onerror = null // Evita loop infinito se a estrela também falhar

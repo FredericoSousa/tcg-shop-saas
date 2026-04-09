@@ -69,7 +69,7 @@ export function RevenueDashboard() {
     <div className="space-y-6">
       {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-primary/20">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-primary/20">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
             <DollarSign className="h-12 w-12 text-primary" />
           </div>
@@ -88,7 +88,7 @@ export function RevenueDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-blue-500/20">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-blue-500/20">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
             <Package className="h-12 w-12 text-blue-500" />
           </div>
@@ -101,7 +101,7 @@ export function RevenueDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-emerald-500/20">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-emerald-500/20">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
             <Box className="h-12 w-12 text-emerald-500" />
           </div>
@@ -114,7 +114,7 @@ export function RevenueDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-purple-500/20">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-purple-500/20">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
             <TrendingUp className="h-12 w-12 text-purple-500" />
           </div>
@@ -132,7 +132,7 @@ export function RevenueDashboard() {
 
       <div className="grid gap-4 md:grid-cols-2">
         {/* Revenue by Category Chart */}
-        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm transition-all duration-300 hover:shadow-lg">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 shadow-sm transition-all duration-300 hover:shadow-lg">
           <CardHeader>
             <CardTitle className="text-lg font-bold">Faturamento por Categoria</CardTitle>
             <CardDescription>Distribuição proporcional das vendas</CardDescription>
@@ -169,7 +169,7 @@ export function RevenueDashboard() {
         </Card>
 
         {/* Top Sets Chart */}
-        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm transition-all duration-300 hover:shadow-lg">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 shadow-sm transition-all duration-300 hover:shadow-lg">
           <CardHeader>
             <CardTitle className="text-lg font-bold">Top Edições (Singles)</CardTitle>
             <CardDescription>As 5 edições que mais faturaram</CardDescription>

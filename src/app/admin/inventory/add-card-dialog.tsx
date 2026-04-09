@@ -129,7 +129,7 @@ export function AddCardDialog() {
         <Sparkles className="h-4 w-4" />
         Adicionar Card
       </Button>
-      <DialogContent className="!max-w-4xl !w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0 border-zinc-200/60 dark:border-zinc-800/60 shadow-2xl">
+      <DialogContent className="!max-w-4xl !w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0 border-zinc-200/60 shadow-2xl">
         <DialogHeader className="p-6 pb-4 border-b bg-muted/5">
           <DialogTitle className="text-2xl font-black tracking-tight">
             Adicionar ao Estoque
@@ -155,7 +155,7 @@ export function AddCardDialog() {
                   onChange={(e) => setQuery(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                   autoFocus
-                  className="pl-10 h-12 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary/40 bg-muted/30 border-zinc-200/50 dark:border-zinc-800/50 rounded-xl"
+                  className="pl-10 h-12 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary/40 bg-muted/30 border-zinc-200/50 rounded-xl"
                   aria-label="Campo de busca de cards"
                 />
               </div>
@@ -221,7 +221,7 @@ export function AddCardDialog() {
                           className={`group flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all duration-300 border-2 relative overflow-hidden ${
                             isSelected 
                               ? "bg-primary/10 border-primary shadow-sm ring-1 ring-primary/20" 
-                              : "border-zinc-200/50 dark:border-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700 bg-white/50 dark:bg-zinc-900/50"
+                              : "border-zinc-200/50 hover:border-zinc-300 bg-white/50"
                           }`}
                         >
                           <input
@@ -233,7 +233,7 @@ export function AddCardDialog() {
                             onChange={() => setSelectedCardId(card.id)}
                             required
                           />
-                          <div className="w-14 h-20 relative bg-muted rounded-lg shrink-0 overflow-hidden border border-zinc-200/30 dark:border-zinc-800/30 shadow-sm transition-transform duration-500 group-hover:scale-105">
+                          <div className="w-14 h-20 relative bg-muted rounded-lg shrink-0 overflow-hidden border border-zinc-200/30 shadow-sm transition-transform duration-500 group-hover:scale-105">
                             {imageUrl && (
                               <img
                                 src={imageUrl}
@@ -318,7 +318,7 @@ export function AddCardDialog() {
                     >
                       Estado de Conservação
                     </label>
-                    <Select name="condition" defaultValue="NM" required onValueChange={(val) => setConditionState(val)}>
+                    <Select name="condition" defaultValue="NM" required onValueChange={(val) => val && setConditionState(val)}>
                       <SelectTrigger
                         id="condition"
                         className="h-12 transition-all duration-300 focus-visible:ring-2 rounded-xl font-medium"
@@ -344,7 +344,7 @@ export function AddCardDialog() {
                     >
                       Idioma Original
                     </label>
-                    <Select name="language" defaultValue="EN" required onValueChange={(val) => setLanguageState(val)}>
+                    <Select name="language" defaultValue="EN" required onValueChange={(val) => val && setLanguageState(val)}>
                       <SelectTrigger
                         id="language"
                         className="h-12 transition-all duration-300 focus-visible:ring-2 rounded-xl font-medium"
@@ -376,7 +376,7 @@ export function AddCardDialog() {
                           className={`flex items-center gap-2 p-2.5 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
                             isSelected
                               ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/20"
-                              : "border-zinc-200/50 dark:border-zinc-800/50 hover:border-zinc-300 dark:hover:border-zinc-700 bg-muted/30"
+                              : "border-zinc-200/50 hover:border-zinc-300 bg-muted/30"
                           }`}
                         >
                           <input
@@ -402,7 +402,7 @@ export function AddCardDialog() {
               </div>
             )}
 
-            <div className="flex justify-end gap-3 pt-6 border-t mt-4 sticky bottom-0 bg-white dark:bg-zinc-950 pb-2 z-10 transition-colors">
+            <div className="flex justify-end gap-3 pt-6 border-t mt-4 sticky bottom-0 bg-white pb-2 z-10 transition-colors">
               <Button
                 type="button"
                 variant="outline"

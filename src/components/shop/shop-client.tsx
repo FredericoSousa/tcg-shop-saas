@@ -290,7 +290,7 @@ export function ShopClient({
                       alt={c}
                       width={32}
                       height={32}
-                      className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal"
+                      className="w-full h-full object-contain mix-blend-multiply"
                     />
                   </button>
                 ))}
@@ -562,7 +562,7 @@ export function ShopClient({
                               alt={c}
                               width={32}
                               height={32}
-                              className="w-full h-full object-contain mix-blend-multiply dark:mix-blend-normal"
+                              className="w-full h-full object-contain mix-blend-multiply"
                             />
                           </button>
                         ))}

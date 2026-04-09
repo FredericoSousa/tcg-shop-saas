@@ -21,10 +21,10 @@ export function ImportProgressDisplay({
 
   if (!progress) {
     return (
-      <div className="p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
+      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <div className="flex items-center gap-3">
-          <Loader2 className="h-5 w-5 text-blue-600 dark:text-blue-400 animate-spin" />
-          <span className="text-sm font-medium text-blue-900 dark:text-blue-100">
+          <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+          <span className="text-sm font-medium text-blue-900">
             {title}
           </span>
         </div>
@@ -39,54 +39,54 @@ export function ImportProgressDisplay({
 
   const statusStyles = {
     fetching: {
-      bg: "bg-blue-50 dark:bg-blue-950/30",
-      border: "border-blue-200 dark:border-blue-800",
+      bg: "bg-blue-50",
+      border: "border-blue-200",
       icon: (
-        <Loader2 className="h-5 w-5 text-blue-600 dark:text-blue-400 animate-spin" />
+        <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
       ),
-      text: "text-blue-900 dark:text-blue-100",
-      textColor: "text-blue-600 dark:text-blue-400",
-      barColor: "bg-blue-500 dark:bg-blue-500",
+      text: "text-blue-900",
+      textColor: "text-blue-600",
+      barColor: "bg-blue-500",
     },
     parsing: {
-      bg: "bg-purple-50 dark:bg-purple-950/30",
-      border: "border-purple-200 dark:border-purple-800",
+      bg: "bg-purple-50",
+      border: "border-purple-200",
       icon: (
-        <Loader2 className="h-5 w-5 text-purple-600 dark:text-purple-400 animate-spin" />
+        <Loader2 className="h-5 w-5 text-purple-600 animate-spin" />
       ),
-      text: "text-purple-900 dark:text-purple-100",
-      textColor: "text-purple-600 dark:text-purple-400",
-      barColor: "bg-purple-500 dark:bg-purple-500",
+      text: "text-purple-900",
+      textColor: "text-purple-600",
+      barColor: "bg-purple-500",
     },
     validating: {
-      bg: "bg-yellow-50 dark:bg-yellow-950/30",
-      border: "border-yellow-200 dark:border-yellow-800",
+      bg: "bg-yellow-50",
+      border: "border-yellow-200",
       icon: (
-        <Loader2 className="h-5 w-5 text-yellow-600 dark:text-yellow-400 animate-spin" />
+        <Loader2 className="h-5 w-5 text-yellow-600 animate-spin" />
       ),
-      text: "text-yellow-900 dark:text-yellow-100",
-      textColor: "text-yellow-600 dark:text-yellow-400",
-      barColor: "bg-yellow-500 dark:bg-yellow-500",
+      text: "text-yellow-900",
+      textColor: "text-yellow-600",
+      barColor: "bg-yellow-500",
     },
     completed: {
-      bg: "bg-emerald-50 dark:bg-emerald-950/30",
-      border: "border-emerald-200 dark:border-emerald-800",
+      bg: "bg-emerald-50",
+      border: "border-emerald-200",
       icon: (
-        <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+        <CheckCircle2 className="h-5 w-5 text-emerald-600" />
       ),
-      text: "text-emerald-900 dark:text-emerald-100",
-      textColor: "text-emerald-600 dark:text-emerald-400",
-      barColor: "bg-emerald-500 dark:bg-emerald-500",
+      text: "text-emerald-900",
+      textColor: "text-emerald-600",
+      barColor: "bg-emerald-500",
     },
     error: {
-      bg: "bg-red-50 dark:bg-red-950/30",
-      border: "border-red-200 dark:border-red-800",
+      bg: "bg-red-50",
+      border: "border-red-200",
       icon: (
-        <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+        <AlertTriangle className="h-5 w-5 text-red-600" />
       ),
-      text: "text-red-900 dark:text-red-100",
-      textColor: "text-red-600 dark:text-red-400",
-      barColor: "bg-red-500 dark:bg-red-500",
+      text: "text-red-900",
+      textColor: "text-red-600",
+      barColor: "bg-red-500",
     },
   };
 
@@ -131,8 +131,8 @@ export function ImportProgressDisplay({
       </div>
 
       {/* Progress bar */}
-      <div className="px-4 md:px-5 py-3 bg-background/50 dark:bg-background/20">
-        <div className="h-2.5 bg-muted/30 dark:bg-muted/50 rounded-full overflow-hidden">
+      <div className="px-4 md:px-5 py-3 bg-background/50">
+        <div className="h-2.5 bg-muted/30 rounded-full overflow-hidden">
           <div
             className={`h-full transition-all duration-300 ${style.barColor}`}
             style={{ width: `${Math.min(percentage, 100)}%` }}
@@ -141,7 +141,7 @@ export function ImportProgressDisplay({
       </div>
 
       {/* Stats */}
-      <div className="px-4 md:px-5 py-4 grid grid-cols-2 sm:grid-cols-4 gap-3 border-t border-inherit bg-muted/20 dark:bg-muted/10">
+      <div className="px-4 md:px-5 py-4 grid grid-cols-2 sm:grid-cols-4 gap-3 border-t border-inherit bg-muted/20">
         <div className="space-y-1">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             Cards
@@ -186,7 +186,7 @@ export function ImportProgressDisplay({
 
       {/* Debug info */}
       {process.env.NODE_ENV === "development" && (
-        <div className="px-4 md:px-5 py-2 bg-muted/30 dark:bg-muted/20 text-xs text-muted-foreground font-mono border-t border-inherit">
+        <div className="px-4 md:px-5 py-2 bg-muted/30 text-xs text-muted-foreground font-mono border-t border-inherit">
           status: {progress.status} | page: {progress.currentPage}/
           {progress.totalPages} | eta:{" "}
           {(progress.estimatedTimeRemaining / 1000).toFixed(1)}s

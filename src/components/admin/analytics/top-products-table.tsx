@@ -44,7 +44,7 @@ export function TopProductsTable() {
   }
 
   return (
-    <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm col-span-1 md:col-span-2 lg:col-span-1 transition-all duration-300 hover:shadow-lg hover:border-primary/20">
+    <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 shadow-sm col-span-1 md:col-span-2 lg:col-span-1 transition-all duration-300 hover:shadow-lg hover:border-primary/20">
       <CardHeader>
         <div className="flex items-center justify-between">
           <div>
@@ -65,7 +65,7 @@ export function TopProductsTable() {
           ) : (
             products.map((product, idx) => (
               <div key={product.id} className="flex items-center gap-4 group cursor-pointer">
-                <div className="relative h-12 w-10 flex-shrink-0 bg-zinc-100 dark:bg-zinc-800 rounded-lg overflow-hidden shadow-sm group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
+                <div className="relative h-12 w-10 flex-shrink-0 bg-zinc-100 rounded-lg overflow-hidden shadow-sm group-hover:shadow-xl group-hover:scale-105 transition-all duration-300">
                   {product.imageUrl ? (
                     <Image
                       src={product.imageUrl}

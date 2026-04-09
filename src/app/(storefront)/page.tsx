@@ -41,7 +41,7 @@ export default async function HomePage() {
   const shopName = tenant.name;
 
   return (
-    <main className="min-h-screen bg-zinc-50 dark:bg-zinc-950 transition-colors duration-500">
+    <main className="min-h-screen bg-zinc-50 transition-colors duration-500">
       {/* Hero Section */}
       <section className="relative bg-zinc-950 text-white overflow-hidden">
         {/* Background effects */}
@@ -86,15 +86,15 @@ export default async function HomePage() {
       <section className="relative -mt-12 z-20">
         <div className="container mx-auto px-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto animate-in slide-in-from-bottom-8 duration-700 delay-150 fill-mode-both">
-            <div className="bg-card/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200/50 dark:border-zinc-800/50 p-6 text-center hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">
+            <div className="bg-card/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200/50 p-6 text-center hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">
               <p className="text-3xl font-black text-primary group-hover:scale-110 transition-transform">{totalCards.toLocaleString()}</p>
               <p className="text-sm font-bold text-muted-foreground mt-1 uppercase tracking-widest">Cards Atuais</p>
             </div>
-            <div className="bg-card/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200/50 dark:border-zinc-800/50 p-6 text-center hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">
+            <div className="bg-card/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200/50 p-6 text-center hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">
               <p className="text-3xl font-black text-primary group-hover:scale-110 transition-transform">{uniqueSets}</p>
               <p className="text-sm font-bold text-muted-foreground mt-1 uppercase tracking-widest">Coleções</p>
             </div>
-            <div className="bg-card/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200/50 dark:border-zinc-800/50 p-6 text-center hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">
+            <div className="bg-card/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200/50 p-6 text-center hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">
               <p className="text-3xl font-black text-primary group-hover:scale-110 transition-transform">100%</p>
               <p className="text-sm font-bold text-muted-foreground mt-1 uppercase tracking-widest">Originalidade</p>
             </div>
@@ -119,10 +119,10 @@ export default async function HomePage() {
               <Link
                 key={item.id}
                 href="/singles"
-                className="group relative bg-card/60 backdrop-blur-sm rounded-2xl shadow-sm border border-zinc-200/50 dark:border-zinc-800/50 overflow-hidden hover:shadow-2xl hover:border-primary/30 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
+                className="group relative bg-card/60 backdrop-blur-sm rounded-2xl shadow-sm border border-zinc-200/50 overflow-hidden hover:shadow-2xl hover:border-primary/30 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
                 style={{ animationDelay: `${idx * 100}ms` }}
               >
-                <div className="aspect-[2/3] w-full bg-zinc-100 dark:bg-zinc-900 relative overflow-hidden flex items-center justify-center">
+                <div className="aspect-[2/3] w-full bg-zinc-100 relative overflow-hidden flex items-center justify-center">
                   {item.cardTemplate?.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -139,7 +139,7 @@ export default async function HomePage() {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                   
                   <div className="absolute bottom-3 left-3 right-3 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                    <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md text-[10px] font-black py-2 rounded-lg text-center shadow-xl uppercase tracking-widest">
+                    <div className="bg-white/90 backdrop-blur-md text-[10px] font-black py-2 rounded-lg text-center shadow-xl uppercase tracking-widest">
                       Detalhes
                     </div>
                   </div>

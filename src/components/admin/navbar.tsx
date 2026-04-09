@@ -1,8 +1,6 @@
 "use client";
 
-import { Menu, Sun, Moon, ChevronDown, UserCog, DollarSign, Cuboid, Settings, LogOut } from "lucide-react";
-import { useTheme } from "next-themes";
-import { useState, useEffect } from "react";
+import { Menu, ChevronDown, UserCog, DollarSign, Cuboid, Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -37,14 +35,7 @@ import { useSidebar } from "./sidebar-provider";
 export function Navbar({ username }: NavbarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { setTheme, theme } = useTheme();
   const { toggleSidebar, isCollapsed } = useSidebar();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
 
   // Find current page name for breadcrumb title
   const currentItem = sidebarItems.find((item) =>

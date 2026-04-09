@@ -1,7 +1,6 @@
 import { Sidebar } from "@/components/admin/sidebar";
 import { Navbar } from "@/components/admin/navbar";
 import { Footer } from "@/components/admin/footer";
-import { ThemeProvider } from "@/components/theme-provider";
 import { ReactNode, Suspense } from "react";
 import { getAdminContext } from "@/lib/tenant-server";
 import { SidebarProvider } from "@/components/admin/sidebar-provider";

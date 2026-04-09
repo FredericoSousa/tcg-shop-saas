@@ -157,8 +157,8 @@ export function SettingsContent() {
             onClick={() => setActiveTab(tab.id)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
               activeTab === tab.id 
-                ? "bg-primary text-white shadow-md dark:text-zinc-950" 
-                : "text-muted-foreground dark:text-zinc-400 hover:bg-muted dark:hover:bg-zinc-800/50 hover:text-foreground dark:hover:text-zinc-100"
+                ? "bg-primary text-white shadow-md" 
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
           >
             <tab.icon className="h-4 w-4" />

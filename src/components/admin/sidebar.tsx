@@ -42,9 +42,9 @@ export function Sidebar({ tenant, username }: SidebarProps) {
   const { isCollapsed } = useSidebar();
 
   return (
-    <div className={`hidden border-r border-border/50 bg-gradient-to-b from-background via-background to-background/80 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950 md:flex flex-shrink-0 h-screen sticky top-0 flex-col transition-all duration-300 ease-in-out ${isCollapsed ? "w-[70px]" : "w-[260px]"
+    <div className={`hidden border-r border-border/50 bg-gradient-to-b from-background via-background to-background/80 md:flex flex-shrink-0 h-screen sticky top-0 flex-col transition-all duration-300 ease-in-out ${isCollapsed ? "w-[70px]" : "w-[260px]"
       }`}>
-      <div className={`flex h-16 items-center border-b border-border/50 dark:border-slate-800 lg:h-[70px] transition-all duration-300 ${isCollapsed ? "px-4 justify-center" : "px-6"
+      <div className={`flex h-16 items-center border-b border-border/50 lg:h-[70px] transition-all duration-300 ${isCollapsed ? "px-4 justify-center" : "px-6"
         }`}>
         <Link
           href="/admin"
@@ -57,10 +57,10 @@ export function Sidebar({ tenant, username }: SidebarProps) {
             </div>
             {!isCollapsed && (
               <div className="flex flex-col gap-0.5 whitespace-nowrap animate-in fade-in duration-500">
-                <span className="text-foreground dark:text-white font-semibold">
+                <span className="text-foreground font-semibold">
                   {tenant.name || "TCG Admin"}
                 </span>
-                <span className="text-xs text-muted-foreground dark:text-slate-300 font-normal">
+                <span className="text-xs text-muted-foreground font-normal">
                   Painel de Controle
                 </span>
               </div>
@@ -84,8 +84,8 @@ export function Sidebar({ tenant, username }: SidebarProps) {
                 title={isCollapsed ? item.name : ""}
                 className={`group flex items-center rounded-lg transition-all duration-200 ${isCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3.5 py-2.5"
                   } ${isStrictActive
-                    ? "bg-primary text-white shadow-md hover:shadow-lg hover:bg-primary/90 dark:bg-primary dark:text-slate-950 dark:hover:bg-primary/95"
-                    : "text-muted-foreground dark:text-slate-50 hover:text-foreground dark:hover:text-white hover:bg-muted/50 dark:hover:bg-slate-700/60"
+                    ? "bg-primary text-white shadow-md hover:shadow-lg hover:bg-primary/90"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   }`}
               >
                 <item.icon className={`${isCollapsed ? "h-5.5 w-5.5" : "h-4.5 w-4.5"} shrink-0`} />
@@ -101,7 +101,7 @@ export function Sidebar({ tenant, username }: SidebarProps) {
       </nav>
 
       {/* User Controls Footer */}
-      <div className="p-3 border-t border-border/50 dark:border-slate-800">
+      <div className="p-3 border-t border-border/50">
         <div className={`flex items-center gap-2 ${isCollapsed ? "justify-center" : "justify-between"}`}>
           <Avatar className="h-9 w-9 border-2 border-primary/10 shrink-0">
             <AvatarImage src="" />
@@ -111,7 +111,7 @@ export function Sidebar({ tenant, username }: SidebarProps) {
           </Avatar>
           {!isCollapsed && (
             <div className="flex flex-col text-left overflow-hidden animate-in fade-in slide-in-from-left-1 duration-300">
-              <span className="text-sm font-semibold truncate dark:text-white">
+              <span className="text-sm font-semibold truncate">
                 {username || "Usuário"}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase tracking-widest leading-tight">
@@ -126,7 +126,7 @@ export function Sidebar({ tenant, username }: SidebarProps) {
               await fetch("/api/auth/logout", { method: "POST" });
               router.push("/login");
             }}
-            className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-lg transition-all"
+            className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
             title="Sair"
           >
             <LogOut className="h-4.5 w-4.5" />

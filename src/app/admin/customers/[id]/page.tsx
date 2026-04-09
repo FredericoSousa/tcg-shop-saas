@@ -48,12 +48,12 @@ export default async function CustomerDetailsPage({
         description="Visualize o histórico de compras e informações do cliente"
         icon={Users}
         actions={
-          <div className="flex items-center gap-3 bg-card/40 p-2 rounded-xl border border-zinc-200/50 dark:border-zinc-800/50 backdrop-blur-md px-4 shadow-sm">
+          <div className="flex items-center gap-3 bg-card/40 p-2 rounded-xl border border-zinc-200/50 backdrop-blur-md px-4 shadow-sm">
             <div className="flex flex-col items-center">
               <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest leading-none mb-1">Pedidos</span>
               <span className="text-xl font-black text-primary leading-none">{totalOrders}</span>
             </div>
-            <div className="h-8 w-px bg-zinc-200/50 dark:bg-zinc-800/50 mx-2" />
+            <div className="h-8 w-px bg-zinc-200/50 mx-2" />
             <div className="flex flex-col items-end">
               <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest leading-none mb-1">Total Gasto</span>
               <span className="text-xl font-black text-primary leading-none">
@@ -70,7 +70,7 @@ export default async function CustomerDetailsPage({
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Profile Card */}
         <div className="w-full lg:w-1/3 flex flex-col gap-6">
-          <div className="bg-card/40 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm overflow-hidden backdrop-blur-md transition-all duration-300 hover:shadow-lg">
+          <div className="bg-card/40 rounded-2xl border border-zinc-200/50 shadow-sm overflow-hidden backdrop-blur-md transition-all duration-300 hover:shadow-lg">
             <div className="bg-primary/5 p-6 border-b flex flex-col items-center text-center">
               <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mb-4">
                 <UserIcon className="w-10 h-10 text-primary" />

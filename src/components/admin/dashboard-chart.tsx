@@ -17,7 +17,7 @@ export function DashboardChart({ data, title, total }: DashboardChartProps) {
   const maxAmount = Math.max(...data.map((d) => d.amount), 1);
 
   return (
-    <div className="flex flex-col h-full bg-card/40 border border-zinc-200/50 dark:border-zinc-800/50 shadow-sm backdrop-blur-md rounded-2xl p-6 group transition-all duration-300 hover:shadow-lg hover:border-primary/20">
+    <div className="flex flex-col h-full bg-card/40 border border-zinc-200/50 shadow-sm backdrop-blur-md rounded-2xl p-6 group transition-all duration-300 hover:shadow-lg hover:border-primary/20">
       <div className="flex items-center justify-between mb-8">
         <div>
           <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none mb-2">{title}</h2>

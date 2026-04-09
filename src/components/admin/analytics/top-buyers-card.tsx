@@ -12,7 +12,7 @@ export async function TopBuyersCard({ tenantId }: TopBuyersCardProps) {
   const customers = await useCase.execute({ tenantId, limit: 5 });
 
   return (
-    <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 dark:border-zinc-800/50 shadow-sm rounded-2xl overflow-hidden h-full transition-all duration-300 hover:shadow-lg hover:border-primary/20">
+    <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 shadow-sm rounded-2xl overflow-hidden h-full transition-all duration-300 hover:shadow-lg hover:border-primary/20">
       <CardHeader className="border-b border-border/20 pb-4">
         <div className="flex items-center justify-between">
           <div>
