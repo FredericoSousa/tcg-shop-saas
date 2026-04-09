@@ -22,6 +22,8 @@ import { ScryfallCard } from "@/lib/types/scryfall";
 import { LanguageBadge } from "@/components/ui/language-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Feedback } from "@/components/ui/feedback";
+import { LANGUAGE_LIST, getLanguageData } from "@/lib/constants/languages";
+import { cn } from "@/lib/utils";
 
 const VALID_EXTRAS = [
   { value: "FOIL", label: "Foil" },
@@ -177,12 +179,25 @@ export function AddCardDialog() {
           <form action={handleSubmit} className="flex flex-col gap-8">
             {/* Resultados da Busca */}
             <div className="flex flex-col gap-3">
-               <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1 flex items-center justify-between">
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1 flex items-center justify-between">
                 <span>Edições Disponíveis</span>
-                {results.length > 0 && <span className="text-primary">{results.length} resultados</span>}
+                <div className="flex items-center gap-3">
+                  {results.length > 0 && !selectedCardId && <span className="text-primary">{results.length} resultados</span>}
+                  {selectedCardId && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-[10px] font-black uppercase px-3 bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20 rounded-lg transition-all"
+                      onClick={() => setSelectedCardId("")}
+                    >
+                      Trocar Edição
+                    </Button>
+                  )}
+                </div>
               </label>
               
-              <div className="min-h-[200px] border border-dashed rounded-2xl bg-muted/5 overflow-hidden flex flex-col">
+              <div className="min-h-[100px] border border-dashed rounded-2xl bg-muted/5 overflow-hidden flex flex-col transition-all duration-500">
                 {isSearching ? (
                   <div className="p-4 space-y-3">
                     {[1, 2, 3].map((i) => (
@@ -210,8 +225,13 @@ export function AddCardDialog() {
                     icon={<XCircle className="h-10 w-10 text-destructive/40" />}
                   />
                 ) : (
-                  <div className="max-h-80 overflow-y-auto p-4 grid gap-3 custom-scrollbar">
-                    {results.map((card) => {
+                  <div className={cn(
+                    "max-h-80 overflow-y-auto p-4 grid gap-3 custom-scrollbar transition-all duration-500",
+                    selectedCardId && "max-h-40"
+                  )}>
+                    {results
+                      .filter(card => !selectedCardId || card.id === selectedCardId)
+                      .map((card) => {
                       const imageUrl = card.image_uris?.small || card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || "";
                       const isSelected = selectedCardId === card.id;
                       
@@ -350,13 +370,23 @@ export function AddCardDialog() {
                         className="h-12 transition-all duration-300 focus-visible:ring-2 rounded-xl font-medium"
                       >
                         <SelectValue placeholder="Selecione...">
-                          {languageState === "EN" ? "Inglês (EN)" : languageState === "PT" ? "Português (PT)" : languageState === "JP" ? "Japonês (JP)" : "Inglês (EN)"}
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg">{getLanguageData(languageState).flag}</span>
+                            <span className="font-bold">{getLanguageData(languageState).label}</span>
+                            <span className="text-muted-foreground text-xs">({languageState})</span>
+                          </div>
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
-                        <SelectItem value="EN"><LanguageBadge language="EN" className="bg-transparent border-0 p-0 shadow-none text-sm font-bold" /></SelectItem>
-                        <SelectItem value="PT"><LanguageBadge language="PT" className="bg-transparent border-0 p-0 shadow-none text-sm font-bold" /></SelectItem>
-                        <SelectItem value="JP"><LanguageBadge language="JP" className="bg-transparent border-0 p-0 shadow-none text-sm font-bold" /></SelectItem>
+                        {LANGUAGE_LIST.map((lang) => (
+                          <SelectItem key={lang.code} value={lang.code}>
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg">{lang.flag}</span>
+                              <span className="font-semibold">{lang.label}</span>
+                              <span className="text-muted-foreground text-[10px] uppercase">({lang.code})</span>
+                            </div>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

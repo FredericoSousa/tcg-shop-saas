@@ -1,22 +1,10 @@
 import * as React from "react"
 import { cn } from "@/lib/utils"
+import { getLanguageData } from "@/lib/constants/languages"
 
 interface LanguageBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   language: string
   showCode?: boolean
-}
-
-const languageMap: Record<string, { flag: string; label: string }> = {
-  PT: { flag: "🇧🇷", label: "Português" },
-  EN: { flag: "🇺🇸", label: "Inglês" },
-  JP: { flag: "🇯🇵", label: "Japonês" },
-  ES: { flag: "🇪🇸", label: "Espanhol" },
-  FR: { flag: "🇫🇷", label: "Francês" },
-  DE: { flag: "🇩🇪", label: "Alemão" },
-  IT: { flag: "🇮🇹", label: "Italiano" },
-  KR: { flag: "🇰🇷", label: "Coreano" },
-  RU: { flag: "🇷🇺", label: "Russo" },
-  CN: { flag: "🇨🇳", label: "Chinês" },
 }
 
 export function LanguageBadge({
@@ -25,7 +13,7 @@ export function LanguageBadge({
   className,
   ...props
 }: LanguageBadgeProps) {
-  const lang = languageMap[language.toUpperCase()] || { flag: "🏳️", label: language }
+  const lang = getLanguageData(language)
 
   return (
     <span
