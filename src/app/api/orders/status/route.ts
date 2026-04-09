@@ -57,38 +57,47 @@ export async function PATCH(request: NextRequest) {
 
     // Process each order
     for (const id of ids) {
-      // If cancelling, restore inventory quantities in a transaction
-      if (status === "CANCELLED") {
-        const order = await prisma.order.findUnique({
-          where: { id },
-          include: { items: true },
-        });
+      const order = await prisma.order.findUnique({
+        where: { id },
+        include: { items: true },
+      });
 
-        if (!order || order.status === "CANCELLED") continue;
+      if (!order) continue;
 
+      const shouldDeletePayments = order.status === "PAID" && status !== "PAID";
+      const shouldRestoreInventory = status === "CANCELLED" && order.status !== "CANCELLED";
+
+      if (shouldDeletePayments || shouldRestoreInventory || status !== order.status) {
         await prisma.$transaction(async (tx) => {
-          for (const item of order.items) {
-            if (item.inventoryItemId) {
-              await tx.inventoryItem.update({
-                where: { id: item.inventoryItemId },
-                data: { quantity: { increment: item.quantity } },
-              });
-            } else if (item.productId) {
-              await tx.product.update({
-                where: { id: item.productId },
-                data: { stock: { increment: item.quantity } },
-              });
+          // 1. Delete payments if status changed from PAID
+          if (shouldDeletePayments) {
+            await tx.orderPayment.deleteMany({
+              where: { orderId: id },
+            });
+          }
+
+          // 2. Restore inventory if status changed to CANCELLED
+          if (shouldRestoreInventory) {
+            for (const item of order.items) {
+              if (item.inventoryItemId) {
+                await tx.inventoryItem.update({
+                  where: { id: item.inventoryItemId },
+                  data: { quantity: { increment: item.quantity } },
+                });
+              } else if (item.productId) {
+                await tx.product.update({
+                  where: { id: item.productId },
+                  data: { stock: { increment: item.quantity } },
+                });
+              }
             }
           }
+
+          // 3. Update status
           await tx.order.update({
             where: { id },
             data: { status },
           });
-        });
-      } else {
-        await prisma.order.update({
-          where: { id },
-          data: { status },
         });
       }
     }

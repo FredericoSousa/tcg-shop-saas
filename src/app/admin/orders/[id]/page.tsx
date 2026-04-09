@@ -6,6 +6,7 @@ import { PageHeader } from "@/components/admin/page-header";
 import { SetBadge } from "@/components/ui/set-badge";
 import { OrderStatusManager } from "@/components/admin/order-status-manager";
 import { getAdminContext } from "@/lib/tenant-server";
+import { OrderActions } from "./order-actions";
 
 export default async function OrderDetailsPage({
   params,
@@ -68,6 +69,11 @@ export default async function OrderDetailsPage({
                 orderId={order.id}
                 currentStatus={order.status}
                 variant="select"
+              />
+              <OrderActions 
+                orderId={order.id} 
+                totalAmount={Number(order.totalAmount)} 
+                status={order.status} 
               />
             </div>
             <div className="h-8 w-px bg-border/50 hidden sm:block mx-1" />

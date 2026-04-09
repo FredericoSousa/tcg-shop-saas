@@ -158,23 +158,46 @@ enum OrderSource {
   ECOMMERCE
 }
 
-model Order {
-  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String      @map("tenant_id") @db.Uuid
-  customerId  String      @map("customer_id") @db.Uuid
-  totalAmount Decimal     @map("total_amount")
-  status      OrderStatus @default(PENDING)
-  source      OrderSource @default(ECOMMERCE)
-  createdAt   DateTime    @default(now()) @map("created_at")
-  updatedAt   DateTime?   @updatedAt @map("updated_at")
+enum PaymentMethodType {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  PIX
+  TRANSFER
+  OTHER
+}
 
-  staffNotes  String?     @map("staff_notes")
-  tenant      Tenant      @relation(fields: [tenantId], references: [id])
-  customer    Customer    @relation(fields: [customerId], references: [id])
-  items       OrderItem[]
+model Order {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String         @map("tenant_id") @db.Uuid
+  customerId  String         @map("customer_id") @db.Uuid
+  totalAmount Decimal        @map("total_amount")
+  status      OrderStatus    @default(PENDING)
+  source      OrderSource    @default(ECOMMERCE)
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime?      @updatedAt @map("updated_at")
+  staffNotes  String?        @map("staff_notes")
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id])
+  customer Customer       @relation(fields: [customerId], references: [id])
+  items    OrderItem[]
+  payments OrderPayment[]
 
   @@index([tenantId])
   @@map("orders")
+}
+
+model OrderPayment {
+  id        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId   String            @map("order_id") @db.Uuid
+  method    PaymentMethodType
+  amount    Decimal
+  createdAt DateTime          @default(now()) @map("created_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_payments")
 }
 
 model OrderItem {

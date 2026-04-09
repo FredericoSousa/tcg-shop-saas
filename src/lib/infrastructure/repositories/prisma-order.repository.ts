@@ -1,11 +1,12 @@
 import { injectable } from "tsyringe";
 import { BasePrismaRepository } from "./base-prisma.repository";
 import { IOrderRepository } from "@/lib/domain/repositories/order.repository";
-import { Order as DomainOrder, OrderStatus, OrderSource, OrderItem as DomainOrderItem } from "@/lib/domain/entities/order";
+import { Order as DomainOrder, OrderStatus, OrderSource, OrderItem as DomainOrderItem, PaymentMethodType } from "@/lib/domain/entities/order";
 import { Prisma, Order as PrismaOrder, OrderItem as PrismaOrderItem, Customer as PrismaCustomer } from "@prisma/client";
 
 type PrismaOrderWithRelations = PrismaOrder & {
   items?: PrismaOrderItem[];
+  payments?: any[]; // Prisma doesn't always export all types if not generated yet, using any for now or I can check if OrderPayment is available
   customer?: PrismaCustomer | null;
 };
 
@@ -33,6 +34,13 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
         quantity: oi.quantity,
         priceAtPurchase: Number(oi.priceAtPurchase),
       })),
+      payments: item.payments?.map((p: any) => ({
+        id: p.id,
+        orderId: p.orderId,
+        method: p.method as any,
+        amount: Number(p.amount),
+        createdAt: p.createdAt,
+      })),
     };
   }
 
@@ -41,6 +49,7 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
       where: { id },
       include: { 
         customer: true,
+        payments: true,
         items: {
           include: { 
             inventoryItem: { include: { cardTemplate: true } },
@@ -165,6 +174,16 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
           });
         }
       }
+    });
+  }
+
+  async savePayments(orderId: string, payments: { method: PaymentMethodType; amount: number }[]): Promise<void> {
+    await this.prisma.orderPayment.createMany({
+      data: payments.map((p) => ({
+        orderId,
+        method: p.method,
+        amount: new Prisma.Decimal(p.amount),
+      })),
     });
   }
 }

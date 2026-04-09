@@ -1,9 +1,9 @@
 "use client";
 
-import { OrderStatusManager } from "@/components/admin/order-status-manager";
 import { OrderStatus } from "@prisma/client";
 import Link from "next/link";
 import { ArrowRight, FilterIcon, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 import * as React from "react";
 import {
   Select,
@@ -143,11 +143,20 @@ const OrderTableView = ({
                 }).format(order.totalAmount)}
               </TableCell>
               <TableCell>
-                <OrderStatusManager
-                  orderId={order.id}
-                  currentStatus={order.status}
-                  variant="select"
-                />
+                <Badge 
+                  variant="outline" 
+                  className={cn(
+                    "font-bold uppercase tracking-wider text-[10px]",
+                    order.status === "PENDING" && "bg-yellow-100 text-yellow-700 border-yellow-200",
+                    order.status === "PAID" && "bg-green-100 text-green-700 border-green-200",
+                    order.status === "SHIPPED" && "bg-blue-100 text-blue-700 border-blue-200",
+                    order.status === "CANCELLED" && "bg-red-100 text-red-700 border-red-200"
+                  )}
+                >
+                  {order.status === "PENDING" ? "Pendente" : 
+                   order.status === "PAID" ? "Pago" : 
+                   order.status === "SHIPPED" ? "Enviado" : "Cancelado"}
+                </Badge>
               </TableCell>
               <TableCell className="text-right">
                 <Link href={`/admin/orders/${order.id}`} className="hover:text-primary">
