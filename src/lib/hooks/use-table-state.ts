@@ -16,8 +16,8 @@ export function useTableState(options: TableStateOptions = {}) {
 
   const { defaultLimit = 10 } = options;
 
-  const page = Number(searchParams.get("page")) || 1;
-  const limit = Number(searchParams.get("limit")) || defaultLimit;
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const limit = Math.max(1, Number(searchParams.get("limit")) || defaultLimit);
   const search = searchParams.get("search") || "";
 
   const getFilter = useCallback(

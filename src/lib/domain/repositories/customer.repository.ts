@@ -12,4 +12,5 @@ export interface ICustomerRepository {
   ): Promise<{ items: Customer[]; total: number }>;
   getStats(id: string): Promise<CustomerStats>;
   upsert(phoneNumber: string, data: { name?: string; email?: string }): Promise<Customer>;
+  delete(id: string): Promise<void>;
 }

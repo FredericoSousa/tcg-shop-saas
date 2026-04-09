@@ -161,4 +161,14 @@ export class PrismaProductRepository extends BasePrismaRepository implements IPr
     });
     return this.mapCategoryToDomain(updated);
   }
+
+  async delete(id: string): Promise<void> {
+    await this.prisma.product.update({
+      where: { id },
+      data: { 
+        active: false,
+        deletedAt: new Date() 
+      },
+    });
+  }
 }

@@ -1,5 +1,7 @@
+import "reflect-metadata";
+import { container } from "./infrastructure/container";
+import { GetTenantUseCase } from "./application/use-cases/get-tenant.use-case";
 import { getSession, type SessionData } from "./auth";
-import { getTenantById } from "./services/tenant.service";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { runWithTenant } from "./tenant-context";
@@ -17,7 +19,8 @@ export async function getTenant() {
     return null;
   }
 
-  return getTenantById(tenantId);
+  const getTenantUseCase = container.resolve(GetTenantUseCase);
+  return getTenantUseCase.execute({ id: tenantId });
 }
 
 /**
@@ -39,7 +42,8 @@ export async function getAdminContext() {
     redirect("/login");
   }
 
-  const tenant = await getTenantById(tenantId);
+  const getTenantUseCase = container.resolve(GetTenantUseCase);
+  const tenant = await getTenantUseCase.execute({ id: tenantId });
 
   if (!tenant) {
     redirect("/login");
@@ -66,7 +70,8 @@ export async function validateAdminApi() {
     return null;
   }
 
-  const tenant = await getTenantById(tenantId);
+  const getTenantUseCase = container.resolve(GetTenantUseCase);
+  const tenant = await getTenantUseCase.execute({ id: tenantId });
 
   if (!tenant) {
     return null;

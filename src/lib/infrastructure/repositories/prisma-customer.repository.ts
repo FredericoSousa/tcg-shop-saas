@@ -119,4 +119,11 @@ export class PrismaCustomerRepository extends BasePrismaRepository implements IC
     });
     return this.mapToDomain(customer);
   }
+
+  async delete(id: string): Promise<void> {
+    await this.prisma.customer.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
+  }
 }

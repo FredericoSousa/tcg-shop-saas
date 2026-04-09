@@ -1,4 +1,6 @@
-import { getTenantBySlug } from '@/lib/services/tenant.service'
+import "reflect-metadata";
+import { container } from "@/lib/infrastructure/container";
+import { GetTenantUseCase } from "@/lib/application/use-cases/get-tenant.use-case";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
@@ -9,7 +11,8 @@ export async function GET(request: Request) {
   }
 
   try {
-    const tenant = await getTenantBySlug(slug)
+    const getTenantUseCase = container.resolve(GetTenantUseCase);
+    const tenant = await getTenantUseCase.execute({ slug });
 
     if (!tenant) {
       return Response.json({ error: 'Tenant not found' }, { status: 404 })

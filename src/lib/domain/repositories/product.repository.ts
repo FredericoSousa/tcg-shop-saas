@@ -16,4 +16,5 @@ export interface IProductRepository {
   findCategoryById(id: string): Promise<ProductCategory | null>;
   saveCategory(category: ProductCategory): Promise<ProductCategory>;
   updateCategory(id: string, data: Partial<ProductCategory>): Promise<ProductCategory>;
+  delete(id: string): Promise<void>;
 }

@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { notFound } from "next/navigation";
 import { 
   ArrowLeft, 
@@ -8,7 +9,8 @@ import {
   Users
 } from "lucide-react";
 import Link from "next/link";
-import { getCustomerWithOrders, getCustomerStats } from "@/lib/services/customer.service";
+import { container } from "@/lib/infrastructure/container";
+import { GetCustomerUseCase } from "@/lib/application/use-cases/get-customer.use-case";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { CustomerOrdersTable } from "@/components/admin/customer-orders-table";
 import { PageHeader } from "@/components/admin/page-header";
@@ -22,15 +24,14 @@ export default async function CustomerDetailsPage({
   const { tenant } = await getAdminContext();
   const { id } = await params;
   
-  const [customer, stats] = await Promise.all([
-    getCustomerWithOrders(tenant.id, id),
-    getCustomerStats(tenant.id, id)
-  ]);
-
-  if (!customer) {
+  const getCustomer = container.resolve(GetCustomerUseCase);
+  const result = await getCustomer.execute(id);
+  
+  if (!result) {
     notFound();
   }
 
+  const { customer, stats } = result;
   const { totalSpent, totalOrders } = stats;
 
   return (

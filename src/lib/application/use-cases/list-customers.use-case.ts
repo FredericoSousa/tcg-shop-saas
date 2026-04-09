@@ -7,8 +7,10 @@ import { IUseCase } from "./use-case.interface";
 export interface ListCustomersRequest {
   page: number;
   limit: number;
-  search?: string;
-  includeDeleted?: boolean;
+  filters: {
+    search?: string;
+    includeDeleted?: boolean;
+  };
 }
 
 export interface ListCustomersResponse {
@@ -22,13 +24,16 @@ export class ListCustomersUseCase implements IUseCase<ListCustomersRequest, List
   constructor(@inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository) {}
 
   async execute(request: ListCustomersRequest): Promise<ListCustomersResponse> {
-    const { page, limit, search, includeDeleted } = request;
-    const { items, total } = await this.customerRepo.findPaginated(page, limit, { search, includeDeleted });
+    const page = Math.max(1, request.page);
+    const limit = Math.max(1, request.limit);
+    const { filters } = request;
+    
+    const { items, total } = await this.customerRepo.findPaginated(page, limit, filters);
     
     return {
       items,
       total,
-      pageCount: Math.ceil(total / limit),
+      pageCount: Math.ceil(total / limit) || 1,
     };
   }
 }

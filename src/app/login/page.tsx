@@ -3,7 +3,8 @@ import { Sparkles, Loader2 } from "lucide-react";
 import { getTenant } from "@/lib/tenant-server";
 import { LoginForm } from "./login-form";
 import { Suspense } from "react";
-import { getTenantBySlug } from "@/lib/services/tenant.service";
+import { container } from "@/lib/infrastructure/container";
+import { GetTenantUseCase } from "@/lib/application/use-cases/get-tenant.use-case";
 import { headers } from "next/headers";
 
 export default function LoginPage() {
@@ -64,7 +65,8 @@ async function LoginContent() {
     const subdomain = host.split(".")[0];
     
     if (subdomain && subdomain !== "localhost" && subdomain !== "www") {
-      tenant = await getTenantBySlug(subdomain);
+      const getTenantUseCase = container.resolve(GetTenantUseCase);
+      tenant = await getTenantUseCase.execute({ slug: subdomain });
     }
   }
 

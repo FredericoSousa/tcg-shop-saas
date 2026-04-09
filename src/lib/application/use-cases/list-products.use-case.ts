@@ -22,13 +22,15 @@ export class ListProductsUseCase implements IUseCase<ListProductsRequest, ListPr
   constructor(@inject(TOKENS.ProductRepository) private productRepo: IProductRepository) { }
 
   async execute(request: ListProductsRequest): Promise<ListProductsResponse> {
-    const { page, limit, search, categoryId } = request;
+    const page = Math.max(1, request.page);
+    const limit = Math.max(1, request.limit);
+    const { search, categoryId } = request;
     const { items, total } = await this.productRepo.findPaginated(page, limit, { search, categoryId });
 
     return {
       items,
       total,
-      pageCount: Math.ceil(total / limit),
+      pageCount: Math.ceil(total / limit) || 1,
     };
   }
 }

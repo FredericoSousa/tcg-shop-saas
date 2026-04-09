@@ -1,7 +1,9 @@
+import "reflect-metadata";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-import { getTenantBySlug } from "./lib/services/tenant.service";
+import { container } from "./lib/infrastructure/container";
+import { GetTenantUseCase } from "./lib/application/use-cases/get-tenant.use-case";
 
 const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || "your-secret-key-change-in-production",
@@ -61,7 +63,8 @@ export async function proxy(request: NextRequest) {
   }
 
   try {
-    const tenantRes = await getTenantBySlug(subdomain);
+    const getTenantUseCase = container.resolve(GetTenantUseCase);
+    const tenantRes = await getTenantUseCase.execute({ slug: subdomain });
 
     if (tenantRes && tenantRes.id) {
       const requestHeaders = new Headers(request.headers);

@@ -27,7 +27,10 @@ export class ListOrdersUseCase implements IUseCase<ListOrdersRequest, ListOrders
   constructor(@inject(TOKENS.OrderRepository) private orderRepo: IOrderRepository) {}
 
   async execute(request: ListOrdersRequest): Promise<ListOrdersResponse> {
-    const { page, limit, filters } = request;
+    const page = Math.max(1, request.page);
+    const limit = Math.max(1, request.limit);
+    const { filters } = request;
+    
     const { items, total } = await this.orderRepo.findPaginated(page, limit, filters);
     
     return {

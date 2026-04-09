@@ -170,6 +170,64 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
     };
   }
 
+  async findStorefrontItems(
+    tenantId: string,
+    page: number,
+    limit: number,
+    filters?: any
+  ): Promise<{ items: DomainInventoryItem[]; total: number }> {
+    const skip = (page - 1) * limit;
+    
+    // For now, storefront items might need complex JS filtering as seen in service
+    // But we'll try to do as much as possible in Prisma.
+    const where: Prisma.InventoryItemWhereInput = {
+      tenantId,
+      active: true,
+      quantity: { gt: 0 },
+      ...(filters?.set ? { cardTemplate: { set: { equals: filters.set, mode: 'insensitive' } } } : {}),
+      ...(filters?.language ? { language: filters.language } : {}),
+      ...(filters?.search ? {
+        cardTemplate: {
+          name: { contains: filters.search, mode: "insensitive" }
+        }
+      } : {})
+    };
+
+    const orderBy: Prisma.InventoryItemOrderByWithRelationInput = {};
+    if (filters?.sort === 'price_asc') orderBy.price = 'asc';
+    else if (filters?.sort === 'price_desc') orderBy.price = 'desc';
+    else if (filters?.sort === 'name_asc') orderBy.cardTemplate = { name: 'asc' };
+    else if (filters?.sort === 'name_desc') orderBy.cardTemplate = { name: 'desc' };
+    else orderBy.cardTemplate = { name: 'asc' };
+
+    const [items, total] = await Promise.all([
+      this.prisma.inventoryItem.findMany({
+        where,
+        include: { cardTemplate: true },
+        orderBy,
+        skip,
+        take: limit,
+      }),
+      this.prisma.inventoryItem.count({ where }),
+    ]);
+
+    return {
+      items: items.map(this.mapToDomain.bind(this)),
+      total,
+    };
+  }
+
+  async findAllActive(tenantId: string): Promise<DomainInventoryItem[]> {
+    const items = await this.prisma.inventoryItem.findMany({
+      where: {
+        tenantId,
+        active: true,
+      },
+      include: { cardTemplate: true },
+    });
+    return items.map(this.mapToDomain.bind(this));
+  }
+
   async decrementStock(id: string, quantity: number): Promise<void> {
     const result = await this.prisma.inventoryItem.updateMany({
       where: {

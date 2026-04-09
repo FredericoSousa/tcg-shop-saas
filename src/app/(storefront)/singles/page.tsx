@@ -1,7 +1,11 @@
+import "reflect-metadata";
+import { container } from "@/lib/infrastructure/container";
+import { GetStorefrontInventoryUseCase } from "@/lib/application/use-cases/get-storefront-inventory.use-case";
+import { GetStorefrontFiltersUseCase } from "@/lib/application/use-cases/get-storefront-filters.use-case";
 import { ShopClient } from "@/components/shop/shop-client";
 import { Sparkles } from "lucide-react";
-import { getStorefrontInventory, getStorefrontFilters } from "@/lib/services/inventory.service";
 import { getTenant } from "@/lib/tenant-server";
+import { unstable_cache } from "next/cache";
 
 export default async function ShopPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -37,8 +41,23 @@ export default async function ShopPage(props: {
     );
   }
 
-  const { items: inventory, total, pageCount } = await getStorefrontInventory(tenant.id, page, filters);
-  const storefrontFilters = await getStorefrontFilters(tenant.id);
+  // Use cases are wrapped in unstable_cache to maintain performance
+  const getInventory = container.resolve(GetStorefrontInventoryUseCase);
+  const getFilters = container.resolve(GetStorefrontFiltersUseCase);
+
+  const inventoryResponse = await unstable_cache(
+    () => getInventory.execute({ tenantId: tenant.id, page, filters }),
+    [`inventory-${tenant.id}-${page}-${JSON.stringify(filters)}`],
+    { revalidate: 3600, tags: [`tenant-${tenant.id}-inventory`] }
+  )();
+
+  const storefrontFilters = await unstable_cache(
+    () => getFilters.execute({ tenantId: tenant.id }),
+    [`filters-${tenant.id}`],
+    { revalidate: 3600, tags: [`tenant-${tenant.id}-inventory`] }
+  )();
+
+  const { items: inventory, total, pageCount } = inventoryResponse;
 
   return (
     <main className="flex-1">

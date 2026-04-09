@@ -1,3 +1,6 @@
+import "reflect-metadata";
+import { container } from "@/lib/infrastructure/container";
+import { ListInventoryUseCase } from "@/lib/application/use-cases/list-inventory.use-case";
 import { getAdminContext } from "@/lib/tenant-server";
 import { PageHeader } from "@/components/admin/page-header";
 import { Package, Upload } from "lucide-react";
@@ -6,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { DataTable } from "./data-table";
 import { columns } from "./columns";
 import { AddCardDialog } from "./add-card-dialog";
-import { getInventoryPaginated } from "@/lib/services/inventory.service";
 
 export default async function InventoryPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -17,9 +19,13 @@ export default async function InventoryPage(props: {
   const search = typeof searchParams?.search === "string" ? searchParams.search : undefined;
 
   const { tenant } = await getAdminContext();
-  const tenantId = tenant.id;
-
-  const { items: rawInventory, pageCount } = await getInventoryPaginated(tenantId, page, limit, search);
+  
+  const listInventory = container.resolve(ListInventoryUseCase);
+  const { items: rawInventory, pageCount } = await listInventory.execute({ 
+    page, 
+    limit, 
+    search 
+  });
 
   const inventory = rawInventory.map((item) => ({
     id: item.id,
@@ -28,11 +34,16 @@ export default async function InventoryPage(props: {
     condition: item.condition,
     language: item.language,
     extras: item.extras,
-    cardTemplate: {
+    cardTemplate: item.cardTemplate ? {
       name: item.cardTemplate.name,
       set: item.cardTemplate.set,
       imageUrl: item.cardTemplate.imageUrl,
       metadata: item.cardTemplate.metadata as Record<string, unknown> | null,
+    } : {
+      name: "Desconhecido",
+      set: "---",
+      imageUrl: null,
+      metadata: null
     },
   }));
 
