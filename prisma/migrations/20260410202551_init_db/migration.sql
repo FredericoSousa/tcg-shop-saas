@@ -13,6 +13,15 @@ CREATE TYPE "OrderStatus" AS ENUM ('PENDING', 'PAID', 'SHIPPED', 'CANCELLED');
 -- CreateEnum
 CREATE TYPE "OrderSource" AS ENUM ('POS', 'ECOMMERCE');
 
+-- CreateEnum
+CREATE TYPE "PaymentMethodType" AS ENUM ('CASH', 'CREDIT_CARD', 'DEBIT_CARD', 'PIX', 'TRANSFER', 'STORE_CREDIT', 'OTHER');
+
+-- CreateEnum
+CREATE TYPE "CreditLedgerType" AS ENUM ('CREDIT', 'DEBIT');
+
+-- CreateEnum
+CREATE TYPE "CreditLedgerSource" AS ENUM ('MANUAL', 'ORDER_PAYMENT', 'ORDER_REFUND');
+
 -- CreateTable
 CREATE TABLE "tenants" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -70,6 +79,7 @@ CREATE TABLE "inventory_items" (
     "condition" "Condition" NOT NULL,
     "language" TEXT NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT true,
+    "allow_negative_stock" BOOLEAN NOT NULL DEFAULT false,
     "extras" TEXT[] DEFAULT ARRAY[]::TEXT[],
 
     CONSTRAINT "inventory_items_pkey" PRIMARY KEY ("id")
@@ -100,6 +110,7 @@ CREATE TABLE "products" (
     "category_id" UUID NOT NULL,
     "tenant_id" UUID NOT NULL,
     "active" BOOLEAN NOT NULL DEFAULT true,
+    "allow_negative_stock" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted_at" TIMESTAMP(3),
@@ -117,9 +128,21 @@ CREATE TABLE "orders" (
     "source" "OrderSource" NOT NULL DEFAULT 'ECOMMERCE',
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3),
+    "friendly_id" TEXT,
     "staff_notes" TEXT,
 
     CONSTRAINT "orders_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "order_payments" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "order_id" UUID NOT NULL,
+    "method" "PaymentMethodType" NOT NULL,
+    "amount" DECIMAL(65,30) NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "order_payments_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -140,12 +163,28 @@ CREATE TABLE "customers" (
     "name" TEXT NOT NULL,
     "email" TEXT,
     "phone_number" TEXT NOT NULL,
+    "credit_balance" DECIMAL(65,30) NOT NULL DEFAULT 0,
     "tenant_id" UUID NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "deleted_at" TIMESTAMP(3),
 
     CONSTRAINT "customers_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "customer_credit_ledger" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "tenant_id" UUID NOT NULL,
+    "customer_id" UUID NOT NULL,
+    "order_id" UUID,
+    "amount" DECIMAL(65,30) NOT NULL,
+    "type" "CreditLedgerType" NOT NULL,
+    "source" "CreditLedgerSource" NOT NULL,
+    "description" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "customer_credit_ledger_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -188,6 +227,12 @@ CREATE INDEX "products_deleted_at_idx" ON "products"("deleted_at");
 CREATE INDEX "orders_tenant_id_idx" ON "orders"("tenant_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "orders_tenant_id_friendly_id_key" ON "orders"("tenant_id", "friendly_id");
+
+-- CreateIndex
+CREATE INDEX "order_payments_order_id_idx" ON "order_payments"("order_id");
+
+-- CreateIndex
 CREATE INDEX "customers_tenant_id_idx" ON "customers"("tenant_id");
 
 -- CreateIndex
@@ -195,6 +240,12 @@ CREATE INDEX "customers_deleted_at_idx" ON "customers"("deleted_at");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "customers_phone_number_tenant_id_key" ON "customers"("phone_number", "tenant_id");
+
+-- CreateIndex
+CREATE INDEX "customer_credit_ledger_customer_id_idx" ON "customer_credit_ledger"("customer_id");
+
+-- CreateIndex
+CREATE INDEX "customer_credit_ledger_tenant_id_idx" ON "customer_credit_ledger"("tenant_id");
 
 -- AddForeignKey
 ALTER TABLE "users" ADD CONSTRAINT "users_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -221,6 +272,9 @@ ALTER TABLE "orders" ADD CONSTRAINT "orders_tenant_id_fkey" FOREIGN KEY ("tenant
 ALTER TABLE "orders" ADD CONSTRAINT "orders_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "order_payments" ADD CONSTRAINT "order_payments_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "order_items" ADD CONSTRAINT "order_items_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -231,3 +285,12 @@ ALTER TABLE "order_items" ADD CONSTRAINT "order_items_product_id_fkey" FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE "customers" ADD CONSTRAINT "customers_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "customer_credit_ledger" ADD CONSTRAINT "customer_credit_ledger_customer_id_fkey" FOREIGN KEY ("customer_id") REFERENCES "customers"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "customer_credit_ledger" ADD CONSTRAINT "customer_credit_ledger_tenant_id_fkey" FOREIGN KEY ("tenant_id") REFERENCES "tenants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "customer_credit_ledger" ADD CONSTRAINT "customer_credit_ledger_order_id_fkey" FOREIGN KEY ("order_id") REFERENCES "orders"("id") ON DELETE SET NULL ON UPDATE CASCADE;

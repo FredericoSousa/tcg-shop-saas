@@ -37,13 +37,13 @@ model Tenant {
   facebook    String?
   twitter     String?
 
-  inventory InventoryItem[]
-  orders    Order[]
-  users     User[]
-  customers Customer[]
-  products  Product[]
+  inventory         InventoryItem[]
+  orders            Order[]
+  users             User[]
+  customers         Customer[]
+  products          Product[]
   productCategories ProductCategory[]
-  creditLedger CustomerCreditLedger[]
+  creditLedger      CustomerCreditLedger[]
 
   @@map("tenants")
 }
@@ -85,16 +85,16 @@ model CardTemplate {
 }
 
 model InventoryItem {
-  id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId       String    @map("tenant_id") @db.Uuid
-  cardTemplateId String    @map("card_template_id") @db.Uuid
-  price          Decimal
-  quantity       Int       @default(0)
-  condition      Condition
-  language       String
-  active         Boolean   @default(true)
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  cardTemplateId     String    @map("card_template_id") @db.Uuid
+  price              Decimal
+  quantity           Int       @default(0)
+  condition          Condition
+  language           String
+  active             Boolean   @default(true)
   allowNegativeStock Boolean   @default(false) @map("allow_negative_stock")
-  extras         String[]  @default([])
+  extras             String[]  @default([])
 
   tenant       Tenant       @relation(fields: [tenantId], references: [id])
   cardTemplate CardTemplate @relation(fields: [cardTemplateId], references: [id])
@@ -107,13 +107,13 @@ model InventoryItem {
 }
 
 model ProductCategory {
-  id              String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name            String
   description     String?
-  showOnEcommerce Boolean @default(true) @map("show_on_ecommerce")
-  tenantId        String  @map("tenant_id") @db.Uuid
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  showOnEcommerce Boolean   @default(true) @map("show_on_ecommerce")
+  tenantId        String    @map("tenant_id") @db.Uuid
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
   deletedAt       DateTime? @map("deleted_at")
 
   tenant   Tenant    @relation(fields: [tenantId], references: [id])
@@ -125,19 +125,19 @@ model ProductCategory {
 }
 
 model Product {
-  id          String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String
-  description String?
-  imageUrl    String? @map("image_url")
-  price       Decimal
-  stock       Int     @default(0)
-  categoryId  String  @map("category_id") @db.Uuid
-  tenantId    String  @map("tenant_id") @db.Uuid
-  active      Boolean @default(true)
-  allowNegativeStock Boolean @default(false) @map("allow_negative_stock")
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String
+  description        String?
+  imageUrl           String?   @map("image_url")
+  price              Decimal
+  stock              Int       @default(0)
+  categoryId         String    @map("category_id") @db.Uuid
+  tenantId           String    @map("tenant_id") @db.Uuid
+  active             Boolean   @default(true)
+  allowNegativeStock Boolean   @default(false) @map("allow_negative_stock")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
 
   tenant     Tenant          @relation(fields: [tenantId], references: [id])
   category   ProductCategory @relation(fields: [categoryId], references: [id])
@@ -172,21 +172,21 @@ enum PaymentMethodType {
 }
 
 model Order {
-  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String         @map("tenant_id") @db.Uuid
-  customerId  String         @map("customer_id") @db.Uuid
-  totalAmount Decimal        @map("total_amount")
-  status      OrderStatus    @default(PENDING)
-  source      OrderSource    @default(ECOMMERCE)
-  createdAt   DateTime       @default(now()) @map("created_at")
-  updatedAt   DateTime?      @updatedAt @map("updated_at")
-  friendlyId  String?        @map("friendly_id")
-  staffNotes  String?        @map("staff_notes")
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String      @map("tenant_id") @db.Uuid
+  customerId  String      @map("customer_id") @db.Uuid
+  totalAmount Decimal     @map("total_amount")
+  status      OrderStatus @default(PENDING)
+  source      OrderSource @default(ECOMMERCE)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime?   @updatedAt @map("updated_at")
+  friendlyId  String?     @map("friendly_id")
+  staffNotes  String?     @map("staff_notes")
 
-  tenant   Tenant         @relation(fields: [tenantId], references: [id])
-  customer Customer       @relation(fields: [customerId], references: [id])
-  items    OrderItem[]
-  payments OrderPayment[]
+  tenant       Tenant                 @relation(fields: [tenantId], references: [id])
+  customer     Customer               @relation(fields: [customerId], references: [id])
+  items        OrderItem[]
+  payments     OrderPayment[]
   creditLedger CustomerCreditLedger[]
 
   @@unique([tenantId, friendlyId])
@@ -223,19 +223,19 @@ model OrderItem {
 }
 
 model Customer {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String
-  email       String?
-  phoneNumber String    @map("phone_number")
-  creditBalance Decimal @default(0) @map("credit_balance")
-  tenantId    String    @map("tenant_id") @db.Uuid
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
-  deletedAt   DateTime? @map("deleted_at")
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String
+  email         String?
+  phoneNumber   String    @map("phone_number")
+  creditBalance Decimal   @default(0) @map("credit_balance")
+  tenantId      String    @map("tenant_id") @db.Uuid
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
 
-  tenant  Tenant  @relation(fields: [tenantId], references: [id])
-  orders  Order[]
-  ledger  CustomerCreditLedger[]
+  tenant Tenant                 @relation(fields: [tenantId], references: [id])
+  orders Order[]
+  ledger CustomerCreditLedger[]
 
   @@unique([phoneNumber, tenantId])
   @@index([tenantId])
