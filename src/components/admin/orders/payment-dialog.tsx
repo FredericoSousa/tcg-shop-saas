@@ -18,8 +18,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PaymentMethodType } from "@/lib/domain/entities/order";
-import { Trash2, Plus, Wallet, Loader2 } from "lucide-react";
+import { Trash2, Plus, Wallet, Loader2, CreditCard, Banknote, Landmark, Smartphone, MoreHorizontal } from "lucide-react";
 import { toast } from "sonner";
+import { ModalLayout } from "@/components/ui/modal-layout";
+import { MaskedInput } from "@/components/ui/masked-input";
+import { cn } from "@/lib/utils";
+import { parseCurrency } from "@/lib/utils/format";
 
 interface PaymentDialogProps {
   isOpen: boolean;
@@ -142,54 +146,118 @@ export function PaymentDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>Finalizar Pedido {friendlyId ? `#${friendlyId}` : `#${orderId.slice(-8).toUpperCase()}`}</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-4 py-4">
-          <div className="flex justify-between items-center text-sm font-medium">
-            <span>Total do Pedido:</span>
-            <span>R$ {totalAmount.toFixed(2)}</span>
+      <ModalLayout
+        title={`Finalizar Pedido ${friendlyId ? `#${friendlyId}` : `#${orderId.slice(-8).toUpperCase()}`}`}
+        description="Selecione as formas de pagamento e os respectivos valores para concluir o pedido."
+        containerClassName="max-w-md"
+        footer={
+          <div className="flex flex-col gap-4 w-full">
+            <div className="px-1 space-y-2 border-t pt-4">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground font-medium uppercase tracking-tight text-[10px]">Total Pago</span>
+                <span className={cn(
+                  "font-black text-base tabular-nums",
+                  totalPaid >= totalAmount - 0.01 ? "text-emerald-600" : "text-zinc-600"
+                )}>
+                  R$ {totalPaid.toFixed(2)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground font-medium uppercase tracking-tight text-[10px]">Restante</span>
+                <span className={cn(
+                  "font-black text-base tabular-nums",
+                  remaining > 0.01 ? "text-destructive" : "text-emerald-600"
+                )}>
+                  R$ {Math.max(0, remaining).toFixed(2)}
+                </span>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-3">
+              <Button 
+                variant="outline" 
+                onClick={onClose} 
+                disabled={isSubmitting}
+                className="font-bold rounded-xl h-11"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSubmit} 
+                disabled={isSubmitting || remaining > 0.01}
+                className="font-bold rounded-xl h-11 px-6 shadow-lg shadow-primary/10"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <span>Processando...</span>
+                  </>
+                ) : (
+                  "Finalizar Pedido"
+                )}
+              </Button>
+            </div>
+          </div>
+        }
+      >
+        <div className="space-y-6 py-4">
+          <div className="flex justify-between items-center p-4 bg-primary/5 border border-primary/10 rounded-2xl">
+            <span className="text-xs font-black uppercase tracking-widest text-primary/70">Total do Pedido</span>
+            <span className="text-xl font-black tabular-nums text-primary">R$ {totalAmount.toFixed(2)}</span>
           </div>
 
-          <div className="space-y-3">
-            {payments.map((payment, index) => (
-              <div key={index} className="flex flex-col gap-2 p-3 border rounded-lg bg-muted/20">
-                <div className="flex gap-2 items-end">
-                  <div className="flex-1 space-y-1">
-                    <label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Forma de Pagamento</label>
+          <div className="space-y-4">
+            {payments.map((payment, index) => {
+              const methodData = PAYMENT_METHODS.find(m => m.value === payment.method);
+              
+              return (
+              <div key={index} className="group flex flex-col gap-3 p-4 border border-zinc-200/60 rounded-2xl bg-white/50 hover:bg-white hover:border-zinc-300 transition-all duration-300 shadow-sm">
+                <div className="flex gap-3 items-end">
+                  <div className="flex-1 space-y-2">
+                    <label className="text-[10px] text-muted-foreground uppercase font-black tracking-widest ml-1">Forma</label>
                     <Select
                       value={payment.method}
                       onValueChange={(v) => updatePayment(index, "method", v)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-11 rounded-xl bg-muted/20 border-zinc-200/50">
                         <SelectValue placeholder="Selecione">
-                          {PAYMENT_METHODS.find((m) => m.value === payment.method)?.label}
+                          <div className="flex items-center gap-2">
+                            {payment.method === 'CASH' && <Banknote className="w-4 h-4 text-emerald-500" />}
+                            {payment.method === 'CREDIT_CARD' && <CreditCard className="w-4 h-4 text-blue-500" />}
+                            {payment.method === 'PIX' && <Smartphone className="w-4 h-4 text-teal-500" />}
+                            {payment.method === 'STORE_CREDIT' && <Wallet className="w-4 h-4 text-amber-500" />}
+                            {methodData?.label}
+                          </div>
                         </SelectValue>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="rounded-xl">
                         {PAYMENT_METHODS.map((m) => (
                           <SelectItem key={m.value} value={m.value}>
-                            {m.label}
+                            <div className="flex items-center gap-2">
+                              {m.value === 'CASH' && <Banknote className="w-3.5 h-3.5" />}
+                              {m.value === 'CREDIT_CARD' && <CreditCard className="w-3.5 h-3.5" />}
+                              {m.value === 'PIX' && <Smartphone className="w-3.5 h-3.5" />}
+                              {m.value === 'STORE_CREDIT' && <Wallet className="w-3.5 h-3.5" />}
+                              {m.label}
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="w-32 space-y-1">
-                    <label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Valor (R$)</label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={payment.amount}
-                      onChange={(e) => updatePayment(index, "amount", parseFloat(e.target.value) || 0)}
+                  <div className="w-32 space-y-2">
+                    <label className="text-[10px] text-muted-foreground uppercase font-black tracking-widest ml-1">Valor</label>
+                    <MaskedInput
+                      mask="currency"
+                      value={payment.amount.toFixed(2)}
+                      onValueChange={(val) => updatePayment(index, "amount", parseCurrency(String(val)))}
+                      className="h-11 rounded-xl font-mono tabular-nums font-bold text-base bg-muted/20 border-zinc-200/50"
                     />
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-destructive h-10 w-10 flex-shrink-0"
+                    className="text-muted-foreground hover:text-destructive h-11 w-11 flex-shrink-0 hover:bg-destructive/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
                     onClick={() => removePayment(index)}
                     disabled={payments.length === 1}
                   >
@@ -198,55 +266,34 @@ export function PaymentDialog({
                 </div>
                 
                 {payment.method === "STORE_CREDIT" && (
-                  <div className="flex items-center gap-2 text-xs">
-                    <Wallet className="w-3 h-3 text-primary" />
-                    <span className="text-muted-foreground">Saldo disponível:</span>
+                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50/50 border border-amber-100 rounded-xl text-xs animate-in slide-in-from-top-2">
+                    <Wallet className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="text-amber-700 font-medium">Saldo disponível:</span>
                     {loadingBalance ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
                     ) : (
-                      <span className={`font-bold ${customerBalance && customerBalance >= payment.amount ? 'text-green-600' : 'text-destructive'}`}>
+                      <span className={cn(
+                        "font-black text-sm tabular-nums",
+                        customerBalance && customerBalance >= payment.amount ? 'text-emerald-600' : 'text-destructive'
+                      )}>
                         R$ {customerBalance?.toFixed(2) || "0.00"}
                       </span>
                     )}
                   </div>
                 )}
               </div>
-            ))}
+            )})}
           </div>
 
           <Button
-            variant="outline"
-            className="w-full border-dashed"
+            variant="ghost"
+            className="w-full border-2 border-dashed border-zinc-200 hover:border-primary/30 hover:bg-primary/5 h-12 rounded-2xl text-muted-foreground hover:text-primary font-bold transition-all duration-300"
             onClick={addPayment}
           >
             <Plus className="h-4 w-4 mr-2" /> Adicionar Forma de Pagamento
           </Button>
-
-          <div className="border-t pt-4 space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span>Total Pago:</span>
-              <span className={totalPaid >= totalAmount - 0.01 ? "text-green-600 font-bold" : ""}>
-                R$ {totalPaid.toFixed(2)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span>Restante:</span>
-              <span className={remaining > 0 ? "text-destructive font-bold" : "text-green-600"}>
-                R$ {Math.max(0, remaining).toFixed(2)}
-              </span>
-            </div>
-          </div>
         </div>
-
-        <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSubmitting}>
-            Cancelar
-          </Button>
-          <Button onClick={handleSubmit} disabled={isSubmitting || (remaining > 0.01)}>
-            {isSubmitting ? "Finalizando..." : "Finalizar Pedido"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+      </ModalLayout>
     </Dialog>
   );
 }

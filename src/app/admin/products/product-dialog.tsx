@@ -2,14 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,6 +18,7 @@ import { Loader2 } from "lucide-react";
 import { ProductService } from "@/lib/api/services/product.service";
 import { MaskedInput } from "@/components/ui/masked-input";
 import { parseCurrency } from "@/lib/utils/format";
+import { ModalLayout } from "@/components/ui/modal-layout";
 
 interface ProductDialogProps {
   children?: React.ReactNode;
@@ -128,15 +122,35 @@ export function ProductDialog({
       {children && (
         <DialogTrigger render={children as React.ReactElement} />
       )}
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>
-            {product ? "Editar Produto" : "Novo Produto"}
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={onSubmit} className="grid gap-4 py-4">
+      <ModalLayout
+        title={product ? "Editar Produto" : "Novo Produto"}
+        description="Preencha as informações do produto abaixo para salvar no catálogo."
+        containerClassName="sm:max-w-[500px]"
+        footer={
+          <div className="flex justify-end gap-3 w-full">
+            <Button
+              variant="outline"
+              onClick={() => setIsOpen?.(false)}
+              className="font-bold rounded-xl h-11"
+              type="button"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              type="submit" 
+              form="product-form"
+              disabled={loading}
+              className="font-bold rounded-xl h-11 px-6 shadow-lg shadow-primary/10"
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {product ? "Salvar Alterações" : "Criar Produto"}
+            </Button>
+          </div>
+        }
+      >
+        <form id="product-form" onSubmit={onSubmit} className="grid gap-6 py-4">
           <div className="grid gap-2">
-            <label className="text-sm font-medium leading-none" htmlFor="name">Nome</label>
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1" htmlFor="name">Nome do Produto</label>
             <Input
               id="name"
               value={formData.name}
@@ -144,23 +158,25 @@ export function ProductDialog({
                 setFormData({ ...formData, name: e.target.value })
               }
               placeholder="Ex: Sleeves Dragon Shield Matter Black"
+              className="h-11 rounded-xl"
               required
             />
           </div>
           <div className="grid gap-2">
-            <label className="text-sm font-medium leading-none" htmlFor="description">Descrição</label>
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1" htmlFor="description">Descrição</label>
             <Textarea
               id="description"
               value={formData.description}
               onChange={(e) =>
                 setFormData({ ...formData, description: e.target.value })
               }
-              placeholder="Descreva o produto..."
+              placeholder="Descreva o produto e suas características..."
+              className="min-h-[100px] rounded-xl"
             />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <label className="text-sm font-medium leading-none" htmlFor="price">Preço (R$)</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1" htmlFor="price">Preço (R$)</label>
               <MaskedInput
                 id="price"
                 mask="currency"
@@ -169,11 +185,12 @@ export function ProductDialog({
                   setFormData({ ...formData, price: String(val) })
                 }
                 placeholder="R$ 0,00"
+                className="h-11 rounded-xl font-mono tabular-nums font-bold"
                 required
               />
             </div>
             <div className="grid gap-2">
-              <label className="text-sm font-medium leading-none" htmlFor="category">Categoria</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1" htmlFor="category">Categoria</label>
               <Select
                 value={formData.categoryId}
                 onValueChange={(value) =>
@@ -181,12 +198,12 @@ export function ProductDialog({
                 }
                 required
               >
-                <SelectTrigger id="category">
+                <SelectTrigger id="category" className="h-11 rounded-xl">
                   <SelectValue placeholder="Selecione">
                     {categories.find((c) => c.id === formData.categoryId)?.name}
                   </SelectValue>
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name}
@@ -198,7 +215,7 @@ export function ProductDialog({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <label className="text-sm font-medium leading-none" htmlFor="stock">Estoque (Qtd)</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1" htmlFor="stock">Estoque Inicial</label>
               <Input
                 id="stock"
                 type="number"
@@ -207,11 +224,12 @@ export function ProductDialog({
                   setFormData({ ...formData, stock: e.target.value })
                 }
                 placeholder="0"
+                className="h-11 rounded-xl font-bold"
                 required
               />
             </div>
             <div className="grid gap-2">
-              <label className="text-sm font-medium leading-none" htmlFor="imageUrl">URL da Imagem</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1" htmlFor="imageUrl">URL da Imagem</label>
               <Input
                 id="imageUrl"
                 value={formData.imageUrl}
@@ -219,10 +237,11 @@ export function ProductDialog({
                   setFormData({ ...formData, imageUrl: e.target.value })
                 }
                 placeholder="https://..."
+                className="h-11 rounded-xl"
               />
             </div>
           </div>
-          <div className="flex items-center space-x-2 py-2">
+          <div className="flex items-center space-x-2 py-3 px-3 bg-muted/20 rounded-xl border border-dashed">
             <input
               type="checkbox"
               id="allowNegativeStock"
@@ -230,26 +249,22 @@ export function ProductDialog({
               onChange={(e) =>
                 setFormData({ ...formData, allowNegativeStock: e.target.checked })
               }
-              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary shadow-sm"
             />
-            <label
-              htmlFor="allowNegativeStock"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-            >
-              Permitir estoque negativo
-            </label>
-            <p className="text-[10px] text-muted-foreground ml-6 font-medium">
-              Se ativado, o produto poderá ser vendido via PDV mesmo sem estoque.
-            </p>
+            <div className="grid gap-0.5 leading-none">
+              <label
+                htmlFor="allowNegativeStock"
+                className="text-sm font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Permitir estoque negativo
+              </label>
+              <p className="text-[10px] text-muted-foreground font-medium">
+                Vendas permitidas mesmo sem saldo físico.
+              </p>
+            </div>
           </div>
-          <DialogFooter>
-            <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {product ? "Salvar Alterações" : "Criar Produto"}
-            </Button>
-          </DialogFooter>
         </form>
-      </DialogContent>
+      </ModalLayout>
     </Dialog>
   );
 }

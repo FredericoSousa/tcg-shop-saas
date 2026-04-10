@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 import { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
@@ -814,13 +815,13 @@ export function ShopClient({
                 return (
                   <div
                     key={item.id}
-                    className="group relative flex flex-col bg-white rounded-xl shadow-sm overflow-hidden border hover:shadow-lg transition-all hover:-translate-y-1 duration-300"
+                    className="group relative flex flex-col bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden hover:border-primary/30 transition-all duration-300"
                   >
-                    <div className="aspect-[2/3] w-full bg-muted/30 relative overflow-hidden flex items-center justify-center group-hover:bg-muted/50 transition-colors">
+                    <div className="aspect-[2/3] w-full bg-zinc-50 relative overflow-hidden flex items-center justify-center">
                       {item.cardTemplate?.imageUrl ? (
                         <div className="relative h-full w-full group/image overflow-hidden">
                           {!imageLoaded[item.id] && (
-                            <Skeleton className="absolute inset-0 z-0 bg-muted-foreground/10 animate-pulse" />
+                            <Skeleton className="absolute inset-0 z-0 bg-zinc-100 animate-pulse" />
                           )}
                           <Image
                             src={
@@ -832,7 +833,7 @@ export function ShopClient({
                             alt={item.cardTemplate.name}
                             fill
                             sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                            className={`object-cover w-full h-full transition-all duration-500 group-hover/image:scale-110 ${imageLoaded[item.id] ? "opacity-100 z-10" : "opacity-0"}`}
+                            className={`object-cover w-full h-full transition-transform duration-500 group-hover/image:scale-105 ${imageLoaded[item.id] ? "opacity-100 z-10" : "opacity-0"}`}
                             loading="lazy"
                             onLoad={() =>
                               setImageLoaded((prev) => ({
@@ -842,8 +843,8 @@ export function ShopClient({
                             }
                           />
                           
-                          {/* Premium Overlay on Hover */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 z-20" />
+                          {/* Minimal Overlay on Hover */}
+                          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 z-20" />
 
                           <QuickAddButton item={{
                             inventoryId: item.id,
@@ -862,16 +863,11 @@ export function ShopClient({
                                   [item.id]: !prev[item.id],
                                 }))
                               }
-                              className="absolute top-2 left-2 bg-black/60 hover:bg-black/80 text-white p-1.5 rounded-full transition-all duration-200 z-30 opacity-0 group-hover:opacity-100 shadow-lg backdrop-blur-sm"
+                              className="absolute top-2 left-2 bg-white/90 hover:bg-white text-zinc-900 p-1.5 rounded-lg transition-all duration-200 z-30 opacity-0 group-hover:opacity-100 shadow-md border border-zinc-100"
                               title={
                                 flippedCards[item.id]
                                   ? "Ver frente"
                                   : "Ver verso"
-                              }
-                              aria-label={
-                                flippedCards[item.id]
-                                  ? "Ver frente do card"
-                                  : "Ver verso do card"
                               }
                             >
                               <RotateCcw className="h-3.5 w-3.5" />
@@ -879,111 +875,79 @@ export function ShopClient({
                           )}
                         </div>
                       ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground/60 text-xs font-medium space-y-2">
-                          <div className="w-12 h-16 border-2 border-dashed border-muted-foreground/30 rounded flex items-center justify-center">
+                        <div className="flex flex-col items-center justify-center h-full text-zinc-200 text-[10px] font-bold uppercase tracking-wider space-y-2">
+                          <div className="w-12 h-16 border border-dashed border-zinc-200 rounded-lg flex items-center justify-center bg-white">
                             ?
                           </div>
                           <span>Sem Imagem</span>
                         </div>
                       )}
+                      
                       {item.cardTemplate?.metadata?.foil && (
-                        <div className="absolute top-2 right-2 bg-gradient-to-r from-yellow-100 via-amber-400 to-yellow-100 text-black text-[9px] font-black px-2 py-0.5 rounded shadow-lg z-30 animate-pulse border border-amber-200">
-                          FOIL
+                        <div className="absolute top-2 right-2 bg-amber-400 text-zinc-950 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-30 uppercase tracking-wider">
+                          Foil
                         </div>
                       )}
                     </div>
-                    <div className="p-4 flex flex-col gap-1.5 flex-1 relative z-10">
+                    
+                    <div className="p-4 flex flex-col gap-2.5 flex-1 relative z-10">
                       <h3
-                        className="font-bold text-sm leading-tight min-h-[2.5rem] group-hover:text-primary transition-colors"
+                        className="font-bold text-zinc-900 text-sm leading-tight min-h-[2.5rem] group-hover:text-primary transition-colors line-clamp-2"
                         title={item.cardTemplate?.name}
                       >
-                        {item.cardTemplate?.name?.includes(" // ") ? (
-                          <>
-                            <span className="line-clamp-1">
-                              {item.cardTemplate.name.split(" // ")[0]}
-                            </span>
-                            <span className="block text-[10px] font-medium text-muted-foreground mt-0.5 line-clamp-1">
-                              {item.cardTemplate.name.split(" // ")[1]}
-                            </span>
-                          </>
-                        ) : (
-                          <span className="line-clamp-2">
-                            {item.cardTemplate?.name}
-                          </span>
-                        )}
+                        <Link href={`/singles/${item.id}`}>
+                          {item.cardTemplate?.name}
+                        </Link>
                       </h3>
-                      <div className="flex items-center flex-wrap gap-1 mt-auto">
+                      
+                      <div className="flex items-center flex-wrap gap-1.5">
+                        <SetBadge
+                          setCode={item.cardTemplate?.set || ""}
+                          className="gap-1 shadow-none bg-zinc-50 border-zinc-100 px-1.5 py-0.5 rounded"
+                          iconClassName="h-3 w-3"
+                          textClassName="text-[10px] font-bold text-zinc-400"
+                        />
                         <span
-                          className="text-[10px] font-semibold px-1 py-0.5 bg-muted/50 rounded border border-muted truncate max-w-[100px] flex items-center justify-center cursor-default"
-                          title={
-                            (item.cardTemplate?.metadata as unknown as Record<string, string>)?.set_name ||
-                            item.cardTemplate?.set ||
-                            ""
-                          }
-                        >
-                          <SetBadge
-                            setCode={item.cardTemplate?.set || ""}
-                            className="gap-1 shadow-none"
-                            iconClassName="h-3 w-3"
-                            textClassName="text-[10px] font-semibold text-foreground tracking-normal m-0 p-0"
-                          />
-                        </span>
-                        <span
-                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${
-                            item.condition === 'NM' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-                            item.condition === 'SP' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                            'bg-muted/50 text-muted-foreground border-muted'
+                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
+                            item.condition === 'NM' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                            item.condition === 'SP' ? 'bg-blue-50 text-blue-600 border-blue-100' :
+                            'bg-zinc-50 text-zinc-400 border-zinc-100'
                           }`}
-                          title="Condição"
                         >
                           {item.condition}
                         </span>
-                        <LanguageBadge 
-                          language={item.language} 
-                          className="bg-muted/50 border-muted" 
-                        />
-                        {item.extras &&
-                          item.extras.length > 0 &&
-                          item.extras.map((ex) => (
-                            <span
-                              key={ex}
-                              className="text-[10px] font-bold px-1.5 py-0.5 bg-gradient-to-r from-violet-100 to-purple-100 text-purple-700 rounded border border-purple-200"
-                            >
-                              {ex}
-                            </span>
-                          ))}
                       </div>
-                      <div className="mt-2 pt-2 border-t flex flex-col gap-3">
-                        <div className="flex flex-col">
-                          <span className="font-black text-xl text-primary leading-none mb-1 tracking-tight">
+                      
+                      <div className="mt-auto pt-3 border-t border-zinc-50 flex flex-col gap-3">
+                        <div className="flex items-baseline justify-between">
+                          <span className="font-black text-xl text-zinc-950 tracking-tight">
                             {formatCurrency(item.price)}
                           </span>
-                          <span
-                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded w-fit ${stockStatus}`}
-                          >
-                            {item.quantity} em estoque
+                          <span className={`text-[10px] font-bold ${
+                            item.quantity > 3 ? 'text-zinc-400' : 'text-amber-600'
+                          }`}>
+                            {item.quantity} un.
                           </span>
                         </div>
+                        
                         <Button
                           size="sm"
-                          variant={addedItems[item.id] ? "default" : "default"}
-                          className={`w-full font-bold text-xs h-9 transition-all duration-300 ease-out hover:scale-[1.02] active:scale-95 shadow-sm hover:shadow-md ${addedItems[item.id] ? "bg-green-600 hover:bg-green-700 text-white" : ""}`}
+                          className={`w-full font-bold text-xs h-9 rounded-xl transition-all duration-300 ${
+                            addedItems[item.id] 
+                              ? "bg-emerald-500 hover:bg-emerald-600 text-white" 
+                              : "bg-zinc-950 hover:bg-primary text-white"
+                          }`}
                           onClick={() => handleAddToCart(item)}
-                          aria-label={
-                            addedItems[item.id]
-                              ? `${item.cardTemplate?.name} adicionado ao carrinho`
-                              : `Adicionar ${item.cardTemplate?.name} ao carrinho`
-                          }
                         >
                           {addedItems[item.id] ? (
-                            <span className="flex items-center gap-1.5 animate-in fade-in zoom-in duration-300">
+                            <span className="flex items-center gap-1.5">
                               <Check className="w-3.5 h-3.5" />
-                              <span>Adicionado</span>
+                              Adicionado
                             </span>
                           ) : (
                             <span className="flex items-center gap-1.5">
                               <ShoppingCart className="w-3.5 h-3.5" />
-                              <span>Comprar</span>
+                              Comprar
                             </span>
                           )}
                         </Button>

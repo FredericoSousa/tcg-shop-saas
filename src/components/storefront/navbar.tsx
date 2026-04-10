@@ -3,70 +3,246 @@
 import Link from "next/link";
 import { CartDrawer } from "@/components/shop/cart-drawer";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
-import { useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Search, Loader2, Menu, ShoppingBag } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { formatCurrency } from "@/lib/utils/format";
+import { SetBadge } from "@/components/ui/set-badge";
+import { Button } from "@/components/ui/button";
 
-export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | null } | null }) {
+export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | null; description?: string | null } | null }) {
   const [query, setQuery] = useState("");
+  const [results, setResults] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (query.length >= 2) {
+        setIsLoading(true);
+        try {
+          const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+          const data = await res.json();
+          setResults(data.items || []);
+          setIsOpen(true);
+        } catch (error) {
+          console.error("Search failed:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        setResults([]);
+        setIsOpen(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
       router.push(`/singles?q=${encodeURIComponent(query.trim())}`);
+      setIsOpen(false);
+      setIsMobileMenuOpen(false);
     }
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-950 text-zinc-100 shadow-xl">
-      <div className="container flex h-16 items-center px-4 mx-auto">
-        <div className="mr-4 flex">
-          <Link href="/" className="mr-6 flex items-center space-x-3 group">
+    <nav className="sticky top-0 z-50 w-full border-b border-zinc-100 bg-white/80 backdrop-blur-md text-zinc-900 shadow-sm">
+      <div className="container flex h-16 items-center px-4 md:px-6 mx-auto">
+        {/* Mobile Menu Trigger */}
+        <div className="lg:hidden mr-2">
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            <SheetTrigger
+              render={
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-zinc-600 hover:bg-zinc-100 rounded-xl">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              }
+            />
+            <SheetContent side="left" className="w-[300px] p-0 border-r border-zinc-100">
+              <div className="flex flex-col h-full bg-white">
+                <SheetHeader className="p-6 border-b border-zinc-50 text-left">
+                  <SheetTitle className="flex items-center gap-3">
+                    {tenant?.logoUrl ? (
+                      <img src={tenant.logoUrl} alt={tenant.name} className="h-8 w-auto object-contain" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-lg bg-zinc-950 flex items-center justify-center shadow-lg">
+                        <span className="text-white font-black text-sm uppercase">
+                          {tenant?.name?.charAt(0) || "T"}
+                        </span>
+                      </div>
+                    )}
+                    <span className="font-black text-zinc-950 tracking-tight lowercase">
+                      {tenant?.name || "tcg shop"}
+                    </span>
+                  </SheetTitle>
+                </SheetHeader>
+
+                <div className="flex-1 overflow-y-auto py-6 px-6 space-y-8">
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-2">Navegação</p>
+                    <div className="grid gap-1">
+                      <Link
+                        href="/"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center gap-4 p-3 font-bold text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50 rounded-xl transition-all"
+                      >
+                        Início
+                      </Link>
+                      <Link
+                        href="/singles"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center gap-4 p-3 font-bold text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50 rounded-xl transition-all"
+                      >
+                        Singles
+                      </Link>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-2">Busca Rápida</p>
+                    <form onSubmit={handleSearch} className="relative">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
+                      <Input
+                        type="search"
+                        placeholder="Buscar cartas..."
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        className="pl-10 h-11 bg-zinc-50 border-zinc-100 rounded-xl focus:ring-primary/20 focus:border-primary"
+                      />
+                    </form>
+                  </div>
+                </div>
+
+                <div className="p-6 border-t border-zinc-50">
+                  <p className="text-[10px] font-bold text-zinc-400 uppercase leading-relaxed">
+                    {tenant?.description || "Sua loja favorita de TCG."}
+                  </p>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+
+        <div className="mr-8 flex">
+          <Link href="/" className="flex items-center space-x-3 group">
             {tenant?.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={tenant.logoUrl} alt={tenant.name} className="h-8 w-auto object-contain transition-transform group-hover:scale-110" />
+              <img src={tenant.logoUrl} alt={tenant.name} className="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
             ) : (
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-blue-600 flex items-center justify-center shadow-lg transition-transform group-hover:rotate-12">
+              <div className="w-8 h-8 rounded-lg bg-zinc-950 flex items-center justify-center shadow-lg transition-transform group-hover:scale-110">
                 <span className="text-white font-black text-sm uppercase">
                   {tenant?.name?.charAt(0) || "T"}
                 </span>
               </div>
             )}
-            {!tenant?.logoUrl && <span className="hidden font-black sm:inline-block text-white tracking-tight">
-              {tenant?.name || "TCG Shop"}
+            {!tenant?.logoUrl && <span className="hidden font-black sm:inline-block text-lg text-zinc-950 tracking-tight lowercase">
+              {tenant?.name || "tcg shop"}
+              <span className="text-primary">.</span>
             </span>}
           </Link>
         </div>
 
-        <div className="hidden md:flex items-center space-x-6 text-sm font-bold uppercase tracking-widest">
+        <div className="hidden lg:flex items-center space-x-6 text-[11px] font-bold uppercase tracking-wider text-zinc-600">
           <Link
             href="/"
-            className="transition-all text-zinc-400 hover:text-white hover:scale-105"
+            className="transition-all hover:text-zinc-950"
           >
             Início
           </Link>
           <Link
             href="/singles"
-            className="transition-all text-zinc-400 hover:text-white hover:scale-105"
+            className="transition-all hover:text-zinc-950"
           >
             Singles
           </Link>
         </div>
 
-        <div className="flex flex-1 items-center justify-end gap-4 ml-4">
-          <form onSubmit={handleSearch} className="relative w-full max-w-[300px] hidden sm:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-            <Input
-              type="search"
-              placeholder="Buscar cartas..."
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="pl-10 bg-zinc-900 border-zinc-800 text-white h-9 rounded-full focus:ring-primary/40 focus:border-primary/40 transition-all placeholder:text-zinc-600"
-            />
-          </form>
-          
-          <nav className="flex items-center space-x-2">
+        <div className="flex flex-1 items-center justify-end gap-2 md:gap-6 ml-4">
+          <div className="relative w-full max-w-[320px] hidden lg:block" ref={dropdownRef}>
+            <form onSubmit={handleSearch} className="relative z-50">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500">
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+              </div>
+              <Input
+                type="search"
+                placeholder="Buscar cartas..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onFocus={() => query.length >= 2 && setIsOpen(true)}
+                className="pl-10 pr-4 bg-zinc-50 border-zinc-200 text-zinc-900 h-10 rounded-xl focus:ring-primary/20 focus:border-primary focus:bg-white transition-all placeholder:text-zinc-500 font-medium text-sm"
+              />
+            </form>
+
+            {/* Live Search Dropdown */}
+            {isOpen && results.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 p-1.5 bg-white border border-zinc-100 rounded-2xl shadow-xl z-40 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="space-y-0.5">
+                  {results.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={`/singles/${item.id}`}
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center gap-3 p-2 rounded-xl hover:bg-zinc-50 transition-all group"
+                    >
+                      <div className="h-12 w-9 bg-zinc-100 rounded overflow-hidden flex-shrink-0 border border-zinc-100">
+                        {item.imageUrl && (
+                          <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-xs text-zinc-900 truncate">{item.name}</h4>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <SetBadge setCode={item.set} showText={false} iconClassName="h-3 w-3" />
+                          <span className="text-[10px] font-bold text-zinc-400 uppercase">{item.set}</span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-bold text-primary text-xs">{formatCurrency(item.price)}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                <div className="p-2 border-t border-zinc-50 mt-1">
+                  <button
+                    onClick={handleSearch}
+                    className="w-full py-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-950 transition-colors"
+                  >
+                    Ver todos os resultados
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {isOpen && query.length >= 2 && results.length === 0 && !isLoading && (
+              <div className="absolute top-full left-0 right-0 mt-3 p-6 bg-zinc-900/95 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl z-40 text-center animate-in fade-in slide-in-from-top-2">
+                <p className="text-zinc-500 text-sm font-medium">Nenhum card encontrado para &quot;{query}&quot;</p>
+              </div>
+            )}
+          </div>
+
+          <nav className="flex items-center gap-4">
             <CartDrawer />
           </nav>
         </div>

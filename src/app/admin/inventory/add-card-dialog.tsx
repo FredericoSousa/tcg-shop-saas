@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Check, Sparkles, Search, XCircle, Info } from "lucide-react";
@@ -19,7 +14,6 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ScryfallCard } from "@/lib/types/scryfall";
-import { LanguageBadge } from "@/components/ui/language-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Feedback } from "@/components/ui/feedback";
 import { LANGUAGE_LIST, getLanguageData } from "@/lib/constants/languages";
@@ -28,7 +22,7 @@ import { ScryfallService } from "@/lib/api/services/scryfall.service";
 import { InventoryService } from "@/lib/api/services/inventory.service";
 import { MaskedInput } from "@/components/ui/masked-input";
 import { parseCurrency } from "@/lib/utils/format";
-
+import { ModalLayout } from "@/components/ui/modal-layout";
 
 const VALID_EXTRAS = [
   { value: "FOIL", label: "Foil" },
@@ -119,6 +113,15 @@ export function AddCardDialog() {
     });
   };
 
+  const handleClose = () => {
+    setOpen(false);
+    setQuery("");
+    setResults([]);
+    setSelectedCardId("");
+    setSelectedExtras([]);
+    setHasSearched(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <Button
@@ -129,18 +132,43 @@ export function AddCardDialog() {
         <Sparkles className="h-4 w-4" />
         Adicionar Card
       </Button>
-      <DialogContent className="!max-w-4xl !w-[95vw] max-h-[90vh] overflow-hidden flex flex-col p-0 border-zinc-200/60 shadow-2xl">
-        <DialogHeader className="p-6 pb-4 border-b bg-muted/5">
-          <DialogTitle className="text-2xl font-black tracking-tight">
-            Adicionar ao Estoque
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
-            <Info className="h-3.5 w-3.5 text-blue-500" />
-            Busque, selecione a edição e configure as propriedades do card.
-          </p>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+      <ModalLayout
+        title="Adicionar ao Estoque"
+        description="Busque, selecione a edição e configure as propriedades do card."
+        containerClassName="!max-w-4xl !w-[95vw]"
+        className="p-6 space-y-8"
+        footer={
+          <div className="flex justify-end gap-3 w-full">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleClose}
+              className="transition-all duration-300 hover:bg-muted h-12 px-6 rounded-xl font-bold"
+            >
+              Cancelar
+            </Button>
+            <Button
+              form="add-card-form"
+              type="submit"
+              disabled={!selectedCardId || isPending}
+              className="transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 gap-2 px-8 h-12 rounded-xl font-bold shadow-lg shadow-primary/20"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Salvando...</span>
+                </>
+              ) : (
+                <>
+                  <Check className="h-5 w-5" />
+                  <span>Salvar no Estoque</span>
+                </>
+              )}
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-8">
           {/* Buscador */}
           <div className="flex flex-col gap-3">
             <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
@@ -174,7 +202,7 @@ export function AddCardDialog() {
             </div>
           </div>
 
-          <form action={handleSubmit} className="flex flex-col gap-8">
+          <form id="add-card-form" action={handleSubmit} className="flex flex-col gap-8">
             {/* Resultados da Busca */}
             <div className="flex flex-col gap-3">
               <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1 flex items-center justify-between">
@@ -446,44 +474,9 @@ export function AddCardDialog() {
                 </div>
               </div>
             )}
-
-            <div className="flex justify-end gap-3 pt-6 border-t mt-4 sticky bottom-0 bg-white pb-2 z-10 transition-colors">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setOpen(false);
-                  setQuery("");
-                  setResults([]);
-                  setSelectedCardId("");
-                  setSelectedExtras([]);
-                  setHasSearched(false);
-                }}
-                className="transition-all duration-300 hover:bg-muted h-12 px-6 rounded-xl font-bold"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                disabled={!selectedCardId || isPending}
-                className="transition-all duration-300 hover:scale-105 active:scale-95 disabled:opacity-50 gap-2 px-8 h-12 rounded-xl font-bold shadow-lg shadow-primary/20"
-              >
-                {isPending ? (
-                  <>
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                    <span>Salvando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-5 w-5" />
-                    <span>Salvar no Estoque</span>
-                  </>
-                )}
-              </Button>
-            </div>
           </form>
         </div>
-      </DialogContent>
+      </ModalLayout>
     </Dialog>
   );
 }

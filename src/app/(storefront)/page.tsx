@@ -1,7 +1,7 @@
 import { getTenant } from '@/lib/tenant-server'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
-import { ShoppingBag, Sparkles, Shield, Truck } from 'lucide-react'
+import { ShoppingBag, Sparkles, Shield, Truck, ChevronRight } from 'lucide-react'
 import { SetBadge } from '@/components/ui/set-badge'
 import { formatCurrency } from '@/lib/utils/format'
 
@@ -22,58 +22,59 @@ export default async function HomePage() {
 
   const tenantId = tenant.id;
 
-  // Fetch some stats
-  const [totalCards, totalSets, featuredCards] = await Promise.all([
-    prisma.inventoryItem.count({ where: { tenantId, active: true, quantity: { gt: 0 } } }),
-    prisma.inventoryItem.findMany({
-      where: { tenantId, active: true, quantity: { gt: 0 } },
-      select: { cardTemplate: { select: { set: true } } },
-      distinct: ['cardTemplateId'],
-    }),
+  // Fetch cards
+  const [featuredCards, recentCards] = await Promise.all([
     prisma.inventoryItem.findMany({
       where: { tenantId, active: true, quantity: { gt: 0 } },
       include: { cardTemplate: true },
       orderBy: { price: 'desc' },
       take: 8,
     }),
+    prisma.inventoryItem.findMany({
+      where: { tenantId, active: true, quantity: { gt: 0 } },
+      include: { cardTemplate: true },
+      orderBy: { id: 'desc' }, // Using ID desc as a proxy for most recent
+      take: 4,
+    }),
   ]);
 
-  const uniqueSets = new Set(totalSets.map(i => i.cardTemplate.set)).size;
   const shopName = tenant.name;
 
   return (
     <main className="min-h-screen bg-zinc-50 transition-colors duration-500">
       {/* Hero Section */}
-      <section className="relative bg-zinc-950 text-white overflow-hidden">
-        {/* Background effects */}
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_1px_1px,_theme(colors.white)_1px,_transparent_0)] [background-size:24px_24px]" />
-        <div className="absolute top-0 right-0 -mr-32 -mt-32 w-[500px] h-[500px] rounded-full bg-primary/20 blur-[100px]" />
-        <div className="absolute bottom-0 left-0 -ml-32 -mb-32 w-[400px] h-[400px] rounded-full bg-blue-500/15 blur-[100px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] rounded-full bg-violet-500/10 blur-[80px]" />
+      <section className="relative min-h-[60vh] flex items-center bg-zinc-950 text-white overflow-hidden py-24">
+        {/* Subtle Background effect */}
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_theme(colors.primary)_0%,_transparent_70%)]" />
+        
+        <div className="relative container mx-auto px-6 z-10">
+          <div className="max-w-4xl mx-auto text-center space-y-12">
+            {/* Brand Mark */}
+            <div className="inline-block">
+              {tenant?.logoUrl ? (
+                <img src={tenant.logoUrl} alt={shopName} className="h-20 w-auto object-contain mx-auto drop-shadow-2xl" />
+              ) : (
+                <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mx-auto shadow-2xl">
+                  <span className="text-4xl font-black text-white">{shopName.charAt(0)}</span>
+                </div>
+              )}
+            </div>
 
-        <div className="relative container mx-auto py-24 md:py-32 px-6 z-10 animate-in fade-in zoom-in duration-700">
-          <div className="max-w-3xl mx-auto text-center">
-            {/* Logo */}
-            {tenant?.logoUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={tenant.logoUrl} alt={shopName} className="h-24 w-auto object-contain mb-8 mx-auto shadow-2xl" />
-            ) : (
-              <div className="w-24 h-24 bg-gradient-to-br from-primary via-blue-500 to-violet-600 rounded-3xl shadow-2xl flex items-center justify-center mb-8 mx-auto transform rotate-3 hover:rotate-0 transition-transform duration-500">
-                <span className="text-5xl font-black text-white">{shopName.charAt(0)}</span>
-              </div>
-            )}
-
-            {!tenant?.logoUrl && <h1 className="text-5xl md:text-7xl font-black font-heading tracking-tight mb-6 drop-shadow-lg leading-[1.1]">
-              {shopName}
-            </h1>}
-            <p className="text-xl md:text-2xl text-zinc-300 max-w-2xl mx-auto font-medium mb-10 leading-relaxed">
-              {tenant?.description || "Encontre os melhores singles de Magic: The Gathering. Estoque atualizado em tempo real."}
-            </p>
+            <div className="space-y-6">
+              {!tenant?.logoUrl && (
+                <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase italic">
+                  {shopName}
+                </h1>
+              )}
+              <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto font-medium leading-relaxed">
+                {tenant?.description || "Encontre os melhores singles de Magic: The Gathering com o melhor preço e segurança."}
+              </p>
+            </div>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link
                 href="/singles"
-                className="inline-flex items-center justify-center gap-2 bg-white text-zinc-900 font-bold px-8 py-4 rounded-xl hover:bg-zinc-100 transition-all hover:scale-105 active:scale-100 shadow-lg text-lg"
+                className="inline-flex items-center justify-center gap-3 bg-white text-zinc-950 font-black px-8 py-4 rounded-xl transition-all hover:bg-primary hover:text-white active:scale-95 shadow-xl text-lg uppercase tracking-tighter"
               >
                 <ShoppingBag className="w-5 h-5" />
                 Explorar Catálogo
@@ -82,134 +83,134 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-
-      {/* Stats */}
-      <section className="relative -mt-12 z-20">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto animate-in slide-in-from-bottom-8 duration-700 delay-150 fill-mode-both">
-            <div className="bg-card/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200/50 p-6 text-center hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">
-              <p className="text-3xl font-black text-primary group-hover:scale-110 transition-transform">{totalCards.toLocaleString()}</p>
-              <p className="text-sm font-bold text-muted-foreground mt-1 uppercase tracking-widest">Cards Atuais</p>
-            </div>
-            <div className="bg-card/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200/50 p-6 text-center hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">
-              <p className="text-3xl font-black text-primary group-hover:scale-110 transition-transform">{uniqueSets}</p>
-              <p className="text-sm font-bold text-muted-foreground mt-1 uppercase tracking-widest">Coleções</p>
-            </div>
-            <div className="bg-card/80 backdrop-blur-md rounded-2xl shadow-lg border border-zinc-200/50 p-6 text-center hover:shadow-xl transition-all duration-300 group hover:-translate-y-1">
-              <p className="text-3xl font-black text-primary group-hover:scale-110 transition-transform">100%</p>
-              <p className="text-sm font-bold text-muted-foreground mt-1 uppercase tracking-widest">Originalidade</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Cards */}
-      {featuredCards.length > 0 && (
-        <section className="container mx-auto px-6 pt-24 pb-8">
-          <div className="text-center mb-12 animate-in fade-in duration-700">
-            <h2 className="text-4xl md:text-5xl font-black font-heading tracking-tight">
-              Destaques do Dia
-            </h2>
-            <p className="text-muted-foreground mt-3 font-medium text-lg">
-              As cartas mais valiosas e raras em nosso estoque
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8 max-w-6xl mx-auto">
-            {featuredCards.map((item, idx) => (
-              <Link
-                key={item.id}
-                href="/singles"
-                className="group relative bg-card/60 backdrop-blur-sm rounded-2xl shadow-sm border border-zinc-200/50 overflow-hidden hover:shadow-2xl hover:border-primary/30 transition-all duration-500 animate-in fade-in slide-in-from-bottom-4 fill-mode-both"
-                style={{ animationDelay: `${idx * 100}ms` }}
+      {recentCards.length > 0 && (
+        <section className="py-16 bg-zinc-50/50">
+          <div className="container mx-auto px-6">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-black uppercase tracking-tighter italic">
+                Últimas <span className="text-primary">Novidades</span>
+              </h2>
+              <Link 
+                href="/singles?sort=id_desc" 
+                className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-950 transition-colors flex items-center gap-2 group"
               >
-                <div className="aspect-[2/3] w-full bg-zinc-100 relative overflow-hidden flex items-center justify-center">
-                  {item.cardTemplate?.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={item.cardTemplate.imageUrl}
-                      alt={item.cardTemplate.name}
-                      className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-700"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground/40 text-xs font-bold uppercase tracking-widest">
-                      <span>Sem Imagem</span>
-                    </div>
-                  )}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                  
-                  <div className="absolute bottom-3 left-3 right-3 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-                    <div className="bg-white/90 backdrop-blur-md text-[10px] font-black py-2 rounded-lg text-center shadow-xl uppercase tracking-widest">
-                      Detalhes
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 bg-card/40">
-                  <h3 className="font-bold text-sm leading-tight line-clamp-2 min-h-[2.5rem] mb-3 group-hover:text-primary transition-colors" title={item.cardTemplate?.name}>
-                    {item.cardTemplate?.name}
-                  </h3>
-                  <div className="flex items-center justify-between mt-auto">
-                    <span className="text-[10px] font-bold px-2 py-1 bg-muted/50 rounded-lg border border-border">
-                      <SetBadge
-                        setCode={item.cardTemplate?.set || ''}
-                        className="gap-1.5"
-                        iconClassName="h-3 w-3"
-                        textClassName="text-[10px] font-black tracking-tight"
-                      />
-                    </span>
-                    <span className="font-black text-base text-primary tabular-nums group-hover:scale-110 transition-transform">
-                      {formatCurrency(item.price)}
-                    </span>
-                  </div>
-                </div>
+                Ver Todas
+                <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
               </Link>
-            ))}
-          </div>
+            </div>
 
-          <div className="text-center mt-16 animate-in fade-in duration-700 delay-500">
-            <Link
-              href="/singles"
-              className="inline-flex items-center gap-2 bg-zinc-900 text-white px-8 py-3 rounded-full font-bold hover:bg-primary transition-all hover:scale-105"
-            >
-              Ver Todas as Cartas →
-            </Link>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+              {recentCards.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/singles/${item.id}`}
+                  className="group block space-y-3"
+                >
+                  <div className="aspect-[2/3] relative rounded-2xl overflow-hidden bg-white border border-zinc-100 transition-all duration-300 group-hover:border-primary/30">
+                    {item.cardTemplate?.imageUrl && (
+                      <img 
+                        src={item.cardTemplate.imageUrl} 
+                        alt={item.cardTemplate.name}
+                        className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500"
+                      />
+                    )}
+                  </div>
+                  <div className="px-1 space-y-0.5">
+                    <h4 className="font-bold text-sm text-zinc-900 truncate group-hover:text-primary transition-colors">{item.cardTemplate?.name}</h4>
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">{item.cardTemplate?.set}</span>
+                      <span className="font-black text-primary text-sm">{formatCurrency(item.price)}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
       )}
 
-      {/* Features */}
-      <section className="container mx-auto px-6 py-20">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-          <div className="text-center p-6">
-            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Sparkles className="w-7 h-7 text-primary" />
-            </div>
-            <h3 className="font-bold text-lg mb-2">Cards Originais</h3>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Todos os cards são verificados e classificados por condição (NM, SP, MP).
-            </p>
+      {/* Featured Cards Section */}
+      {featuredCards.length > 0 && (
+        <section className="container mx-auto px-6 py-16">
+          <div className="flex items-center justify-between mb-10">
+            <h2 className="text-2xl font-black uppercase tracking-tighter italic">
+              Cards de <span className="text-primary">Destaque</span>
+            </h2>
+            <Link 
+                href="/singles" 
+                className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-950 transition-colors flex items-center gap-2 group"
+              >
+                Catalogos Completo
+                <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+              </Link>
           </div>
-          <div className="text-center p-6">
-            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Shield className="w-7 h-7 text-primary" />
-            </div>
-            <h3 className="font-bold text-lg mb-2">Compra Segura</h3>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Processo de checkout rápido e seguro com verificação de estoque em tempo real.
-            </p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+            {featuredCards.map((item) => (
+              <div
+                key={item.id}
+                className="group relative flex flex-col bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden hover:border-primary/30 transition-all duration-300"
+              >
+                <div className="aspect-[2/3] w-full bg-zinc-50 relative overflow-hidden flex items-center justify-center">
+                  {item.cardTemplate?.imageUrl && (
+                    <img
+                      src={item.cardTemplate.imageUrl}
+                      alt={item.cardTemplate.name}
+                      className="object-cover w-full h-full grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500"
+                      loading="lazy"
+                    />
+                  )}
+                  <Link href={`/singles/${item.id}`} className="absolute inset-0 z-20" />
+                </div>
+                <div className="p-4 flex flex-col gap-2">
+                  <h3 className="font-bold text-zinc-900 text-sm leading-tight line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
+                    {item.cardTemplate?.name}
+                  </h3>
+                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-zinc-50">
+                    <SetBadge setCode={item.cardTemplate?.set || ''} className="bg-transparent p-0" iconClassName="h-3 w-3" textClassName="text-[10px] font-bold text-zinc-400" />
+                    <span className="font-black text-primary text-sm">
+                      {formatCurrency(item.price)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-          <div className="text-center p-6">
-            <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Truck className="w-7 h-7 text-primary" />
+        </section>
+      )}
+
+      {/* Simplified trust signals */}
+      <section className="container mx-auto px-6 py-16 border-t border-zinc-100">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-4xl mx-auto">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center flex-shrink-0 text-zinc-400">
+              <Sparkles className="w-5 h-5" />
             </div>
-            <h3 className="font-bold text-lg mb-2">Envio Rápido</h3>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              Pedidos processados com agilidade e enviados com proteção adequada para cards.
-            </p>
+            <div>
+              <h3 className="font-bold text-xs uppercase tracking-widest text-zinc-900">Originalidade</h3>
+              <p className="text-zinc-500 text-[10px] uppercase font-bold mt-0.5 tracking-tight">Cards verificados 100%</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center flex-shrink-0 text-zinc-400">
+              <Shield className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-xs uppercase tracking-widest text-zinc-900">Segurança</h3>
+              <p className="text-zinc-500 text-[10px] uppercase font-bold mt-0.5 tracking-tight">Checkout criptografado</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 bg-zinc-50 rounded-xl flex items-center justify-center flex-shrink-0 text-zinc-400">
+              <Truck className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-xs uppercase tracking-widest text-zinc-900">Agilidade</h3>
+              <p className="text-zinc-500 text-[10px] uppercase font-bold mt-0.5 tracking-tight">Envio no próximo dia útil</p>
+            </div>
           </div>
         </div>
       </section>
     </main>
-  )
+  );
 }

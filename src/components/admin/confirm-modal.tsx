@@ -1,12 +1,7 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { ModalLayout } from "@/components/ui/modal-layout";
+import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 
@@ -29,31 +24,34 @@ export function ConfirmModal({
 }: ConfirmModalProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-        <div className="py-4 text-sm text-muted-foreground">
-          {description}
-        </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={loading}
-          >
-            Cancelar
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={onConfirm}
-            disabled={loading}
-          >
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Confirmar
-          </Button>
-        </DialogFooter>
-      </DialogContent>
+      <ModalLayout
+        title={title}
+        description={description}
+        className="py-0"
+        footer={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+              className="font-bold rounded-xl h-11"
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={onConfirm}
+              disabled={loading}
+              className="font-bold rounded-xl h-11 px-6 shadow-lg shadow-destructive/10"
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirmar
+            </Button>
+          </>
+        }
+      >
+        {null}
+      </ModalLayout>
     </Dialog>
   );
 }

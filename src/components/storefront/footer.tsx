@@ -91,9 +91,6 @@ export function Footer({ tenant }: TenantFooterProps) {
               <li>
                 <Link href="/singles" className="text-zinc-400 hover:text-white transition-colors font-medium">Singles</Link>
               </li>
-              <li>
-                <Link href="/orders" className="text-zinc-400 hover:text-white transition-colors font-medium">Meus Pedidos</Link>
-              </li>
             </ul>
           </div>
 
