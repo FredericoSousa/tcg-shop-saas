@@ -12,6 +12,7 @@ export class PrismaCustomerRepository extends BasePrismaRepository implements IC
       name: item.name,
       email: item.email,
       phoneNumber: item.phoneNumber,
+      creditBalance: Number(item.creditBalance || 0),
       tenantId: item.tenantId,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
@@ -124,6 +125,16 @@ export class PrismaCustomerRepository extends BasePrismaRepository implements IC
     await this.prisma.customer.update({
       where: { id },
       data: { deletedAt: new Date() },
+    });
+  }
+
+  async updateCreditBalance(id: string, amount: number, tx?: any): Promise<void> {
+    const prismaClient = tx || this.prisma;
+    await prismaClient.customer.update({
+      where: { id },
+      data: {
+        creditBalance: { increment: new Prisma.Decimal(amount) },
+      },
     });
   }
 }

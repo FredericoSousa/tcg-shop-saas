@@ -12,15 +12,21 @@ import type { Tenant } from "./domain/entities/tenant";
  * Should be used in Server Components or API Routes.
  */
 export async function getTenant() {
-  const headersList = await headers();
-  const tenantId = headersList.get("x-tenant-id");
+  try {
+    const headersList = await headers();
+    const tenantId = headersList.get("x-tenant-id");
 
-  if (!tenantId) {
+    if (!tenantId) {
+      return null;
+    }
+
+    const getTenantUseCase = container.resolve(GetTenantUseCase);
+    return getTenantUseCase.execute({ id: tenantId });
+  } catch (error) {
+    // If headers() is called during static generation, it may throw or return empty
+    // We return null to allow the build to proceed with a default state if applicable
     return null;
   }
-
-  const getTenantUseCase = container.resolve(GetTenantUseCase);
-  return getTenantUseCase.execute({ id: tenantId });
 }
 
 /**

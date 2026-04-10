@@ -7,6 +7,7 @@ import { Order } from "@/lib/domain/entities/order";
 import { prisma } from "@/lib/prisma";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
+import { generateOrderFriendlyId } from "@/lib/utils/order-utils";
 
 export interface PlaceOrderRequest {
   items: {
@@ -58,6 +59,7 @@ export class PlaceOrderUseCase implements IUseCase<PlaceOrderRequest, PlaceOrder
         totalAmount,
         status: "PENDING",
         source: "ECOMMERCE",
+        friendlyId: generateOrderFriendlyId(),
         createdAt: new Date(),
         updatedAt: new Date(),
       };

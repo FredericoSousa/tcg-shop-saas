@@ -92,7 +92,7 @@ export function POSClient() {
       const result = await response.json();
 
       if (result.success) {
-        toast.success("Itens adicionados à comanda!");
+        toast.success(`Itens adicionados à comanda #${result.data.friendlyId}!`);
         setCart([]);
         setSelectedCustomer(null);
       } else {

@@ -8,11 +8,13 @@ import { useRouter } from "next/navigation";
 
 interface OrderActionsProps {
   orderId: string;
+  customerId: string;
   totalAmount: number;
   status: string;
+  friendlyId?: string | null;
 }
 
-export function OrderActions({ orderId, totalAmount, status }: OrderActionsProps) {
+export function OrderActions({ orderId, customerId, totalAmount, status, friendlyId }: OrderActionsProps) {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const router = useRouter();
 
@@ -32,7 +34,9 @@ export function OrderActions({ orderId, totalAmount, status }: OrderActionsProps
         isOpen={isPaymentOpen}
         onClose={() => setIsPaymentOpen(false)}
         orderId={orderId}
+        customerId={customerId}
         totalAmount={totalAmount}
+        friendlyId={friendlyId}
         onSuccess={() => {
           router.refresh();
         }}

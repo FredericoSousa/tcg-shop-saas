@@ -8,6 +8,7 @@ import { PrismaProductRepository } from "./repositories/prisma-product.repositor
 import { PrismaTenantRepository } from "./repositories/prisma-tenant.repository";
 import { PrismaUserRepository } from "./repositories/prisma-tenant.repository";
 import { PrismaReportsRepository } from "./repositories/prisma-reports.repository";
+import { PrismaCustomerCreditLedgerRepository } from "./repositories/prisma-customer-credit-ledger.repository";
 
 export const TOKENS = {
   InventoryRepository: Symbol("InventoryRepository"),
@@ -18,6 +19,7 @@ export const TOKENS = {
   TenantRepository: Symbol("TenantRepository"),
   UserRepository: Symbol("UserRepository"),
   ReportsRepository: Symbol("ReportsRepository"),
+  CustomerCreditLedgerRepository: Symbol("CustomerCreditLedgerRepository"),
 };
 
 // Register Repositories as Singletons
@@ -29,5 +31,6 @@ container.register(TOKENS.ProductRepository, { useClass: PrismaProductRepository
 container.register(TOKENS.TenantRepository, { useClass: PrismaTenantRepository }, { lifecycle: Lifecycle.Singleton });
 container.register(TOKENS.UserRepository, { useClass: PrismaUserRepository }, { lifecycle: Lifecycle.Singleton });
 container.register(TOKENS.ReportsRepository, { useClass: PrismaReportsRepository }, { lifecycle: Lifecycle.Singleton });
+container.register(TOKENS.CustomerCreditLedgerRepository, { useClass: PrismaCustomerCreditLedgerRepository }, { lifecycle: Lifecycle.Singleton });
 
 export { container };

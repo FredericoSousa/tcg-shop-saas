@@ -77,7 +77,7 @@ export default async function SuccessPage({
             <div className="flex items-center justify-between mb-4 border-b pb-4">
               <div>
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Cód. Pedido</p>
-                <p className="font-mono text-sm font-semibold">{order.id.split('-')[0].toUpperCase()}</p>
+                <p className="font-mono text-sm font-semibold">{order.friendlyId || order.id.slice(0, 8).toUpperCase()}</p>
               </div>
               <div className="text-right">
                 <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Cliente</p>

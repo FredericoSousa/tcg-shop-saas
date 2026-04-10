@@ -7,6 +7,7 @@ import { Order } from "@/lib/domain/entities/order";
 import { prisma } from "@/lib/prisma";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
+import { generateOrderFriendlyId } from "@/lib/utils/order-utils";
 
 export interface POSCheckoutRequest {
   items: {
@@ -23,6 +24,7 @@ export interface POSCheckoutRequest {
 
 export interface POSCheckoutResponse {
   orderId: string;
+  friendlyId: string;
 }
 
 @injectable()
@@ -36,7 +38,7 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
   async execute(request: POSCheckoutRequest): Promise<POSCheckoutResponse> {
     const { items, customerData } = request;
 
-    const orderId = await prisma.$transaction(async () => {
+    const result = await prisma.$transaction(async () => {
       // 1. Decrement stock for products
       for (const item of items) {
         await this.productRepo.decrementStock(item.productId, item.quantity);
@@ -65,7 +67,7 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
           quantity: item.quantity,
           priceAtPurchase: item.price,
         })), totalAmount);
-        return existingOrder.id;
+          return { orderId: existingOrder.id, friendlyId: existingOrder.friendlyId || "" };
       } else {
         const orderEntity: Order = {
           id: "",
@@ -74,6 +76,7 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
           totalAmount,
           status: "PENDING",
           source: "POS",
+          friendlyId: generateOrderFriendlyId(),
           createdAt: new Date(),
           updatedAt: new Date(),
         };
@@ -84,10 +87,10 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
           priceAtPurchase: item.price,
         })));
 
-        return newOrder.id;
+        return { orderId: newOrder.id, friendlyId: newOrder.friendlyId || "" };
       }
     });
 
-    return { orderId };
+    return result;
   }
 }

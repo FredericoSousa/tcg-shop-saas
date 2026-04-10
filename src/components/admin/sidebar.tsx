@@ -13,7 +13,7 @@ import {
   ShoppingBag,
   LogOut,
 } from "lucide-react";
-import { Tenant } from "@prisma/client";
+import { Tenant } from "@/lib/domain/entities/tenant";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 

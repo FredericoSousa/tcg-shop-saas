@@ -4,6 +4,7 @@ import { container } from "@/lib/infrastructure/container";
 import { GetCustomerUseCase } from "@/lib/application/use-cases/get-customer.use-case";
 import { UpdateCustomerUseCase } from "@/lib/application/use-cases/update-customer.use-case";
 import { logger } from "@/lib/logger";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
 export async function GET(
   _request: NextRequest,
@@ -15,12 +16,12 @@ export async function GET(
       const getCustomerUseCase = container.resolve(GetCustomerUseCase);
       
       const result = await getCustomerUseCase.execute(id);
-      if (!result) return Response.json({ error: "Customer not found" }, { status: 404 });
+      if (!result) return ApiResponse.notFound("Cliente não encontrado");
       
-      return Response.json({ ...result.customer, stats: result.stats });
+      return ApiResponse.success({ ...result.customer, stats: result.stats });
     } catch (error) {
       logger.error("Error fetching customer details", error as Error, { tenantId: tenant.id });
-      return Response.json({ error: "Internal server error" }, { status: 500 });
+      return ApiResponse.serverError();
     }
   });
 }
@@ -36,10 +37,10 @@ export async function PUT(
       
       const { name, email, phoneNumber } = await request.json();
       const customer = await updateCustomerUseCase.execute({ id, name, email, phoneNumber });
-      return Response.json(customer);
+      return ApiResponse.success(customer);
     } catch (error) {
       logger.error("Error updating customer", error as Error, { tenantId: tenant.id });
-      return Response.json({ error: "Internal server error" }, { status: 500 });
+      return ApiResponse.serverError();
     }
   });
 }
@@ -54,10 +55,10 @@ export async function DELETE(
       const updateCustomerUseCase = container.resolve(UpdateCustomerUseCase);
       
       await updateCustomerUseCase.execute({ id, deletedAt: new Date() });
-      return Response.json({ success: true });
+      return ApiResponse.success({ success: true });
     } catch (error) {
       logger.error("Error deleting customer", error as Error, { tenantId: tenant.id });
-      return Response.json({ error: "Internal server error" }, { status: 500 });
+      return ApiResponse.serverError();
     }
   });
 }
@@ -72,10 +73,10 @@ export async function PATCH(
       const updateCustomerUseCase = container.resolve(UpdateCustomerUseCase);
       
       await updateCustomerUseCase.execute({ id, deletedAt: null });
-      return Response.json({ success: true });
+      return ApiResponse.success({ success: true });
     } catch (error) {
       logger.error("Error restoring customer", error as Error, { tenantId: tenant.id });
-      return Response.json({ error: "Internal server error" }, { status: 500 });
+      return ApiResponse.serverError();
     }
   });
 }

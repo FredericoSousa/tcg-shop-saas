@@ -59,6 +59,7 @@ export type OrderType = {
   status: OrderStatus;
   source: "POS" | "ECOMMERCE";
   createdAt: Date | string;
+  friendlyId?: string | null;
   items: OrderItemType[];
 };
 
@@ -116,7 +117,9 @@ const OrderTableView = ({
               </TableCell>
               <TableCell>
                 <div className="flex flex-col">
-                  <span className="font-mono text-[10px] font-bold text-muted-foreground">#{order.id.slice(-8).toUpperCase()}</span>
+                  <span className="font-mono text-[10px] font-bold text-muted-foreground">
+                    {order.friendlyId ? `#${order.friendlyId}` : `#${order.id.slice(-8).toUpperCase()}`}
+                  </span>
                   <span className="text-xs font-medium">{new Date(order.createdAt).toLocaleDateString("pt-BR")}</span>
                 </div>
               </TableCell>
@@ -234,7 +237,7 @@ export function OrdersClient({
         <TableSearch 
           value={search} 
           onChange={setSearch} 
-          placeholder="Buscar por ID ou cliente..."
+          placeholder="Buscar por código ou cliente..."
           isLoading={isPending}
         />
 

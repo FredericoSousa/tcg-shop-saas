@@ -52,7 +52,7 @@ export default async function OrderDetailsPage({
       </Link>
 
       <PageHeader
-        title={`Pedido #${order.id.slice(-8).toUpperCase()}`}
+        title={`Pedido #${order.friendlyId || order.id.slice(-8).toUpperCase()}`}
         description={`${new Date(order.createdAt).toLocaleString("pt-BR")} • ${order.customer.name}`}
         icon={ShoppingCart}
         actions={
@@ -72,8 +72,10 @@ export default async function OrderDetailsPage({
               />
               <OrderActions 
                 orderId={order.id} 
+                customerId={order.customerId}
                 totalAmount={Number(order.totalAmount)} 
                 status={order.status} 
+                friendlyId={order.friendlyId}
               />
             </div>
             <div className="h-8 w-px bg-border/50 hidden sm:block mx-1" />

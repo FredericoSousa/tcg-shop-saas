@@ -12,6 +12,8 @@ export interface Tenant {
   whatsapp: string | null;
   facebook: string | null;
   twitter: string | null;
+  active: boolean;
+  brandColor: string | null;
 }
 
 export type UserRole = "ADMIN" | "USER";

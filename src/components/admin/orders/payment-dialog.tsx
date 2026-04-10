@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,15 +18,17 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PaymentMethodType } from "@/lib/domain/entities/order";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Wallet, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface PaymentDialogProps {
   isOpen: boolean;
   onClose: () => void;
   orderId: string;
+  customerId: string;
   totalAmount: number;
   onSuccess: () => void;
+  friendlyId?: string | null;
 }
 
 interface PaymentEntry {
@@ -40,6 +42,7 @@ const PAYMENT_METHODS: { value: PaymentMethodType; label: string }[] = [
   { value: "DEBIT_CARD", label: "Cartão de Débito" },
   { value: "PIX", label: "PIX" },
   { value: "TRANSFER", label: "Transferência" },
+  { value: "STORE_CREDIT", label: "Crédito da Loja" },
   { value: "OTHER", label: "Outro" },
 ];
 
@@ -47,13 +50,40 @@ export function PaymentDialog({
   isOpen,
   onClose,
   orderId,
+  customerId,
   totalAmount,
   onSuccess,
+  friendlyId,
 }: PaymentDialogProps) {
   const [payments, setPayments] = useState<PaymentEntry[]>([
     { method: "CASH", amount: totalAmount },
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerBalance, setCustomerBalance] = useState<number | null>(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
+
+  const fetchBalance = useCallback(async () => {
+    if (!customerId) return;
+    setLoadingBalance(true);
+    try {
+      const response = await fetch(`/api/admin/customers/${customerId}`);
+      if (!response.ok) throw new Error("Erro ao carregar saldo");
+      const result = await response.json();
+      if (result.success && result.data) {
+        setCustomerBalance(result.data.creditBalance || 0);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingBalance(false);
+    }
+  }, [customerId]);
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchBalance();
+    }
+  }, [isOpen, fetchBalance]);
 
   const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
   const remaining = totalAmount - totalPaid;
@@ -77,6 +107,13 @@ export function PaymentDialog({
   const handleSubmit = async () => {
     if (Math.abs(remaining) > 0.01 && remaining > 0) {
       toast.error(`Valor total pago é inferior ao total do pedido. Falta R$ ${remaining.toFixed(2)}`);
+      return;
+    }
+
+    // Check if store credit is enough
+    const storeCreditPayment = payments.find(p => p.method === "STORE_CREDIT");
+    if (storeCreditPayment && customerBalance !== null && storeCreditPayment.amount > customerBalance) {
+      toast.error("Saldo de créditos insuficiente.");
       return;
     }
 
@@ -107,7 +144,7 @@ export function PaymentDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Finalizar Pedido</DialogTitle>
+          <DialogTitle>Finalizar Pedido {friendlyId ? `#${friendlyId}` : `#${orderId.slice(-8).toUpperCase()}`}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -118,45 +155,61 @@ export function PaymentDialog({
 
           <div className="space-y-3">
             {payments.map((payment, index) => (
-              <div key={index} className="flex gap-2 items-end">
-                <div className="flex-1 space-y-1">
-                  <label className="text-xs text-muted-foreground">Forma de Pagamento</label>
-                  <Select
-                    value={payment.method}
-                    onValueChange={(v) => updatePayment(index, "method", v)}
+              <div key={index} className="flex flex-col gap-2 p-3 border rounded-lg bg-muted/20">
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1 space-y-1">
+                    <label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Forma de Pagamento</label>
+                    <Select
+                      value={payment.method}
+                      onValueChange={(v) => updatePayment(index, "method", v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione">
+                          {PAYMENT_METHODS.find((m) => m.value === payment.method)?.label}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PAYMENT_METHODS.map((m) => (
+                          <SelectItem key={m.value} value={m.value}>
+                            {m.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="w-32 space-y-1">
+                    <label className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Valor (R$)</label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={payment.amount}
+                      onChange={(e) => updatePayment(index, "amount", parseFloat(e.target.value) || 0)}
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive h-10 w-10 flex-shrink-0"
+                    onClick={() => removePayment(index)}
+                    disabled={payments.length === 1}
                   >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione">
-                        {PAYMENT_METHODS.find((m) => m.value === payment.method)?.label}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {PAYMENT_METHODS.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>
-                          {m.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
-                <div className="w-32 space-y-1">
-                  <label className="text-xs text-muted-foreground">Valor (R$)</label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={payment.amount}
-                    onChange={(e) => updatePayment(index, "amount", parseFloat(e.target.value) || 0)}
-                  />
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-destructive h-10 w-10"
-                  onClick={() => removePayment(index)}
-                  disabled={payments.length === 1}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                
+                {payment.method === "STORE_CREDIT" && (
+                  <div className="flex items-center gap-2 text-xs">
+                    <Wallet className="w-3 h-3 text-primary" />
+                    <span className="text-muted-foreground">Saldo disponível:</span>
+                    {loadingBalance ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <span className={`font-bold ${customerBalance && customerBalance >= payment.amount ? 'text-green-600' : 'text-destructive'}`}>
+                        R$ {customerBalance?.toFixed(2) || "0.00"}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

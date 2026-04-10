@@ -22,6 +22,7 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
       source: item.source as OrderSource,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
+      friendlyId: item.friendlyId,
       customer: item.customer ? {
         name: item.customer.name,
         phoneNumber: item.customer.phoneNumber,
@@ -68,6 +69,7 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
         totalAmount: new Prisma.Decimal(order.totalAmount),
         status: order.status,
         source: order.source,
+        friendlyId: order.friendlyId,
         items: {
           create: items.map((item) => ({
             inventoryItemId: item.inventoryItemId,
@@ -83,8 +85,9 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
     return this.mapToDomain(saved);
   }
 
-  async updateStatus(id: string, status: OrderStatus): Promise<void> {
-    await this.prisma.order.update({
+  async updateStatus(id: string, status: OrderStatus, tx?: any): Promise<void> {
+    const prismaClient = tx || this.prisma;
+    await prismaClient.order.update({
       where: { id },
       data: { status },
     });
@@ -111,6 +114,7 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
         OR: [
           { customer: { name: { contains: filters.search, mode: "insensitive" } } },
           { customer: { phoneNumber: { contains: filters.search, mode: "insensitive" } } },
+          { friendlyId: { contains: filters.search, mode: "insensitive" } },
         ],
       } : {}),
     };
@@ -177,8 +181,9 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
     });
   }
 
-  async savePayments(orderId: string, payments: { method: PaymentMethodType; amount: number }[]): Promise<void> {
-    await this.prisma.orderPayment.createMany({
+  async savePayments(orderId: string, payments: { method: PaymentMethodType; amount: number }[], tx?: any): Promise<void> {
+    const prismaClient = tx || this.prisma;
+    await prismaClient.orderPayment.createMany({
       data: payments.map((p) => ({
         orderId,
         method: p.method,

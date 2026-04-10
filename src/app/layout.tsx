@@ -26,6 +26,7 @@ export const metadata: Metadata = {
 };
 
 import { QueryProvider } from "@/components/query-provider";
+import { Suspense } from "react";
 
 export default function RootLayout({
   children,
@@ -38,7 +39,11 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <QueryProvider>{children}</QueryProvider>
+        <QueryProvider>
+          <Suspense fallback={null}>
+            {children}
+          </Suspense>
+        </QueryProvider>
       </body>
     </html>
   );

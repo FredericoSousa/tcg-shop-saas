@@ -18,15 +18,18 @@ export class CreateCustomerUseCase implements IUseCase<CreateCustomerRequest, Cu
   async execute(request: CreateCustomerRequest): Promise<Customer> {
     const { name, phoneNumber, email = null } = request;
 
-    return this.customerRepo.save({
+    const customer: Customer = {
       id: "",
       name,
       phoneNumber,
       email,
       tenantId: getTenantId()!,
+      creditBalance: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
       deletedAt: null,
-    });
+    };
+
+    return this.customerRepo.save(customer);
   }
 }

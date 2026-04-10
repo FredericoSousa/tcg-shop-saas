@@ -1,6 +1,6 @@
 export type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "CANCELLED";
 export type OrderSource = "POS" | "ECOMMERCE";
-export type PaymentMethodType = "CASH" | "CREDIT_CARD" | "DEBIT_CARD" | "PIX" | "TRANSFER" | "OTHER";
+export type PaymentMethodType = "CASH" | "CREDIT_CARD" | "DEBIT_CARD" | "PIX" | "TRANSFER" | "STORE_CREDIT" | "OTHER";
 
 export interface OrderItem {
   id: string;
@@ -37,6 +37,7 @@ export interface Order {
   source: OrderSource;
   createdAt: Date;
   updatedAt: Date | null;
+  friendlyId?: string | null;
   items?: OrderItem[];
   payments?: OrderPayment[];
   customer?: {

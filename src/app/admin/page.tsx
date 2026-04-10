@@ -14,8 +14,6 @@ import { TopBuyersCard } from "@/components/admin/analytics/top-buyers-card";
 import { GetDashboardSummaryUseCase } from "@/lib/application/use-cases/get-dashboard-summary.use-case";
 import { ListOrdersUseCase } from "@/lib/application/use-cases/list-orders.use-case";
 
-// Premium performance optimization for Next.js 16
-export const unstable_instant = { prefetch: "static" };
 
 export default async function AdminDashboardPage() {
   const { tenant } = await getAdminContext();

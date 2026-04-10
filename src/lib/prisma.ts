@@ -17,7 +17,8 @@ const tenantAwareModels = [
   'productCategory',
   'product',
   'order',
-  'customer'
+  'customer',
+  'customerCreditLedger'
 ];
 
 export const prisma = basePrisma.$extends({
@@ -43,11 +44,19 @@ export const prisma = basePrisma.$extends({
         // Automatic tenantId injection for CREATE operations
         if (['create', 'createMany'].includes(operation)) {
           if (operation === 'create') {
-            anyArgs.data = { ...anyArgs.data, tenantId };
+            // Only inject if tenantId or tenant relation is not already provided
+            if (!anyArgs.data.tenantId && !anyArgs.data.tenant) {
+              anyArgs.data = { ...anyArgs.data, tenantId };
+            }
           } else if (operation === 'createMany') {
             if (Array.isArray(anyArgs.data)) {
               // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              anyArgs.data = anyArgs.data.map((item: any) => ({ ...item, tenantId }));
+              anyArgs.data = anyArgs.data.map((item: any) => {
+                if (!item.tenantId && !item.tenant) {
+                  return { ...item, tenantId };
+                }
+                return item;
+              });
             }
           }
         }
@@ -57,7 +66,9 @@ export const prisma = basePrisma.$extends({
           anyArgs.where = { ...anyArgs.where, tenantId };
           
           if (operation === 'upsert') {
-            anyArgs.create = { ...anyArgs.create, tenantId };
+            if (!anyArgs.create.tenantId && !anyArgs.create.tenant) {
+              anyArgs.create = { ...anyArgs.create, tenantId };
+            }
           }
         }
 

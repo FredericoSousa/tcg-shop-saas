@@ -43,6 +43,7 @@ model Tenant {
   customers Customer[]
   products  Product[]
   productCategories ProductCategory[]
+  creditLedger CustomerCreditLedger[]
 
   @@map("tenants")
 }
@@ -164,6 +165,7 @@ enum PaymentMethodType {
   DEBIT_CARD
   PIX
   TRANSFER
+  STORE_CREDIT
   OTHER
 }
 
@@ -176,13 +178,16 @@ model Order {
   source      OrderSource    @default(ECOMMERCE)
   createdAt   DateTime       @default(now()) @map("created_at")
   updatedAt   DateTime?      @updatedAt @map("updated_at")
+  friendlyId  String?        @map("friendly_id")
   staffNotes  String?        @map("staff_notes")
 
   tenant   Tenant         @relation(fields: [tenantId], references: [id])
   customer Customer       @relation(fields: [customerId], references: [id])
   items    OrderItem[]
   payments OrderPayment[]
+  creditLedger CustomerCreditLedger[]
 
+  @@unique([tenantId, friendlyId])
   @@index([tenantId])
   @@map("orders")
 }
@@ -220,16 +225,49 @@ model Customer {
   name        String
   email       String?
   phoneNumber String    @map("phone_number")
+  creditBalance Decimal @default(0) @map("credit_balance")
   tenantId    String    @map("tenant_id") @db.Uuid
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
   deletedAt   DateTime? @map("deleted_at")
 
-  tenant Tenant  @relation(fields: [tenantId], references: [id])
-  orders Order[]
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  orders  Order[]
+  ledger  CustomerCreditLedger[]
 
   @@unique([phoneNumber, tenantId])
   @@index([tenantId])
   @@index([deletedAt])
   @@map("customers")
+}
+
+enum CreditLedgerType {
+  CREDIT
+  DEBIT
+}
+
+enum CreditLedgerSource {
+  MANUAL
+  ORDER_PAYMENT
+  ORDER_REFUND
+}
+
+model CustomerCreditLedger {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String             @map("tenant_id") @db.Uuid
+  customerId  String             @map("customer_id") @db.Uuid
+  orderId     String?            @map("order_id") @db.Uuid
+  amount      Decimal
+  type        CreditLedgerType
+  source      CreditLedgerSource
+  description String?
+  createdAt   DateTime           @default(now()) @map("created_at")
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
+  order    Order?   @relation(fields: [orderId], references: [id])
+
+  @@index([customerId])
+  @@index([tenantId])
+  @@map("customer_credit_ledger")
 }

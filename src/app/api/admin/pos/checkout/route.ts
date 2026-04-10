@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       }
 
       const posCheckoutUseCase = container.resolve(POSCheckoutUseCase);
-      const { orderId } = await posCheckoutUseCase.execute({
+      const { orderId, friendlyId } = await posCheckoutUseCase.execute({
         items,
         customerData,
       });
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
       revalidatePath("/admin/orders");
       revalidatePath("/admin/products");
 
-      return ApiResponse.success({ orderId });
+      return ApiResponse.success({ orderId, friendlyId });
     } catch (error: unknown) {
       const err = error as Error;
       logger.error("POS Checkout Error", err, { tenantId: tenant.id });

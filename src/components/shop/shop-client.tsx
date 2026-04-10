@@ -44,17 +44,13 @@ type ShopItem = {
   quantity: number;
   condition: string;
   language: string;
-  extras?: string[];
-  cardTemplate: {
+  extras: string[];
+  cardTemplate?: {
     name: string;
     set: string;
     imageUrl: string | null;
     backImageUrl?: string | null;
-    metadata: {
-      colors?: string[];
-      type_line?: string;
-      foil?: boolean;
-    } | null;
+    metadata: any;
   } | null;
 };
 

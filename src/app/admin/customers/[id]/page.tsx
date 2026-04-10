@@ -13,6 +13,7 @@ import { container } from "@/lib/infrastructure/container";
 import { GetCustomerUseCase } from "@/lib/application/use-cases/get-customer.use-case";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { CustomerOrdersTable } from "@/components/admin/customer-orders-table";
+import { CustomerCreditSection } from "@/components/admin/customer-credit-section";
 import { PageHeader } from "@/components/admin/page-header";
 import { getAdminContext } from "@/lib/tenant-server";
 
@@ -130,9 +131,10 @@ export default async function CustomerDetailsPage({
           </div>
         </div>
 
-        {/* Orders Table */}
-        <div className="flex-1">
+        {/* Orders Table & Credits */}
+        <div className="flex-1 flex flex-col gap-6">
           <CustomerOrdersTable customerId={id} />
+          <CustomerCreditSection customerId={id} initialBalance={customer.creditBalance} />
         </div>
       </div>
     </div>

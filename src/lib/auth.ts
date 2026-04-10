@@ -69,34 +69,46 @@ export async function verifySessionToken(
  * Get current session from cookies
  */
 export async function getSession(): Promise<SessionData | null> {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("session")?.value;
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("session")?.value;
 
-  if (!token) return null;
+    if (!token) return null;
 
-  return verifySessionToken(token);
+    return verifySessionToken(token);
+  } catch (error) {
+    return null;
+  }
 }
 
 /**
  * Set session cookie
  */
 export async function setSessionCookie(token: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.set("session", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 7, // 7 days
-    path: "/",
-  });
+  try {
+    const cookieStore = await cookies();
+    cookieStore.set("session", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: "/",
+    });
+  } catch (error) {
+    // Ignore errors during build/SSD
+  }
 }
 
 /**
  * Clear session cookie
  */
 export async function clearSessionCookie(): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete("session");
+  try {
+    const cookieStore = await cookies();
+    cookieStore.delete("session");
+  } catch (error) {
+    // Ignore errors during build/SSD
+  }
 }
 
 /**

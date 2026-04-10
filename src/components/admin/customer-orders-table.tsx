@@ -20,6 +20,7 @@ interface Order {
   totalAmount: string;
   status: string;
   createdAt: string;
+  friendlyId?: string | null;
 }
 
 interface CustomerOrdersTableProps {
@@ -93,7 +94,7 @@ export function CustomerOrdersTable({ customerId }: CustomerOrdersTableProps) {
                 {orders.map((order) => (
                   <TableRow key={order.id} className="hover:bg-muted/50 transition-colors">
                     <TableCell className="font-bold">
-                      #{order.id.slice(-8).toUpperCase()}
+                      #{order.friendlyId || order.id.slice(-8).toUpperCase()}
                     </TableCell>
                     <TableCell className="text-muted-foreground text-sm">
                       {new Date(order.createdAt).toLocaleDateString("pt-BR")}

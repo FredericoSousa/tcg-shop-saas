@@ -63,7 +63,11 @@ export async function GET(request: NextRequest) {
       const includeDeleted = searchParams.get("includeDeleted") === "true";
 
       const listCustomersUseCase = container.resolve(ListCustomersUseCase);
-      const result = await listCustomersUseCase.execute({ page, limit, search, includeDeleted });
+      const result = await listCustomersUseCase.execute({ 
+        page, 
+        limit, 
+        filters: { search, includeDeleted } 
+      });
       return ApiResponse.success(result);
     } catch (error) {
       logger.error("Error fetching customers", error as Error, { tenantId: tenant.id });
