@@ -136,6 +136,7 @@ export class AddBulkInventoryUseCase implements IUseCase<AddBulkInventoryRequest
           condition: itemRequest.condition,
           language: itemRequest.language,
           active: true,
+          allowNegativeStock: false,
           extras: itemRequest.extras || []
         });
       }

@@ -11,6 +11,7 @@ export type ProductColumn = {
   description: string | null;
   imageUrl: string | null;
   active: boolean;
+  allowNegativeStock: boolean;
   category: {
     id: string;
     name: string;
