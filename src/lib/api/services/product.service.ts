@@ -7,6 +7,7 @@ export interface CreateProductDto {
   stock: number;
   categoryId: string;
   imageUrl?: string;
+  allowNegativeStock?: boolean;
 }
 
 export const ProductService = {

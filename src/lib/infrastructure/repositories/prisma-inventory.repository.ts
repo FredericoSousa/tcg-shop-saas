@@ -19,6 +19,7 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
       quantity: item.quantity,
       language: item.language,
       active: item.active,
+      allowNegativeStock: item.allowNegativeStock,
       extras: item.extras as string[],
       condition: item.condition as string,
       cardTemplate: item.cardTemplate ? {
@@ -78,6 +79,7 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
       condition: item.condition as PrismaCondition,
       language: item.language,
       active: item.active,
+      allowNegativeStock: item.allowNegativeStock,
       extras: item.extras,
     };
 
@@ -100,6 +102,7 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
         condition: item.condition as PrismaCondition,
         language: item.language,
         active: item.active,
+        allowNegativeStock: item.allowNegativeStock,
         extras: item.extras,
       })),
     });
@@ -110,6 +113,7 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
     if (data.price !== undefined) prismaData.price = new Prisma.Decimal(data.price);
     if (data.quantity !== undefined) prismaData.quantity = data.quantity;
     if (data.active !== undefined) prismaData.active = data.active;
+    if (data.allowNegativeStock !== undefined) prismaData.allowNegativeStock = data.allowNegativeStock;
 
     const updated = await this.prisma.inventoryItem.update({
       where: { id },
@@ -124,6 +128,7 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
     if (data.price !== undefined) prismaData.price = new Prisma.Decimal(data.price);
     if (data.quantity !== undefined) prismaData.quantity = data.quantity;
     if (data.active !== undefined) prismaData.active = data.active;
+    if (data.allowNegativeStock !== undefined) prismaData.allowNegativeStock = data.allowNegativeStock;
 
     await this.prisma.inventoryItem.updateMany({
       where: { id: { in: ids } },
@@ -232,7 +237,10 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
     const result = await this.prisma.inventoryItem.updateMany({
       where: {
         id,
-        quantity: { gte: quantity },
+        OR: [
+          { allowNegativeStock: true },
+          { quantity: { gte: quantity } }
+        ]
       },
       data: {
         quantity: { decrement: quantity },

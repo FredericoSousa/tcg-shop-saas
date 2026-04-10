@@ -15,6 +15,7 @@ export class PrismaProductRepository extends BasePrismaRepository implements IPr
       price: Number(item.price),
       stock: item.stock,
       active: item.active,
+      allowNegativeStock: item.allowNegativeStock,
       categoryId: item.categoryId,
       tenantId: item.tenantId,
       createdAt: item.createdAt,
@@ -53,8 +54,9 @@ export class PrismaProductRepository extends BasePrismaRepository implements IPr
         imageUrl: product.imageUrl,
         price: new Prisma.Decimal(product.price),
         stock: product.stock,
+        allowNegativeStock: product.allowNegativeStock,
         categoryId: product.categoryId,
-      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      } as any,
     });
     return this.mapToDomain(saved);
   }
@@ -69,6 +71,7 @@ export class PrismaProductRepository extends BasePrismaRepository implements IPr
         price: data.price !== undefined ? new Prisma.Decimal(data.price) : undefined,
         stock: data.stock,
         active: data.active,
+        allowNegativeStock: data.allowNegativeStock,
         categoryId: data.categoryId,
         deletedAt: data.deletedAt,
       },
@@ -109,9 +112,12 @@ export class PrismaProductRepository extends BasePrismaRepository implements IPr
     const result = await this.prisma.product.updateMany({
       where: {
         id,
-        stock: { gte: quantity },
         active: true,
         deletedAt: null,
+        OR: [
+          { allowNegativeStock: true },
+          { stock: { gte: quantity } }
+        ]
       },
       data: {
         stock: { decrement: quantity },

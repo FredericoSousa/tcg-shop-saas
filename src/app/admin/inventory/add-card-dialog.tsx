@@ -93,6 +93,7 @@ export function AddCardDialog() {
           condition: formData.get("condition") as string,
           language: formData.get("language") as string,
           extras: selectedExtras,
+          allowNegativeStock: formData.get("allowNegativeStock") === "on",
         };
 
         const result = await InventoryService.addItem(body);
@@ -423,6 +424,28 @@ export function AddCardDialog() {
                       );
                     })}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {selectedCardId && (
+              <div className="flex items-center space-x-2 py-4 px-2 bg-muted/20 rounded-xl border border-dashed animate-in fade-in duration-700">
+                <input
+                  type="checkbox"
+                  name="allowNegativeStock"
+                  id="allowNegativeStock"
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary shadow-sm"
+                />
+                <div className="grid gap-0.5 leading-none">
+                  <label
+                    htmlFor="allowNegativeStock"
+                    className="text-sm font-bold leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Permitir estoque negativo
+                  </label>
+                  <p className="text-[10px] text-muted-foreground font-medium">
+                    Se ativado, este card poderá ser vendido via PDV mesmo sem estoque físico.
+                  </p>
                 </div>
               </div>
             )}

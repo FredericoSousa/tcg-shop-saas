@@ -2,10 +2,10 @@
 
 import { CartItem } from "./pos-client";
 import { Button } from "@/components/ui/button";
-import { Trash2, Minus, Plus } from "lucide-react";
+import { Trash2, Minus, Plus, X } from "lucide-react";
 import Image from "next/image";
 
-import { CustomerSelector, CustomerType } from "./customer-selector";
+import { CustomerType } from "./customer-selector";
 
 interface CartPanelProps {
   items: CartItem[];
@@ -14,7 +14,10 @@ interface CartPanelProps {
   selectedCustomer: CustomerType | null;
   onSelectCustomer: (customer: CustomerType | null) => void;
   onCheckout: () => void;
+  onFinalize: () => void;
   isSubmitting: boolean;
+  activeOrderId?: string | null;
+  activeOrderFriendlyId?: string | null;
 }
 
 export function CartPanel({
@@ -24,7 +27,10 @@ export function CartPanel({
   selectedCustomer,
   onSelectCustomer,
   onCheckout,
+  onFinalize,
   isSubmitting,
+  activeOrderId,
+  activeOrderFriendlyId,
 }: CartPanelProps) {
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
@@ -105,23 +111,54 @@ export function CartPanel({
       </div>
 
       <div className="space-y-4">
-        <CustomerSelector 
-          selectedCustomer={selectedCustomer}
-          onSelect={onSelectCustomer}
-        />
+        {selectedCustomer && (
+          <div className="p-3 rounded-lg border bg-primary/5 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <span className="text-xs font-bold text-primary">{selectedCustomer.name.charAt(0)}</span>
+              </div>
+              <div>
+                <p className="text-sm font-semibold truncate max-w-[150px]">{selectedCustomer.name}</p>
+                <p className="text-[10px] text-muted-foreground">{selectedCustomer.phoneNumber}</p>
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8 text-muted-foreground"
+              onClick={() => onSelectCustomer(null)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
 
-        <Button 
-          className="w-full py-6 text-lg font-bold gap-3 shadow-lg" 
-          onClick={onCheckout}
-          disabled={isSubmitting || items.length === 0}
-        >
-          {isSubmitting ? "Processando..." : (
-            <>
-              <Plus className="h-6 w-6" />
-              Adicionar à Comanda
-            </>
-          )}
-        </Button>
+        <div className="grid grid-cols-2 gap-2">
+          <Button 
+            variant="outline"
+            className="w-full py-6 font-semibold" 
+            onClick={onCheckout}
+            disabled={isSubmitting || items.length === 0 || !selectedCustomer}
+          >
+            {isSubmitting ? "Salvando..." : "Salvar Comanda"}
+          </Button>
+
+          <Button 
+            className="w-full py-6 font-bold gap-2 shadow-md bg-green-600 hover:bg-green-700" 
+            onClick={onFinalize}
+            disabled={isSubmitting || items.length === 0 || !selectedCustomer}
+          >
+            Finalizar
+          </Button>
+        </div>
+
+        {activeOrderFriendlyId && (
+          <div className="text-center">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">
+              Editando Comanda <span className="text-primary">#{activeOrderFriendlyId}</span>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

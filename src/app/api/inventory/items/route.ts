@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
   const { tenant } = context;
 
   try {
-    const { scryfallId, price, quantity, condition, language, extras = [] } = await request.json();
+    const { scryfallId, price, quantity, condition, language, extras = [], allowNegativeStock = false } = await request.json();
 
     await runWithTenant(tenant.id, () => addInventoryUseCase.execute({
       scryfallId,
@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
       condition,
       language,
       extras,
+      allowNegativeStock,
     }));
 
     revalidatePath("/admin/inventory");

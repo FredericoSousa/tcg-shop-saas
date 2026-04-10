@@ -35,6 +35,7 @@ interface ProductDialogProps {
     stock: number;
     imageUrl: string | null;
     category: { id: string; name: string };
+    allowNegativeStock: boolean;
   };
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -62,6 +63,7 @@ export function ProductDialog({
     stock: "",
     categoryId: "",
     imageUrl: "",
+    allowNegativeStock: false,
   });
 
   useEffect(() => {
@@ -73,6 +75,7 @@ export function ProductDialog({
         stock: product.stock?.toString() ?? "0",
         categoryId: product.category.id,
         imageUrl: product.imageUrl || "",
+        allowNegativeStock: product.allowNegativeStock,
       });
     } else {
       setFormData({
@@ -82,6 +85,7 @@ export function ProductDialog({
         stock: "0",
         categoryId: "",
         imageUrl: "",
+        allowNegativeStock: false,
       });
     }
   }, [product, isOpen]);
@@ -216,6 +220,26 @@ export function ProductDialog({
                 placeholder="https://..."
               />
             </div>
+          </div>
+          <div className="flex items-center space-x-2 py-2">
+            <input
+              type="checkbox"
+              id="allowNegativeStock"
+              checked={formData.allowNegativeStock}
+              onChange={(e) =>
+                setFormData({ ...formData, allowNegativeStock: e.target.checked })
+              }
+              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+            />
+            <label
+              htmlFor="allowNegativeStock"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Permitir estoque negativo
+            </label>
+            <p className="text-[10px] text-muted-foreground ml-6 font-medium">
+              Se ativado, o produto poderá ser vendido via PDV mesmo sem estoque.
+            </p>
           </div>
           <DialogFooter>
             <Button type="submit" disabled={loading}>

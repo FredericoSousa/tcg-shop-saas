@@ -17,6 +17,7 @@ export interface InventoryItem {
   condition: string;
   language: string;
   active: boolean;
+  allowNegativeStock: boolean;
   extras: string[];
   cardTemplate?: CardTemplate;
 }

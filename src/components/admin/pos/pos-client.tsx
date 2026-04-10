@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { ProductSearch } from "./product-search";
 import { CartPanel } from "./cart-panel";
-import { CustomerType } from "./customer-selector";
+import { CustomerSelector, CustomerType } from "./customer-selector";
 import { toast } from "sonner";
+import { PaymentDialog } from "../orders/payment-dialog";
+import { Loader2 } from "lucide-react";
 
 export type CartItem = {
   id: string;
@@ -17,7 +19,48 @@ export type CartItem = {
 export function POSClient() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(null);
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const [activeOrderFriendlyId, setActiveOrderFriendlyId] = useState<string | null>(null);
+  const [isLoadingOrder, setIsLoadingOrder] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const [totalAmount, setTotalAmount] = useState(0);
+
+  const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+  // Fetch in-progress order when customer is selected
+  const fetchInProgressOrder = async (customerId: string) => {
+    setIsLoadingOrder(true);
+    try {
+      const response = await fetch(`/api/admin/pos/order-in-progress?customerId=${customerId}`);
+      const result = await response.json();
+      if (result.success && result.data) {
+        setCart(result.data.items);
+        setActiveOrderId(result.data.id);
+        setActiveOrderFriendlyId(result.data.friendlyId);
+      } else {
+        setCart([]);
+        setActiveOrderId(null);
+        setActiveOrderFriendlyId(null);
+      }
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      toast.error("Erro ao carregar pedido em andamento");
+    } finally {
+      setIsLoadingOrder(false);
+    }
+  };
+
+  const handleSelectCustomer = (customer: CustomerType | null) => {
+    setSelectedCustomer(customer);
+    if (customer) {
+      fetchInProgressOrder(customer.id);
+    } else {
+      setCart([]);
+      setActiveOrderId(null);
+      setActiveOrderFriendlyId(null);
+    }
+  };
 
   const addToCart = (product: Omit<CartItem, "quantity">) => {
     setCart((prev) => {
@@ -59,6 +102,22 @@ export function POSClient() {
     );
   };
 
+  const handleOpenFinalize = () => {
+    if (!selectedCustomer || subtotal <= 0) return;
+    
+    // First, save current changes if any
+    handleCheckout().then(() => {
+      setTotalAmount(subtotal);
+      setIsPaymentDialogOpen(true);
+    });
+  };
+
+  const handleFinalizeSuccess = () => {
+    setCart([]);
+    setSelectedCustomer(null);
+    setActiveOrderId(null);
+    setActiveOrderFriendlyId(null);
+  };
   const handleCheckout = async () => {
     if (cart.length === 0) {
       toast.error("O carrinho está vazio");
@@ -92,9 +151,9 @@ export function POSClient() {
       const result = await response.json();
 
       if (result.success) {
-        toast.success(`Itens adicionados à comanda #${result.data.friendlyId}!`);
-        setCart([]);
-        setSelectedCustomer(null);
+        toast.success(`Pedido #${result.data.friendlyId} atualizado!`);
+        // Refresh items from server to ensure sync
+        fetchInProgressOrder(selectedCustomer.id);
       } else {
         toast.error(result.message || "Erro ao processar venda");
       }
@@ -111,7 +170,28 @@ export function POSClient() {
       {/* Left Column: Product Search */}
       <div className="flex-1 border-r flex flex-col p-4 bg-muted/20">
         <h2 className="text-lg font-semibold mb-4">Catálogo de Produtos</h2>
-        <ProductSearch onSelect={addToCart} />
+        {!selectedCustomer ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-xl bg-background/50">
+             <div className="bg-primary/10 p-4 rounded-full mb-4">
+                <Loader2 className="h-8 w-8 text-primary animate-pulse" />
+             </div>
+             <h3 className="text-xl font-bold mb-2">Selecione um Cliente Primeiro</h3>
+             <p className="text-muted-foreground max-w-xs mb-6">Para iniciar uma venda ou carregar uma comanda, você precisa selecionar um cliente abaixo.</p>
+             <div className="w-[300px]">
+                <CustomerSelector 
+                  selectedCustomer={selectedCustomer}
+                  onSelect={handleSelectCustomer}
+                />
+             </div>
+          </div>
+        ) : isLoadingOrder ? (
+          <div className="flex-1 flex flex-col items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+            <p className="text-sm font-medium">Carregando comanda...</p>
+          </div>
+        ) : (
+          <ProductSearch onSelect={addToCart} />
+        )}
       </div>
 
       {/* Right Column: Cart & Checkout */}
@@ -122,11 +202,26 @@ export function POSClient() {
           onUpdateQuantity={updateQuantity}
           onRemove={removeFromCart}
           selectedCustomer={selectedCustomer}
-          onSelectCustomer={setSelectedCustomer}
+          onSelectCustomer={handleSelectCustomer}
           onCheckout={handleCheckout}
+          onFinalize={handleOpenFinalize}
           isSubmitting={isSubmitting}
+          activeOrderId={activeOrderId}
+          activeOrderFriendlyId={activeOrderFriendlyId}
         />
       </div>
+
+      {selectedCustomer && activeOrderId && (
+        <PaymentDialog
+          isOpen={isPaymentDialogOpen}
+          onClose={() => setIsPaymentDialogOpen(false)}
+          orderId={activeOrderId}
+          customerId={selectedCustomer.id}
+          totalAmount={subtotal}
+          onSuccess={handleFinalizeSuccess}
+          friendlyId={activeOrderFriendlyId}
+        />
+      )}
     </div>
   );
 }

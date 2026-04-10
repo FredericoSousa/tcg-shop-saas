@@ -16,6 +16,7 @@ export const SaveProductSchema = z.object({
   stock: z.number().int().min(0, "O estoque não pode ser negativo"),
   categoryId: z.string().min(1, "A categoria é obrigatória"),
   active: z.boolean().optional(),
+  allowNegativeStock: z.boolean().optional().default(false),
 });
 
 export type SaveProductRequest = z.infer<typeof SaveProductSchema>;
@@ -36,6 +37,7 @@ export class SaveProductUseCase implements IUseCase<SaveProductRequest, Product>
         stock: validatedRequest.stock,
         categoryId: validatedRequest.categoryId,
         active: validatedRequest.active,
+        allowNegativeStock: validatedRequest.allowNegativeStock,
       });
     }
 
@@ -48,6 +50,7 @@ export class SaveProductUseCase implements IUseCase<SaveProductRequest, Product>
       stock: validatedRequest.stock,
       categoryId: validatedRequest.categoryId,
       active: true,
+      allowNegativeStock: validatedRequest.allowNegativeStock,
       tenantId: getTenantId()!,
       createdAt: new Date(),
       updatedAt: new Date(),

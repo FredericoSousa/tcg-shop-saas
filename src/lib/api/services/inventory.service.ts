@@ -7,6 +7,7 @@ export interface CreateInventoryItemDto {
   condition: string;
   language: string;
   extras: string[];
+  allowNegativeStock?: boolean;
 }
 
 export interface BulkInventoryItemDto {
@@ -16,6 +17,7 @@ export interface BulkInventoryItemDto {
   language: "EN" | "PT" | "JP";
   price: number;
   extras: string[];
+  allowNegativeStock?: boolean;
 }
 
 export const InventoryService = {

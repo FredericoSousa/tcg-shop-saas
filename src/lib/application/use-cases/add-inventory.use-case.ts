@@ -16,6 +16,7 @@ export interface AddInventoryRequest {
   condition: string;
   language: string;
   extras?: string[];
+  allowNegativeStock?: boolean;
 }
 
 export interface AddInventoryResponse {
@@ -36,7 +37,8 @@ export class AddInventoryUseCase implements IUseCase<AddInventoryRequest, AddInv
       quantity, 
       condition, 
       language, 
-      extras = [] 
+      extras = [],
+      allowNegativeStock = false
     } = request;
 
     // 1. Get or create Card Template
@@ -93,6 +95,7 @@ export class AddInventoryUseCase implements IUseCase<AddInventoryRequest, AddInv
         condition,
         language,
         active: true,
+        allowNegativeStock,
         extras,
       });
     }

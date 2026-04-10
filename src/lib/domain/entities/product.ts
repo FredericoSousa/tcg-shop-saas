@@ -17,6 +17,7 @@ export interface Product {
   price: number;
   stock: number;
   active: boolean;
+  allowNegativeStock: boolean;
   categoryId: string;
   tenantId: string;
   createdAt: Date;
