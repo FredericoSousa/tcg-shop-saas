@@ -26,6 +26,8 @@ import { LANGUAGE_LIST, getLanguageData } from "@/lib/constants/languages";
 import { cn } from "@/lib/utils";
 import { ScryfallService } from "@/lib/api/services/scryfall.service";
 import { InventoryService } from "@/lib/api/services/inventory.service";
+import { MaskedInput } from "@/components/ui/masked-input";
+import { parseCurrency } from "@/lib/utils/format";
 
 
 const VALID_EXTRAS = [
@@ -88,7 +90,7 @@ export function AddCardDialog() {
       try {
         const body = {
           scryfallId: formData.get("scryfallId") as string,
-          price: parseFloat(formData.get("price") as string),
+          price: parseCurrency(formData.get("price") as string),
           quantity: parseInt(formData.get("quantity") as string, 10),
           condition: formData.get("condition") as string,
           language: formData.get("language") as string,
@@ -292,19 +294,14 @@ export function AddCardDialog() {
                     >
                       Preço Unitário (R$)
                     </label>
-                    <div className="relative group">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm font-bold text-muted-foreground group-focus-within:text-primary transition-colors">R$</span>
-                      <Input
+                    <MaskedInput
                         id="price"
-                        type="number"
-                        step="0.01"
+                        mask="currency"
                         name="price"
                         required
-                        placeholder="0,00"
-                        min="0"
-                        className="pl-10 h-12 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary/40 rounded-xl font-mono tabular-nums font-bold"
+                        placeholder="R$ 0,00"
+                        className="h-12 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary/40 rounded-xl font-mono tabular-nums font-bold"
                       />
-                    </div>
                   </div>
                   <div className="space-y-2">
                     <label

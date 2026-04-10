@@ -13,6 +13,7 @@ import { TopProductsTable } from "@/components/admin/analytics/top-products-tabl
 import { TopBuyersCard } from "@/components/admin/analytics/top-buyers-card";
 import { GetDashboardSummaryUseCase } from "@/lib/application/use-cases/get-dashboard-summary.use-case";
 import { ListOrdersUseCase } from "@/lib/application/use-cases/list-orders.use-case";
+import { formatCurrency } from "@/lib/utils";
 
 
 export default async function AdminDashboardPage() {
@@ -43,10 +44,7 @@ export default async function AdminDashboardPage() {
     },
     {
       title: "Valor do Estoque",
-      value: new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      }).format(totalInventoryValue),
+      value: formatCurrency(totalInventoryValue),
       icon: TrendingUp,
       color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
     },
@@ -58,10 +56,7 @@ export default async function AdminDashboardPage() {
     },
     {
       title: "Receita Total",
-      value: new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      }).format(totalRevenue),
+      value: formatCurrency(totalRevenue),
       icon: DollarSign,
       color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
     },
@@ -158,7 +153,7 @@ export default async function AdminDashboardPage() {
         <div className="lg:col-span-2">
           <DashboardChart 
             title="Tendência de Faturamento" 
-            total={new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalRevenue)} 
+            total={formatCurrency(totalRevenue)} 
             data={weeklyRevenue} 
           />
         </div>
@@ -248,10 +243,7 @@ export default async function AdminDashboardPage() {
                     <div className="flex items-center gap-6 shrink-0">
                       <StatusBadge status={order.status} className="scale-90" />
                       <span className="text-base font-black font-mono tabular-nums w-24 text-right text-foreground">
-                        {new Intl.NumberFormat("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        }).format(Number(order.totalAmount))}
+                        {formatCurrency(order.totalAmount)}
                       </span>
                     </div>
                   </div>

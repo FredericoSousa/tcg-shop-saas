@@ -23,6 +23,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { ProductService } from "@/lib/api/services/product.service";
+import { MaskedInput } from "@/components/ui/masked-input";
+import { parseCurrency } from "@/lib/utils/format";
 
 interface ProductDialogProps {
   children?: React.ReactNode;
@@ -97,7 +99,7 @@ export function ProductDialog({
     try {
       const body = {
         ...formData,
-        price: parseFloat(formData.price),
+        price: parseCurrency(formData.price),
         stock: parseInt(formData.stock) || 0,
       };
 
@@ -159,15 +161,14 @@ export function ProductDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <label className="text-sm font-medium leading-none" htmlFor="price">Preço (R$)</label>
-              <Input
+              <MaskedInput
                 id="price"
-                type="number"
-                step="0.01"
+                mask="currency"
                 value={formData.price}
-                onChange={(e) =>
-                  setFormData({ ...formData, price: e.target.value })
+                onValueChange={(val) =>
+                  setFormData({ ...formData, price: String(val) })
                 }
-                placeholder="0,00"
+                placeholder="R$ 0,00"
                 required
               />
             </div>

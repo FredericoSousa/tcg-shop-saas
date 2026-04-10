@@ -3,7 +3,7 @@
 import { OrderStatus } from "@prisma/client";
 import Link from "next/link";
 import { ArrowRight, FilterIcon, Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatPhone, formatCurrency } from "@/lib/utils";
 import * as React from "react";
 import {
   Select,
@@ -126,7 +126,7 @@ const OrderTableView = ({
               <TableCell>
                 <div className="flex flex-col">
                   <span className="font-bold text-sm tracking-tight">{order.customer.name}</span>
-                  <span className="text-[10px] text-muted-foreground">{order.customer.phoneNumber}</span>
+                  <span className="text-[10px] text-muted-foreground">{formatPhone(order.customer.phoneNumber)}</span>
                 </div>
               </TableCell>
               <TableCell className="text-center">
@@ -140,10 +140,7 @@ const OrderTableView = ({
                 {order.items.reduce((acc, item) => acc + item.quantity, 0)}
               </TableCell>
               <TableCell className="text-right font-black text-primary">
-                {new Intl.NumberFormat("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                }).format(order.totalAmount)}
+                {formatCurrency(order.totalAmount)}
               </TableCell>
               <TableCell>
                 <Badge 

@@ -2,6 +2,7 @@ import { getTenant } from '@/lib/tenant-server'
 import { prisma } from '@/lib/prisma'
 import { CheckCircle2, Package, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { formatCurrency } from '@/lib/utils/format'
 
 export default async function SuccessPage({
   searchParams,
@@ -96,7 +97,7 @@ export default async function SuccessPage({
                     <span className="truncate">{item.inventoryItem?.cardTemplate?.name || 'Item não disponível'}</span>
                   </div>
                   <span className="font-semibold text-gray-600">
-                    {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(item.priceAtPurchase) * item.quantity)}
+                    {formatCurrency(Number(item.priceAtPurchase) * item.quantity)}
                   </span>
                 </div>
               ))}
@@ -105,7 +106,7 @@ export default async function SuccessPage({
             <div className="border-t mt-4 pt-4 flex justify-between items-center">
               <span className="font-bold">Total do Pedido</span>
               <span className="font-black text-2xl text-primary">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(order.totalAmount))}
+                {formatCurrency(order.totalAmount)}
               </span>
             </div>
           </div>

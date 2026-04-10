@@ -17,6 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { TrendingUp, Package, Box, DollarSign } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface RevenueData {
   byCategory: { category: string; count: number; revenue: number }[];
@@ -78,7 +79,7 @@ export function RevenueDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-primary">
-              {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(data.totalRevenue)}
+              {formatCurrency(data.totalRevenue)}
             </div>
             <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1 font-bold">
               <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
@@ -123,7 +124,7 @@ export function RevenueDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-black text-purple-500">
-              {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(data.totalRevenue / (data.totalItemsSold || 1))}
+              {formatCurrency(data.totalRevenue / (data.totalItemsSold || 1))}
             </div>
             <p className="text-xs text-muted-foreground mt-1.5 font-bold uppercase tracking-tighter opacity-70">Média por transação</p>
           </CardContent>
@@ -158,7 +159,7 @@ export function RevenueDashboard() {
                 </Pie>
                 <Tooltip 
                   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  formatter={(value: any) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value))}
+                  formatter={(value: any) => formatCurrency(value)}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', background: 'var(--card)', color: 'var(--foreground)' }}
                 />
                 <Legend verticalAlign="bottom" height={36} wrapperStyle={{ paddingBottom: '10px', fontWeight: 'bold' }} />
@@ -194,7 +195,7 @@ export function RevenueDashboard() {
                 />
                 <Tooltip 
                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                   formatter={(value: any) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(value))}
+                   formatter={(value: any) => formatCurrency(value)}
                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', background: 'var(--card)', color: 'var(--foreground)' }}
                 />

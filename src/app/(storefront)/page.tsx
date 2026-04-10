@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { ShoppingBag, Sparkles, Shield, Truck } from 'lucide-react'
 import { SetBadge } from '@/components/ui/set-badge'
+import { formatCurrency } from '@/lib/utils/format'
 
 export default async function HomePage() {
   const tenant = await getTenant();
@@ -158,7 +159,7 @@ export default async function HomePage() {
                       />
                     </span>
                     <span className="font-black text-base text-primary tabular-nums group-hover:scale-110 transition-transform">
-                      {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(item.price))}
+                      {formatCurrency(item.price)}
                     </span>
                   </div>
                 </div>

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table";
 import { AdjustCreditDialog } from "./adjust-credit-dialog";
 import { toast } from "sonner";
+import { formatCurrency } from "@/lib/utils";
 
 interface CreditEntry {
   id: string;
@@ -56,12 +57,6 @@ export function CustomerCreditSection({ customerId, initialBalance }: CustomerCr
     fetchHistory();
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
 
   return (
     <div className="bg-card/40 backdrop-blur-md rounded-2xl border border-zinc-200/50 shadow-sm overflow-hidden flex flex-col transition-all duration-300 hover:shadow-lg mt-6">

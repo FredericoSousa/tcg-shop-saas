@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ShoppingBag, ChevronRight, Loader2 } from "lucide-react";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Button } from "@/components/ui/button";
+import { formatCurrency } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -103,10 +104,7 @@ export function CustomerOrdersTable({ customerId }: CustomerOrdersTableProps) {
                       <StatusBadge status={order.status} />
                     </TableCell>
                     <TableCell className="font-bold text-foreground">
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: "BRL",
-                      }).format(Number(order.totalAmount))}
+                      {formatCurrency(order.totalAmount)}
                     </TableCell>
                     <TableCell className="text-right">
                       <Link href={`/admin/orders/${order.id}`} passHref>

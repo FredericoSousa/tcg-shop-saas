@@ -7,6 +7,7 @@ import { SetBadge } from "@/components/ui/set-badge";
 import { OrderStatusManager } from "@/components/admin/order-status-manager";
 import { getAdminContext } from "@/lib/tenant-server";
 import { OrderActions } from "./order-actions";
+import { formatCurrency } from "@/lib/utils";
 
 export default async function OrderDetailsPage({
   params,
@@ -82,10 +83,7 @@ export default async function OrderDetailsPage({
             <div className="flex flex-col text-right">
               <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest leading-none mb-1">Total</span>
               <span className="font-black text-xl text-primary leading-none">
-                {new Intl.NumberFormat("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                }).format(Number(order.totalAmount))}
+                {formatCurrency(order.totalAmount)}
               </span>
             </div>
           </div>
@@ -143,10 +141,7 @@ export default async function OrderDetailsPage({
               <div className="text-right shrink-0 min-w-20">
                 <p className="text-lg font-black">{item.quantity}x</p>
                 <p className="text-sm font-semibold text-muted-foreground">
-                  {new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  }).format(Number(item.priceAtPurchase))}
+                  {formatCurrency(item.priceAtPurchase)}
                 </p>
               </div>
             </div>

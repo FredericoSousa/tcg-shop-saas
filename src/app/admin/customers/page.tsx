@@ -38,6 +38,8 @@ import { FilterSection } from "@/components/admin/filter-section";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { TableSearch } from "@/components/admin/table-search";
 import { CustomerService } from "@/lib/api/services/customer.service";
+import { formatPhone } from "@/lib/utils";
+import { MaskedInput } from "@/components/ui/masked-input";
 
 
 interface Customer {
@@ -261,7 +263,7 @@ export default function CustomersPage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {customer.phoneNumber}
+                  {formatPhone(customer.phoneNumber)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
                     {new Date(customer.createdAt).toLocaleDateString("pt-BR")}
@@ -354,8 +356,9 @@ export default function CustomersPage() {
               </div>
               <div className="grid gap-2">
                 <label htmlFor="phone" className="text-sm font-medium">Telefone</label>
-                <Input
+                <MaskedInput
                   id="phone"
+                  mask="phone"
                   value={formData.phoneNumber}
                   onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                   placeholder="(00) 00000-0000"

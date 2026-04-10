@@ -12,6 +12,7 @@ import Link from "next/link";
 import { container } from "@/lib/infrastructure/container";
 import { GetCustomerUseCase } from "@/lib/application/use-cases/get-customer.use-case";
 import { StatusBadge } from "@/components/admin/status-badge";
+import { formatPhone, formatCurrency } from "@/lib/utils";
 import { CustomerOrdersTable } from "@/components/admin/customer-orders-table";
 import { CustomerCreditSection } from "@/components/admin/customer-credit-section";
 import { PageHeader } from "@/components/admin/page-header";
@@ -59,10 +60,7 @@ export default async function CustomerDetailsPage({
             <div className="flex flex-col items-end">
               <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest leading-none mb-1">Total Gasto</span>
               <span className="text-xl font-black text-primary leading-none">
-                {new Intl.NumberFormat("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                }).format(totalSpent)}
+                {formatCurrency(totalSpent)}
               </span>
             </div>
           </div>
@@ -98,7 +96,7 @@ export default async function CustomerDetailsPage({
                 </div>
                 <div className="flex flex-col">
                   <span className="text-muted-foreground text-xs uppercase font-bold tracking-wider">Telefone</span>
-                  <span className="font-medium">{customer.phoneNumber}</span>
+                  <span className="font-medium">{formatPhone(customer.phoneNumber)}</span>
                 </div>
               </div>
 
@@ -121,10 +119,7 @@ export default async function CustomerDetailsPage({
               <div className="flex flex-col text-center">
                 <span className="text-xs text-muted-foreground uppercase font-bold tracking-wider mb-1">Total Gasto</span>
                 <span className="text-xl font-black text-primary">
-                  {new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  }).format(totalSpent)}
+                  {formatCurrency(totalSpent)}
                 </span>
               </div>
             </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, User, Check, Loader2, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, formatPhone } from "@/lib/utils";
 
 export interface CustomerType {
   id: string;
@@ -90,7 +90,7 @@ export function CustomerSelector({
             </div>
             <div>
               <p className="text-sm font-semibold">{selectedCustomer.name}</p>
-              <p className="text-xs text-muted-foreground">{selectedCustomer.phoneNumber}</p>
+              <p className="text-xs text-muted-foreground">{formatPhone(selectedCustomer.phoneNumber)}</p>
             </div>
           </div>
           <button 
@@ -136,7 +136,7 @@ export function CustomerSelector({
                     >
                       <div>
                         <p className="text-sm font-medium">{customer.name}</p>
-                        <p className="text-xs text-muted-foreground">{customer.phoneNumber}</p>
+                        <p className="text-xs text-muted-foreground">{formatPhone(customer.phoneNumber)}</p>
                       </div>
                       <Check className="h-4 w-4 text-primary opacity-0 group-hover:opacity-100" />
                     </div>

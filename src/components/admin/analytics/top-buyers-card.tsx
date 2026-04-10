@@ -2,6 +2,7 @@ import { container } from "@/lib/infrastructure/container";
 import { GetCustomerRankingUseCase } from "@/lib/application/use-cases/get-customer-ranking.use-case";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, Star, Trophy } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface TopBuyersCardProps {
   tenantId: string;
@@ -47,11 +48,7 @@ export async function TopBuyersCard({ tenantId }: TopBuyersCardProps) {
                 </div>
                 <div className="text-right ml-4">
                   <p className="text-sm font-black text-foreground tabular-nums">
-                    {new Intl.NumberFormat("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                      maximumFractionDigits: 0,
-                    }).format(customer.totalSpent)}
+                    {formatCurrency(customer.totalSpent, { maximumFractionDigits: 0 })}
                   </p>
                   <div className="flex items-center justify-end gap-0.5 mt-0.5">
                     {idx === 0 && (

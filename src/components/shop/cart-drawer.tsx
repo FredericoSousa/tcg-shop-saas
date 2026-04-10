@@ -16,7 +16,8 @@ import { Input } from '@/components/ui/input'
 import { ShoppingCart, Plus, Minus, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { formatPhone } from '@/lib/utils'
+import { formatPhone, formatCurrency } from '@/lib/utils'
+import { MaskedInput } from '@/components/ui/masked-input'
 
 const checkoutSchema = z.object({
   phoneNumber: z.string().min(8, 'Telefone inválido'),
@@ -195,7 +196,7 @@ export function CartDrawer() {
                         </div>
                         <div className="text-right flex flex-col items-end gap-1">
                           <div className="font-extrabold text-sm text-primary">
-                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price * item.quantity)}
+                            {formatCurrency(item.price * item.quantity)}
                           </div>
                           <button
                             type="button"
@@ -217,7 +218,7 @@ export function CartDrawer() {
             <div className="flex items-center justify-between mb-4 bg-background p-4 rounded-lg border shadow-sm">
               <span className="font-semibold text-sm">Total do Pedido</span>
               <span className="font-extrabold text-2xl text-primary tracking-tight">
-                {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(total)}
+                {formatCurrency(total)}
               </span>
             </div>
 
@@ -229,13 +230,13 @@ export function CartDrawer() {
               </h4>
 
               <div className="space-y-1">
-                <Input
+                <MaskedInput
                   id="phoneNumber"
+                  mask="phone"
                   placeholder="Telefone/WhatsApp *"
                   {...form.register("phoneNumber")}
-                  onChange={(e) => {
-                    const masked = formatPhone(e.target.value)
-                    form.setValue('phoneNumber', masked)
+                  onValueChange={(val) => {
+                    form.setValue('phoneNumber', String(val))
                     if (customerExists !== null) setCustomerExists(null)
                   }}
                   onBlur={handlePhoneBlur}

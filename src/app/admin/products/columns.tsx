@@ -1,6 +1,7 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { ProductActions } from "./product-actions";
 import Image from "next/image";
+import { formatCurrency } from "@/lib/utils";
 
 export type ProductColumn = {
   id: string;
@@ -52,11 +53,7 @@ export const createColumns = (categories: { id: string; name: string }[]): Colum
     header: "Preço",
     cell: ({ row }) => {
       const price = parseFloat(row.getValue("price"));
-      const formatted = new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-      }).format(price);
-      return <div className="font-medium">{formatted}</div>;
+      return <div className="font-medium">{formatCurrency(price)}</div>;
     },
   },
   {

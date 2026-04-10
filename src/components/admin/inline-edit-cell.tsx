@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
+import { cn, formatCurrency } from "@/lib/utils";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
@@ -111,7 +111,7 @@ export function InlineEditCell({
     >
       {prefix}
       {field === "price" 
-        ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2 }).format(initialValue)
+        ? formatCurrency(initialValue)
         : initialValue
       }
       <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 bg-primary/10 rounded pointer-events-none">

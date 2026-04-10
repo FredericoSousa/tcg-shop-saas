@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, ShoppingCart } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 interface TopProduct {
   id: string;
@@ -92,7 +93,7 @@ export function TopProductsTable() {
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-sm font-black text-primary tabular-nums">
-                    {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(product.revenue)}
+                    {formatCurrency(product.revenue)}
                   </p>
                   <p className="text-[9px] text-emerald-500 font-black flex items-center justify-end gap-0.5 uppercase tracking-tight">
                     <TrendingUp className="h-2.5 w-2.5" />

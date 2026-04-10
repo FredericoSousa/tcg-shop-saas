@@ -24,6 +24,7 @@ import { useCart } from "@/store/use-cart";
 import { SetBadge } from "@/components/ui/set-badge";
 import { LanguageBadge } from "@/components/ui/language-badge";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils/format";
 import {
   PackageOpen,
   Check,
@@ -955,10 +956,7 @@ export function ShopClient({
                       <div className="mt-2 pt-2 border-t flex flex-col gap-3">
                         <div className="flex flex-col">
                           <span className="font-black text-xl text-primary leading-none mb-1 tracking-tight">
-                            {new Intl.NumberFormat("pt-BR", {
-                              style: "currency",
-                              currency: "BRL",
-                            }).format(item.price)}
+                            {formatCurrency(item.price)}
                           </span>
                           <span
                             className={`text-[10px] font-bold px-1.5 py-0.5 rounded w-fit ${stockStatus}`}
