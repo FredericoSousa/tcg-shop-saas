@@ -34,6 +34,8 @@ import { toast } from "sonner";
 import { useTableState } from "@/lib/hooks/use-table-state";
 import { FilterSection } from "@/components/admin/filter-section";
 import { TableSearch } from "@/components/admin/table-search";
+import { UserService } from "@/lib/api/services/user.service";
+
 
 interface User {
   id: string;
@@ -64,13 +66,8 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const queryParams = new URLSearchParams();
-      if (search) queryParams.append("search", search);
-      
-      const response = await fetch(`/api/admin/users?${queryParams}`);
-      if (!response.ok) throw new Error("Failed to fetch users");
-      const data = await response.json();
-      setUsers(data);
+      const data = await UserService.list(search);
+      setUsers(data.data);
     } catch (error) {
       console.error(error);
       toast.error("Erro ao carregar usuários");
@@ -88,20 +85,11 @@ export default function UsersPage() {
 
     setIsSubmitting(true);
     try {
-      const response = await fetch("/api/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: newUsername,
-          password: newPassword,
-          role: newRole,
-        }),
+      await UserService.create({
+        username: newUsername,
+        password: newPassword,
+        role: newRole,
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to create user");
-      }
 
       toast.success("Usuário criado com sucesso");
       setIsCreateDialogOpen(false);
@@ -121,14 +109,7 @@ export default function UsersPage() {
     if (!confirm(`Tem certeza que deseja excluir o usuário ${username}?`)) return;
 
     try {
-      const response = await fetch(`/api/admin/users/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to delete user");
-      }
+      await UserService.delete(id);
 
       toast.success("Usuário excluído com sucesso");
       fetchUsers();

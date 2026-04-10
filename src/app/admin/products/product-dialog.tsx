@@ -22,6 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { ProductService } from "@/lib/api/services/product.service";
 
 interface ProductDialogProps {
   children?: React.ReactNode;
@@ -90,22 +91,17 @@ export function ProductDialog({
     setLoading(true);
 
     try {
-      const url = product
-        ? `/api/admin/products/${product.id}`
-        : "/api/admin/products";
-      const method = product ? "PUT" : "POST";
+      const body = {
+        ...formData,
+        price: parseFloat(formData.price),
+        stock: parseInt(formData.stock) || 0,
+      };
 
-      const res = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...formData,
-          price: parseFloat(formData.price),
-          stock: parseInt(formData.stock) || 0,
-        }),
-      });
-
-      if (!res.ok) throw new Error("Erro ao salvar produto");
+      if (product) {
+        await ProductService.update(product.id, body);
+      } else {
+        await ProductService.create(body as any);
+      }
 
       toast.success(
         product ? "Produto atualizado com sucesso" : "Produto criado com sucesso"

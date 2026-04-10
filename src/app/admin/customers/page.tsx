@@ -37,6 +37,8 @@ import { useTableState } from "@/lib/hooks/use-table-state";
 import { FilterSection } from "@/components/admin/filter-section";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { TableSearch } from "@/components/admin/table-search";
+import { CustomerService } from "@/lib/api/services/customer.service";
+
 
 interface Customer {
   id: string;
@@ -80,15 +82,12 @@ export default function CustomersPage() {
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
     try {
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: limit.toString(),
-        search: search,
-        includeDeleted: includeDeleted.toString(),
+      const result = await CustomerService.list({
+        page,
+        limit,
+        search,
+        includeDeleted,
       });
-      const response = await fetch(`/api/admin/customers?${queryParams}`);
-      if (!response.ok) throw new Error("Failed to fetch customers");
-      const result = await response.json();
       if (result.success && result.data) {
         setCustomers(result.data.items || []);
         setTotal(result.data.total || 0);
@@ -134,20 +133,10 @@ export default function CustomersPage() {
 
     setIsSubmitting(true);
     try {
-      const url = editingCustomer
-        ? `/api/admin/customers/${editingCustomer.id}`
-        : "/api/admin/customers";
-      const method = editingCustomer ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || "Failed to save customer");
+      if (editingCustomer) {
+        await CustomerService.update(editingCustomer.id, formData);
+      } else {
+        await CustomerService.create(formData);
       }
 
       toast.success(editingCustomer ? "Cliente atualizado" : "Cliente criado");
@@ -166,11 +155,7 @@ export default function CustomersPage() {
     if (!confirm(`Tem certeza que deseja excluir o cliente ${name}?`)) return;
 
     try {
-      const response = await fetch(`/api/admin/customers/${id}`, {
-        method: "DELETE",
-      });
-
-      if (!response.ok) throw new Error("Failed to delete customer");
+      await CustomerService.delete(id);
 
       toast.success("Cliente excluído com sucesso");
       fetchCustomers();
@@ -183,11 +168,7 @@ export default function CustomersPage() {
   const handleRestore = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
-      const response = await fetch(`/api/admin/customers/${id}`, {
-        method: "PATCH",
-      });
-
-      if (!response.ok) throw new Error("Failed to restore customer");
+      await CustomerService.restore(id);
 
       toast.success("Cliente restaurado com sucesso");
       fetchCustomers();

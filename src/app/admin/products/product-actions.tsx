@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { ProductService } from "@/lib/api/services/product.service";
 import { Button } from "@/components/ui/button";
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,11 +37,7 @@ export function ProductActions({
   const onDelete = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/products/${product.id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("Erro ao excluir");
+      await ProductService.delete(product.id);
 
       toast.success("Produto excluído com sucesso");
       setShowDeleteModal(false);

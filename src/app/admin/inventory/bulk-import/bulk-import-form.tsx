@@ -29,6 +29,9 @@ import { Input } from "@/components/ui/input";
 import { SetBadge } from "@/components/ui/set-badge";
 import { ChipListInput } from "@/components/ui/chip-list-input";
 import { ImportProgressDisplay } from "@/components/admin/import-progress-display";
+import { ScryfallService } from "@/lib/api/services/scryfall.service";
+import { InventoryService, BulkInventoryItemDto } from "@/lib/api/services/inventory.service";
+
 
 type ParsedLine = {
   quantity: number;
@@ -191,13 +194,7 @@ export function BulkImportForm() {
     let results: (BulkItemResult & { originalLine: string })[] = [];
     for (let i = 0; i < batchRequest.length; i += CHUNK_SIZE) {
       const chunk = batchRequest.slice(i, i + CHUNK_SIZE);
-      const response = await fetch("/api/scryfall/resolve-batch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(chunk),
-      });
-      if (!response.ok) throw new Error("Erro na resolução em lote");
-      const apiResponse = await response.json();
+      const apiResponse = await ScryfallService.resolveBatch(chunk);
       if (!apiResponse.success) throw new Error(apiResponse.message || "Erro na resolução em lote");
       
       const chunkResults = apiResponse.data || [];
@@ -301,18 +298,7 @@ export function BulkImportForm() {
             // After streaming is done, fetch the actual collection data
             setTimeout(async () => {
               try {
-                const importResponse = await fetch("/api/inventory/import-ligamagic", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ collectionId: ligamagicId }),
-                });
-
-                if (!importResponse.ok) {
-                  const errData = await importResponse.json();
-                  throw new Error(errData.error || "Erro ao importar coleção");
-                }
-
-                const apiResponse = await importResponse.json();
+                const apiResponse = await InventoryService.importLigaMagic(ligamagicId);
                 if (!apiResponse.success) {
                   throw new Error(apiResponse.message || "Erro ao importar coleção");
                 }
@@ -404,16 +390,8 @@ export function BulkImportForm() {
     setReResolvingIndex(index);
     try {
       // Use the normal search API directly for re-processing since it supports fuzzy matching via the text search API
-      const searchResponse = await fetch("/api/scryfall/search-by-name", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: item.cardName,
-          setCode: item.setCode,
-          cardNumber: item.cardNumber,
-        }),
-      });
-      const found: BulkItemResult | null = searchResponse.ok ? await searchResponse.json() : null;
+      const result = await ScryfallService.searchByName(item.cardName, item.setCode, item.cardNumber);
+      const found = result.data;
 
       if (found && found.status === "success") {
         const resultItem = {
@@ -429,7 +407,7 @@ export function BulkImportForm() {
         setItems((prev) =>
           prev.map((it, i) => {
             if (i !== index) return it;
-            return resultItem;
+            return resultItem as BulkItemResult & { originalLine: string };
           }),
         );
       } else {
@@ -481,20 +459,12 @@ export function BulkImportForm() {
 
         for (let i = 0; i < toAdd.length; i += CHUNK_SIZE) {
           const chunk = toAdd.slice(i, i + CHUNK_SIZE);
-          const bulkResponse = await fetch("/api/inventory/bulk", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(chunk),
-          });
-
-          if (!bulkResponse.ok) throw new Error("Erro ao salvar lote");
-
-          const apiResponse = await bulkResponse.json();
+          const apiResponse = await InventoryService.bulkAdd(chunk as BulkInventoryItemDto[]);
           if (!apiResponse.success) {
             throw new Error(apiResponse.message || "Erro ao salvar lote");
           }
 
-          const results: { cardName: string; status: "success" | "error"; error?: string }[] = apiResponse.data || [];
+          const results = apiResponse.data || [];
 
           totalSuccesses += results.filter(
             (r) => r.status === "success",

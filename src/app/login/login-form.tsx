@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Loader2, ArrowRight } from "lucide-react";
+import { AuthService } from "@/lib/api/services/auth.service";
+
 
 interface LoginFormProps {
   tenantId: string;
@@ -31,13 +33,7 @@ export function LoginForm({ tenantId, tenantName }: LoginFormProps) {
     }
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, tenantId }),
-      });
-
-      const result = await response.json();
+      const result = await AuthService.login(username, password, tenantId);
 
       if (!result.success) {
         toast.error("Houve um problema", {

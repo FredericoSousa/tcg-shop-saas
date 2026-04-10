@@ -13,6 +13,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { InventoryService } from "@/lib/api/services/inventory.service";
+
 
 interface BulkActionsBarProps {
   selectedCount: number;
@@ -38,13 +40,7 @@ export function BulkActionsBar({
   const handleBulkDelete = async () => {
     setIsDeleting(true);
     try {
-      const response = await fetch("/api/inventory/items", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: selectedIds }),
-      });
-
-      const result = await response.json();
+      const result = await InventoryService.deleteItems(selectedIds);
       if (!result.success) throw new Error(result.message || "Failed to delete");
 
       toast.success(`${selectedCount} itens removidos com sucesso.`);
@@ -65,17 +61,11 @@ export function BulkActionsBar({
 
     setIsUpdating(true);
     try {
-      const response = await fetch("/api/inventory/items", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ids: selectedIds,
-          price: bulkPrice ? parseFloat(bulkPrice) : undefined,
-          quantity: bulkQuantity ? parseInt(bulkQuantity, 10) : undefined,
-        }),
-      });
-
-      const result = await response.json();
+      const result = await InventoryService.updateItems(
+        selectedIds,
+        bulkPrice ? parseFloat(bulkPrice) : undefined,
+        bulkQuantity ? parseInt(bulkQuantity, 10) : undefined
+      );
       if (!result.success) throw new Error(result.message || "Failed to update");
 
       toast.success(`${selectedCount} itens atualizados com sucesso.`);

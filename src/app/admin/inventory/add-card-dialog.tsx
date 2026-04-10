@@ -24,6 +24,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Feedback } from "@/components/ui/feedback";
 import { LANGUAGE_LIST, getLanguageData } from "@/lib/constants/languages";
 import { cn } from "@/lib/utils";
+import { ScryfallService } from "@/lib/api/services/scryfall.service";
+import { InventoryService } from "@/lib/api/services/inventory.service";
+
 
 const VALID_EXTRAS = [
   { value: "FOIL", label: "Foil" },
@@ -67,9 +70,7 @@ export function AddCardDialog() {
     setIsSearching(true);
     setHasSearched(true);
     try {
-      const response = await fetch(`/api/scryfall/search?q=${encodeURIComponent(query)}`);
-      if (!response.ok) throw new Error("Search failed");
-      const result = await response.json();
+      const result = await ScryfallService.search(query);
       if (result.success && result.data) {
         setResults(result.data as Card[]);
       } else {
@@ -94,13 +95,7 @@ export function AddCardDialog() {
           extras: selectedExtras,
         };
 
-        const response = await fetch("/api/inventory/items", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(body),
-        });
-
-        const result = await response.json();
+        const result = await InventoryService.addItem(body);
 
         if (!result.success) {
           throw new Error(result.message || "Erro ao salvar o card");

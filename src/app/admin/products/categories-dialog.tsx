@@ -13,7 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Grid, Plus, Trash2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { CategoryService } from "@/lib/api/services/category.service";
 import { ConfirmModal } from "@/components/admin/confirm-modal";
+
 
 interface CategoriesDialogProps {
   categories: { id: string; name: string }[];
@@ -33,13 +35,7 @@ export function CategoriesDialog({ categories }: CategoriesDialogProps) {
 
     setLoading(true);
     try {
-      const res = await fetch("/api/admin/categories", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: newCategory, showOnEcommerce }),
-      });
-
-      if (!res.ok) throw new Error("Erro ao criar categoria");
+      const res = await CategoryService.create(newCategory, showOnEcommerce);
 
       toast.success("Categoria criada com sucesso");
       setNewCategory("");
@@ -57,11 +53,7 @@ export function CategoriesDialog({ categories }: CategoriesDialogProps) {
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/categories/${categoryToDelete.id}`, {
-        method: "DELETE",
-      });
-
-      if (!res.ok) throw new Error("Erro ao excluir");
+      const res = await CategoryService.delete(categoryToDelete.id);
 
       toast.success("Categoria excluída");
       setCategoryToDelete(null);
