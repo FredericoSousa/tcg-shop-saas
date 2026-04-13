@@ -2,7 +2,6 @@ import { getBrowser } from "../puppeteer";
 import { logger } from "../logger";
 import { convertSetCode } from "../constants/card-mappings";
 import { Page } from "puppeteer-core";
-import { JSDOM } from "jsdom";
 
 export type CollectionCard = {
   quantity: number;
@@ -29,126 +28,72 @@ export type ImportProgress = {
   status: "fetching" | "parsing" | "validating" | "completed" | "error";
 };
 
-function extractCardsFromHtml(cardsHtml: string): CollectionCard[] {
+type RawCard = {
+  quantityText: string | null | undefined;
+  cardNumberText: string | null | undefined;
+  setImageSrc: string | null | undefined;
+  cardNameFront: string | null | undefined;
+  cardNameBack: string | null | undefined;
+  languageSrc: string | null | undefined;
+  condition: string | null | undefined;
+  priceText: string | null | undefined;
+  extrasText: string | null | undefined;
+};
+
+function processRawCards(rawCards: RawCard[]): CollectionCard[] {
   try {
-    const dom = new JSDOM(
-      `<html><body><table>${cardsHtml}</table></body></html>`,
-    );
-    const document = dom.window.document;
-    return Array.from(document.querySelectorAll(".pointer"))
-      .map((element) => {
-        if (!element) return null;
-        // More robust element access
-        const quantityEl = element.children[0];
-        const cardNumberEl = element.children[1];
-        const cardNameEl = element.children[3];
-        const setImageEl = element.children[2]
-          ?.children[0] as HTMLImageElement | null;
-        const languageImageEl = element.children[5]
-          ?.children[0] as HTMLImageElement | null;
-        const conditionEl = element.children[6];
-        const priceEl = element.children[9];
-        const extrasEl = element.children[4];
+    return rawCards.map((raw) => {
+      const quantity = Number(raw.quantityText?.replace("x", "").trim() ?? 1);
+      const cardNumber = raw.cardNumberText?.replace("#", "").trim() ?? "";
 
-        // Fallback to position-based parsing if data attributes not found
-        const quantity = Number(
-          quantityEl?.textContent?.replace("x", "").trim() ?? 1,
-        );
-        const cardNumber =
-          cardNumberEl?.textContent?.replace("#", "").trim() ?? "";
-
-        if (!cardNumber || isNaN(quantity) || quantity < 1) {
-          logger.debug("Skipping invalid card", {
-            action: "extract_card_skip",
-            reason: "invalid_data",
-            cardNumber: cardNumber || "missing",
-            quantity,
-          });
-          return null;
-        }
-
-        // Extract set code from image URL or data attribute
-        const setCode =
-          setImageEl
-            ?.getAttribute("data-src")
-            ?.split("/ed_mtg/")[1]
-            ?.split(".")[0]
-            ?.split("_")[0] ?? "";
-
-        // Check for special set types
-        const isStoreChampionship = /SC\d+/g.test(setCode?.toUpperCase() ?? "");
-        const isPlayNetwork = /PW\d+/g.test(setCode?.toUpperCase() ?? "");
-        const isMysteryBooster = /MB\d+/g.test(setCode?.toUpperCase() ?? "");
-
-        const finalSetCode = convertSetCode(
-          setCode,
-          isStoreChampionship,
-          isMysteryBooster,
-          isPlayNetwork,
-        );
-
-        // Extract card name (handles double-faced cards) with deep guards
-
-        const frontSideNameEl = cardNameEl?.children[0];
-        const backSideNameEl = cardNameEl?.children[1]?.children[1];
-
-        const frontSideName =
-          frontSideNameEl?.children[1]?.textContent ??
-          frontSideNameEl?.children[0]?.textContent;
-
-        const backSideName =
-          backSideNameEl?.children[1]?.textContent ??
-          backSideNameEl?.children[0]?.textContent;
-
-        let cardName = frontSideName as string;
-
-        if (backSideName) {
-          cardName = `${frontSideName} // ${backSideName}`;
-        }
-
-        // Extract language - safe URL parsing with fallback
-        const language =
-          languageImageEl?.src
-            .split("/bandeiras/")?.[1]
-            ?.replace(".svg", "")
-            ?.toUpperCase() ?? "EN";
-
-        // Extract condition
-        const condition = conditionEl?.textContent?.trim() ?? "";
-
-        // Extract price - safe parsing
-        const price = parseFloat(
-          priceEl?.textContent?.replace("R$", "").replace(",", ".") ?? "0",
-        );
-
-        // Extract extras - safe split
-        const extras: string[] =
-          extrasEl?.textContent
-            ?.split(", ")
-            ?.map((e: string) =>
-              e
-                .trim()
-                .replaceAll(" / ", "/")
-                .replaceAll(" ", "_")
-                .toUpperCase(),
-            )
-            ?.filter(Boolean) ?? [];
-
-        return {
+      if (!cardNumber || isNaN(quantity) || quantity < 1) {
+        logger.debug("Skipping invalid card", {
+          action: "extract_card_skip",
+          reason: "invalid_data",
+          cardNumber: cardNumber || "missing",
           quantity,
-          name: cardName || "Unknown",
-          set: finalSetCode,
-          cardNumber,
-          price: isNaN(price) ? 0 : price,
-          language,
-          condition,
-          extras,
-        };
-      })
-      .filter(Boolean) as CollectionCard[];
+        });
+        return null;
+      }
+
+      const setCode = raw.setImageSrc?.split("/ed_mtg/")[1]?.split(".")[0]?.split("_")[0] ?? "";
+
+      const isStoreChampionship = /SC\d+/g.test(setCode?.toUpperCase() ?? "");
+      const isPlayNetwork = /PW\d+/g.test(setCode?.toUpperCase() ?? "");
+      const isMysteryBooster = /MB\d+/g.test(setCode?.toUpperCase() ?? "");
+
+      const finalSetCode = convertSetCode(
+        setCode,
+        isStoreChampionship,
+        isMysteryBooster,
+        isPlayNetwork,
+      );
+
+      let cardName = (raw.cardNameFront as string) || "Unknown";
+      if (raw.cardNameBack) {
+        cardName = `${raw.cardNameFront} // ${raw.cardNameBack}`;
+      }
+
+      const language = raw.languageSrc?.split("/bandeiras/")?.[1]?.replace(".svg", "")?.toUpperCase() ?? "EN";
+      const condition = raw.condition?.trim() ?? "";
+      const price = parseFloat(raw.priceText?.replace("R$", "").replace(",", ".") ?? "0");
+
+      const extras = raw.extrasText?.split(", ")?.map((e: string) => e.trim().replaceAll(" / ", "/").replaceAll(" ", "_").toUpperCase())?.filter(Boolean) ?? [];
+
+      return {
+        quantity,
+        name: cardName,
+        set: finalSetCode,
+        cardNumber,
+        price: isNaN(price) ? 0 : price,
+        language,
+        condition,
+        extras,
+      };
+    }).filter(Boolean) as CollectionCard[];
   } catch (error) {
-    logger.warn("Error extracting card from row", {
-      action: "extract_card",
+    logger.warn("Error processing raw cards", {
+      action: "process_raw_cards",
       error: error instanceof Error ? error.message : String(error),
     });
     return [];
@@ -204,14 +149,40 @@ async function fetchPageCards(
       status: "parsing",
     });
 
-    const cardsOnPage = await page.evaluate(() => {
+    const rawCards = await page.evaluate(() => {
       const rows = Array.from(document.querySelectorAll(".pointer"));
-      return rows.map((el) => el.outerHTML);
+      return rows.map((element) => {
+        const quantityEl = element.children[0];
+        const cardNumberEl = element.children[1];
+        const cardNameEl = element.children[3];
+        const setImageEl = element.children[2]?.children[0] as HTMLImageElement | undefined;
+        const languageImageEl = element.children[5]?.children[0] as HTMLImageElement | undefined;
+        const conditionEl = element.children[6];
+        const priceEl = element.children[9];
+        const extrasEl = element.children[4];
+
+        const frontSideNameEl = cardNameEl?.children[0];
+        const backSideNameEl = cardNameEl?.children[1]?.children[1];
+
+        const frontSideName = frontSideNameEl?.children[1]?.textContent ?? frontSideNameEl?.children[0]?.textContent;
+        const backSideName = backSideNameEl?.children[1]?.textContent ?? backSideNameEl?.children[0]?.textContent;
+
+        return {
+          quantityText: quantityEl?.textContent,
+          cardNumberText: cardNumberEl?.textContent,
+          setImageSrc: setImageEl?.getAttribute("data-src"),
+          cardNameFront: frontSideName,
+          cardNameBack: backSideName,
+          languageSrc: languageImageEl?.src,
+          condition: conditionEl?.textContent,
+          priceText: priceEl?.textContent,
+          extrasText: extrasEl?.textContent,
+        };
+      });
     });
 
-    const cardsHtml = cardsOnPage.join("");
-    const cards = extractCardsFromHtml(cardsHtml);
-    return { cards, parsedElements: cardsOnPage.length };
+    const cards = processRawCards(rawCards);
+    return { cards, parsedElements: rawCards.length };
   } catch (error) {
     logger.warn("Error fetching page cards", {
       action: "fetch_page_cards",
