@@ -1,7 +1,6 @@
-import { getBrowser } from "../puppeteer";
 import { logger } from "../logger";
 import { convertSetCode } from "../constants/card-mappings";
-import { Page } from "puppeteer-core";
+import * as cheerio from "cheerio";
 
 export type CollectionCard = {
   quantity: number;
@@ -14,17 +13,14 @@ export type CollectionCard = {
   extras: string[];
 };
 
-/**
- * Progress tracking for collection import
- */
 export type ImportProgress = {
   currentPage: number;
   totalPages: number;
   cardsProcessed: number;
-  estimatedTimeRemaining: number; // in milliseconds
+  estimatedTimeRemaining: number;
   estimatedTimeRemainingSeconds: number;
-  validationRate: number; // percentage 0-100
-  speed: number; // cards per second
+  validationRate: number;
+  speed: number;
   status: "fetching" | "parsing" | "validating" | "completed" | "error";
 };
 
@@ -47,27 +43,16 @@ function processRawCards(rawCards: RawCard[]): CollectionCard[] {
       const cardNumber = raw.cardNumberText?.replace("#", "").trim() ?? "";
 
       if (!cardNumber || isNaN(quantity) || quantity < 1) {
-        logger.debug("Skipping invalid card", {
-          action: "extract_card_skip",
-          reason: "invalid_data",
-          cardNumber: cardNumber || "missing",
-          quantity,
-        });
         return null;
       }
 
       const setCode = raw.setImageSrc?.split("/ed_mtg/")[1]?.split(".")[0]?.split("_")[0] ?? "";
-
+      
       const isStoreChampionship = /SC\d+/g.test(setCode?.toUpperCase() ?? "");
       const isPlayNetwork = /PW\d+/g.test(setCode?.toUpperCase() ?? "");
       const isMysteryBooster = /MB\d+/g.test(setCode?.toUpperCase() ?? "");
 
-      const finalSetCode = convertSetCode(
-        setCode,
-        isStoreChampionship,
-        isMysteryBooster,
-        isPlayNetwork,
-      );
+      const finalSetCode = convertSetCode(setCode, isStoreChampionship, isMysteryBooster, isPlayNetwork);
 
       let cardName = (raw.cardNameFront as string) || "Unknown";
       if (raw.cardNameBack) {
@@ -100,18 +85,30 @@ function processRawCards(rawCards: RawCard[]): CollectionCard[] {
   }
 }
 
-/**
- * Fetch cards from a single page
- */
+async function fetchHtml(url: string): Promise<string> {
+  const response = await fetch(url, {
+    headers: {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+      "Accept": "text/html",
+      "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}, status: ${response.status}`);
+  }
+
+  return response.text();
+}
+
 async function fetchPageCards(
-  page: Page,
   pageNumber: number,
   collectionId: string,
   onProgress?: (progress: ImportProgress) => void,
 ): Promise<{ cards: CollectionCard[]; parsedElements: number }> {
-  const url = `https://www.ligamagic.com.br/?view=colecao/colecao&id=${collectionId}&modoExibicao=1&page=${pageNumber}`;
-
   try {
+    const url = `https://www.ligamagic.com.br/?view=colecao/colecao&id=${collectionId}&modoExibicao=1&page=${pageNumber}`;
+    
     onProgress?.({
       currentPage: pageNumber,
       totalPages: 0,
@@ -123,21 +120,10 @@ async function fetchPageCards(
       status: "fetching",
     });
 
-    await page.goto(url, { waitUntil: "networkidle2", timeout: 30000 });
-
-    // Wait for either data attributes or fallback to class-based selectors
-    try {
-      await page.waitForSelector(".pointer", {
-        timeout: 30000,
-      });
-    } catch {
-      logger.warn("Timeout waiting for cards selector", {
-        action: "fetch_page_cards",
-        page: pageNumber,
-      });
-      return { cards: [], parsedElements: 0 };
-    }
-
+    const html = await fetchHtml(url);
+    const $ = cheerio.load(html);
+    const rows = $(".pointer");
+    
     onProgress?.({
       currentPage: pageNumber,
       totalPages: 0,
@@ -149,64 +135,46 @@ async function fetchPageCards(
       status: "parsing",
     });
 
-    const rawCards = await page.evaluate(() => {
-      const rows = Array.from(document.querySelectorAll(".pointer"));
-      return rows.map((element) => {
-        const quantityEl = element.children[0];
-        const cardNumberEl = element.children[1];
-        const cardNameEl = element.children[3];
-        const setImageEl = element.children[2]?.children[0] as HTMLImageElement | undefined;
-        const languageImageEl = element.children[5]?.children[0] as HTMLImageElement | undefined;
-        const conditionEl = element.children[6];
-        const priceEl = element.children[9];
-        const extrasEl = element.children[4];
+    const rawCards: RawCard[] = [];
+    
+    rows.each((_, el) => {
+      const element = $(el);
+      const children = element.children();
+      
+      const quantityEl = children.eq(0);
+      const cardNumberEl = children.eq(1);
+      const cardNameEl = children.eq(3);
+      const setImageEl = children.eq(2).find("img").first();
+      const languageImageEl = children.eq(5).find("img").first();
+      const conditionEl = children.eq(6);
+      const priceEl = children.eq(9);
+      const extrasEl = children.eq(4);
 
-        const frontSideNameEl = cardNameEl?.children[0];
-        const backSideNameEl = cardNameEl?.children[1]?.children[1];
+      const frontSideNameEl = cardNameEl.children().eq(0);
+      const backSideNameEl = cardNameEl.children().eq(1).children().eq(1);
 
-        const frontSideName = frontSideNameEl?.children[1]?.textContent ?? frontSideNameEl?.children[0]?.textContent;
-        const backSideName = backSideNameEl?.children[1]?.textContent ?? backSideNameEl?.children[0]?.textContent;
+      const frontSideName = frontSideNameEl.children().eq(1).text() || frontSideNameEl.children().eq(0).text() || frontSideNameEl.text();
+      const backSideName = backSideNameEl.children().eq(1).text() || backSideNameEl.children().eq(0).text() || backSideNameEl.text() || null;
 
-        return {
-          quantityText: quantityEl?.textContent,
-          cardNumberText: cardNumberEl?.textContent,
-          setImageSrc: setImageEl?.getAttribute("data-src"),
-          cardNameFront: frontSideName,
-          cardNameBack: backSideName,
-          languageSrc: languageImageEl?.src,
-          condition: conditionEl?.textContent,
-          priceText: priceEl?.textContent,
-          extrasText: extrasEl?.textContent,
-        };
+      rawCards.push({
+        quantityText: quantityEl.text(),
+        cardNumberText: cardNumberEl.text(),
+        setImageSrc: setImageEl.attr("data-src"),
+        cardNameFront: frontSideName?.trim() || null,
+        cardNameBack: backSideName?.trim() || null,
+        languageSrc: languageImageEl.attr("src"),
+        condition: conditionEl.text(),
+        priceText: priceEl.text(),
+        extrasText: extrasEl.text(),
       });
     });
 
     const cards = processRawCards(rawCards);
     return { cards, parsedElements: rawCards.length };
   } catch (error) {
-    logger.warn("Error fetching page cards", {
-      action: "fetch_page_cards",
-      page: pageNumber,
-      error: error instanceof Error ? error.message : String(error),
-    });
+    logger.warn("Error fetching page cards", { action: "fetch_page_cards", page: pageNumber, error: String(error) });
     return { cards: [], parsedElements: 0 };
   }
-}
-
-/**
- * Fetch collection with parallel page processing
- * Significantly faster than sequential page fetching
- */
-async function createConfiguredPage(browser: import("puppeteer-core").Browser) {
-  const page = await browser.newPage();
-  await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
-  await page.setExtraHTTPHeaders({
-    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Upgrade-Insecure-Requests": "1"
-  });
-  page.setDefaultTimeout(30000);
-  page.setDefaultNavigationTimeout(30000);
-  return page;
 }
 
 export async function getCollectionById(
@@ -214,60 +182,39 @@ export async function getCollectionById(
   onProgress?: (progress: ImportProgress) => void,
 ): Promise<CollectionCard[]> {
   const timer = { start: Date.now() };
-  let browser: import("puppeteer-core").Browser | null = null;
   const allCards: CollectionCard[] = [];
   let totalParsedElements = 0;
 
   try {
-    browser = await getBrowser();
-    const page = await createConfiguredPage(browser);
-
-    // First, fetch first page to detect total pages
     const firstPageUrl = `https://www.ligamagic.com.br/?view=colecao/colecao&id=${id}&modoExibicao=1&page=1`;
-    await page.goto(firstPageUrl, { waitUntil: "networkidle2" });
-
-    // Try to find pagination info
-    const pagination = await page.evaluate(() => {
-      const paginationEl = document.querySelector(".direita-paginacao");
-      if (!paginationEl) return { totalPages: 1 };
-
+    const html = await fetchHtml(firstPageUrl);
+    const $ = cheerio.load(html);
+    
+    let totalPages = 1;
+    const lastPageEl = $(".direita-paginacao a").last();
+    if (lastPageEl.length) {
       try {
-        const lastPageEl = Array.from(paginationEl.children).pop() as HTMLAnchorElement | null;
-        const lastPageUrl = new URL(lastPageEl?.href || "");
-        const lastPageNumber =
-          Number(lastPageUrl.searchParams.get("page")) ?? 1;
-        return { totalPages: lastPageNumber };
+        const href = lastPageEl.attr("href") || "";
+        const match = href.match(/page=(\d+)/);
+        if (match) {
+          totalPages = parseInt(match[1], 10);
+        }
       } catch {
-        return { totalPages: 1 };
+        totalPages = 1;
       }
-    });
-
-    logger.info("Starting collection import", {
-      action: "import_ligamagic_collection",
-      collectionId: id,
-      estimatedPages: pagination.totalPages,
-    });
-
-    // Helper to calculate and emit progress
-    const emitProgress = (
-      currentPage: number,
-      totalPages: number,
-      status: ImportProgress["status"],
-    ) => {
+    }
+    
+    const emitProgress = (currentPage: number, tPages: number, status: ImportProgress["status"]) => {
       const elapsedMs = Date.now() - timer.start;
       const avgTimePerPage = elapsedMs / Math.max(1, currentPage - 1);
-      const remainingPages = Math.max(0, totalPages - currentPage);
+      const remainingPages = Math.max(0, tPages - currentPage);
       const estimatedTimeRemaining = remainingPages * avgTimePerPage;
-      const cardsPerSecond =
-        elapsedMs > 0 ? (allCards.length / elapsedMs) * 1000 : 0;
-      const validationRate =
-        totalParsedElements > 0
-          ? Math.round((allCards.length / totalParsedElements) * 100)
-          : 0;
+      const cardsPerSecond = elapsedMs > 0 ? (allCards.length / elapsedMs) * 1000 : 0;
+      const validationRate = totalParsedElements > 0 ? Math.round((allCards.length / totalParsedElements) * 100) : 0;
 
       onProgress?.({
         currentPage,
-        totalPages,
+        totalPages: tPages,
         cardsProcessed: allCards.length,
         estimatedTimeRemaining,
         estimatedTimeRemainingSeconds: Math.ceil(estimatedTimeRemaining / 1000),
@@ -277,80 +224,34 @@ export async function getCollectionById(
       });
     };
 
-    // Fetch first page
-    const firstResult = await fetchPageCards(page, 1, id, (p) =>
-      emitProgress(1, pagination.totalPages, p.status),
-    );
+    const firstResult = await fetchPageCards(1, id, (p) => emitProgress(1, totalPages, p.status));
     allCards.push(...firstResult.cards);
     totalParsedElements += firstResult.parsedElements;
+    emitProgress(1, totalPages, "validating");
 
-    emitProgress(1, pagination.totalPages, "validating");
-
-    // Fetch remaining pages in parallel (max 3 concurrent to avoid overload)
-    const pageNumbers = Array.from(
-      { length: pagination.totalPages - 1 },
-      (_, i) => i + 2,
-    );
+    const pageNumbers = Array.from({ length: totalPages - 1 }, (_, i) => i + 2);
 
     if (pageNumbers.length > 0) {
-      // Process in batches of 3
       const batchSize = 3;
       for (let i = 0; i < pageNumbers.length; i += batchSize) {
         const batch = pageNumbers.slice(i, i + batchSize);
-        if (!browser) throw new Error("Browser not initialized");
-        const pages = await Promise.all(batch.map(() => createConfiguredPage(browser!)));
+        const results = await Promise.all(batch.map((pageNum) => 
+          fetchPageCards(pageNum, id, (p) => emitProgress(pageNum, totalPages, p.status))
+        ));
 
-        try {
-          const results = await Promise.all(
-            batch.map((pageNum, idx) =>
-              fetchPageCards(pages[idx], pageNum, id, (p) =>
-                emitProgress(pageNum, pagination.totalPages, p.status),
-              ),
-            ),
-          );
+        results.forEach((result) => {
+          allCards.push(...result.cards);
+          totalParsedElements += result.parsedElements;
+        });
 
-          results.forEach((result) => {
-            allCards.push(...result.cards);
-            totalParsedElements += result.parsedElements;
-          });
-
-          emitProgress(
-            Math.min(i + batchSize + 1, pagination.totalPages + 1),
-            pagination.totalPages,
-            "validating",
-          );
-
-          logger.debug("Batch completed", {
-            action: "fetch_batch",
-            batchPages: batch.length,
-            totalCardsCollected: allCards.length,
-            validationRate: `${Math.round((allCards.length / totalParsedElements) * 100)}%`,
-          });
-        } finally {
-          // Close pages to free memory
-          await Promise.all(pages.map((p) => p.close().catch(() => { })));
-        }
+        emitProgress(Math.min(i + batchSize + 1, totalPages + 1), totalPages, "validating");
       }
     }
 
-    await page.close();
-
-    logger.info("Collection import completed", {
-      action: "import_ligamagic_collection",
-      totalCards: allCards.length,
-      duration: Date.now() - timer.start,
-    });
-
+    logger.info("Collection import completed", { action: "import_ligamagic_collection", totalCards: allCards.length, duration: Date.now() - timer.start });
     return allCards;
   } catch (error) {
-    logger.error("Fatal error importing collection", error as Error, {
-      action: "import_ligamagic_collection",
-      collectionId: id,
-    });
+    logger.error("Fatal error importing collection", error as Error, { action: "import_ligamagic_collection", collectionId: id });
     return [];
-  } finally {
-    if (browser) {
-      await browser.close().catch(() => { });
-    }
   }
 }
