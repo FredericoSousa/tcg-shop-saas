@@ -34,7 +34,7 @@ export default async function HomePage() {
     prisma.inventoryItem.findMany({
       where: { tenantId, active: true, quantity: { gt: 0 } },
       include: { cardTemplate: true },
-      orderBy: { id: 'desc' }, // Using ID desc as a proxy for most recent
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], // Using actual date added for most recent
       take: 4,
     }),
   ]);

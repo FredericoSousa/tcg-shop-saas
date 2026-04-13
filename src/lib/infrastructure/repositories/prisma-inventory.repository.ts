@@ -124,7 +124,9 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
   }
 
   async updateMany(ids: string[], data: Partial<DomainInventoryItem>): Promise<void> {
-    const prismaData: Prisma.InventoryItemUpdateManyMutationInput = {};
+    const prismaData: Prisma.InventoryItemUpdateManyMutationInput = {
+      updatedAt: new Date()
+    };
     if (data.price !== undefined) prismaData.price = new Prisma.Decimal(data.price);
     if (data.quantity !== undefined) prismaData.quantity = data.quantity;
     if (data.active !== undefined) prismaData.active = data.active;
@@ -139,7 +141,7 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
   async deleteMany(ids: string[]): Promise<void> {
     await this.prisma.inventoryItem.updateMany({
       where: { id: { in: ids } },
-      data: { active: false },
+      data: { active: false, updatedAt: new Date() },
     });
   }
 
@@ -244,6 +246,7 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
       },
       data: {
         quantity: { decrement: quantity },
+        updatedAt: new Date(),
       },
     });
 
