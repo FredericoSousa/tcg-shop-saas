@@ -13,10 +13,6 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'c1.scryfall.com',
       },
-      {
-        protocol: 'https',
-        hostname: '**',
-      }
     ]
   },
   async headers() {

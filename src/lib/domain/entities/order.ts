@@ -28,6 +28,9 @@ export interface OrderPayment {
   createdAt: Date;
 }
 
+/**
+ * Order data interface — used for data transfer and persistence mapping.
+ */
 export interface Order {
   id: string;
   tenantId: string;
@@ -45,3 +48,29 @@ export interface Order {
     phoneNumber: string;
   };
 }
+
+// ─── Domain Logic Helpers ──────────────────────────────────────────
+
+const CANCELLABLE_STATUSES: OrderStatus[] = ["PENDING"];
+const FINALIZABLE_STATUSES: OrderStatus[] = ["PENDING"];
+
+/** Whether an order in the given status can be cancelled. */
+export function canOrderBeCancelled(status: OrderStatus): boolean {
+  return CANCELLABLE_STATUSES.includes(status);
+}
+
+/** Whether an order in the given status can be finalized (marked as paid). */
+export function canOrderBeFinalized(status: OrderStatus): boolean {
+  return FINALIZABLE_STATUSES.includes(status);
+}
+
+/** Calculate the sum of all item subtotals. */
+export function calculateItemsTotal(items: OrderItem[]): number {
+  return items.reduce((sum, item) => sum + item.priceAtPurchase * item.quantity, 0);
+}
+
+/** Calculate the total amount already paid. */
+export function calculatePaidAmount(payments: OrderPayment[]): number {
+  return payments.reduce((sum, p) => sum + p.amount, 0);
+}
+

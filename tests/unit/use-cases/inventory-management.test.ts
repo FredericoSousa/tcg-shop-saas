@@ -81,7 +81,7 @@ describe('Inventory Management Use Cases', () => {
     it('should delete multiple items', async () => {
       const useCase = new DeleteInventoryUseCase(inventoryRepo);
       await useCase.execute({ ids: ['1', '2'] });
-      expect(inventoryRepo.deleteMany).toHaveBeenCalledWith(['1', '2']);
+      expect(inventoryRepo.deactivateMany).toHaveBeenCalledWith(['1', '2']);
     });
   });
 });

@@ -6,6 +6,10 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { runWithTenant } from "./tenant-context";
 import type { Tenant } from "./domain/entities/tenant";
+import { DomainError, EntityNotFoundError, ValidationError, BusinessRuleViolationError } from "./domain/errors/domain.error";
+import { ApiResponse } from "./infrastructure/http/api-response";
+import { logger } from "./logger";
+import { ZodError } from "zod";
 
 /**
  * Gets the current tenant from the x-tenant-id header.
@@ -87,15 +91,49 @@ export async function validateAdminApi() {
 }
 
 /**
+ * Maps DomainError subclasses to appropriate HTTP responses.
+ */
+function handleDomainError(error: DomainError): Response {
+  if (error instanceof EntityNotFoundError) {
+    return ApiResponse.notFound(error.message, error.code);
+  }
+  if (error instanceof ValidationError) {
+    return ApiResponse.badRequest(error.message, error.code, error.details);
+  }
+  if (error instanceof BusinessRuleViolationError) {
+    return ApiResponse.json({ success: false, message: error.message, error: { code: error.code } }, 422);
+  }
+  return ApiResponse.serverError(error.message, error.code);
+}
+
+/**
  * Wrapper for API routes and Server Actions to ensure tenant context is set.
+ * Provides centralized error handling: DomainErrors are mapped to appropriate
+ * HTTP status codes, unknown errors return 500.
  */
 export async function withAdminApi<T>(
   handler: (context: { session: SessionData, tenant: Tenant }) => Promise<T>
 ): Promise<T | Response> {
   const context = await validateAdminApi();
   if (!context) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    return ApiResponse.unauthorized();
   }
 
-  return runWithTenant(context.tenant.id, () => handler(context));
+  try {
+    return await runWithTenant(context.tenant.id, () => handler(context));
+  } catch (error) {
+    if (error instanceof DomainError) {
+      logger.warn(`Domain error: ${error.message}`, { action: error.code, tenantId: context.tenant.id });
+      return handleDomainError(error);
+    }
+
+    if (error instanceof ZodError) {
+      const details = error.issues.map((e) => `${e.path.map(String).join(".")}: ${e.message}`);
+      return ApiResponse.badRequest("Dados inválidos", "VALIDATION_ERROR", details);
+    }
+
+    logger.error("Unhandled API error", error as Error, { tenantId: context.tenant.id });
+    return ApiResponse.serverError();
+  }
 }
+

@@ -1,5 +1,7 @@
 /**
- * Structured logging utility for better debugging and tracking
+ * Structured logging utility for better debugging and tracking.
+ * Outputs human-readable strings in development and JSON in production
+ * for structured log ingestion (Datadog, CloudWatch, etc.).
  */
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
@@ -16,7 +18,7 @@ interface LogContext {
 class Logger {
   private isDev = process.env.NODE_ENV === "development";
 
-  private formatMessage(
+  private formatDev(
     level: LogLevel,
     message: string,
     context?: LogContext,
@@ -26,25 +28,45 @@ class Logger {
     return `[${timestamp}] [${level.toUpperCase()}] ${message}${contextStr}`;
   }
 
+  private formatProd(
+    level: LogLevel,
+    message: string,
+    context?: LogContext,
+  ): string {
+    return JSON.stringify({
+      timestamp: new Date().toISOString(),
+      level: level.toUpperCase(),
+      message,
+      ...context,
+    });
+  }
+
+  private format(level: LogLevel, message: string, context?: LogContext): string {
+    return this.isDev
+      ? this.formatDev(level, message, context)
+      : this.formatProd(level, message, context);
+  }
+
   debug(message: string, context?: LogContext): void {
     if (this.isDev) {
-      console.debug(this.formatMessage("debug", message, context));
+      console.debug(this.format("debug", message, context));
     }
   }
 
   info(message: string, context?: LogContext): void {
-    console.log(this.formatMessage("info", message, context));
+    console.log(this.format("info", message, context));
   }
 
   warn(message: string, context?: LogContext): void {
-    console.warn(this.formatMessage("warn", message, context));
+    console.warn(this.format("warn", message, context));
   }
 
   error(message: string, error?: Error | string, context?: LogContext): void {
     const errorMsg =
       error instanceof Error ? error.message : String(error || "");
-    const fullContext = { ...context, error: errorMsg };
-    console.error(this.formatMessage("error", message, fullContext));
+    const stack = error instanceof Error ? error.stack : undefined;
+    const fullContext = { ...context, error: errorMsg, ...(stack && !this.isDev ? { stack } : {}) };
+    console.error(this.format("error", message, fullContext));
   }
 }
 
@@ -64,3 +86,4 @@ export function createTimer(label: string) {
     },
   };
 }
+

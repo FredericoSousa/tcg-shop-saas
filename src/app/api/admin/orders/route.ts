@@ -2,8 +2,7 @@ import { NextRequest } from "next/server";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
 import { ListOrdersUseCase } from "@/lib/application/use-cases/list-orders.use-case";
-import { OrderStatus } from "@prisma/client";
-import { logger } from "@/lib/logger";
+import { ordersQuerySchema, parseSearchParams } from "@/lib/validation/schemas";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
 /**
@@ -43,27 +42,20 @@ import { ApiResponse } from "@/lib/infrastructure/http/api-response";
  *               $ref: '#/components/schemas/ApiResponse'
  */
 export async function GET(request: NextRequest) {
-  return withAdminApi(async ({ tenant }) => {
-    try {
-      const { searchParams } = new URL(request.url);
-      const page = parseInt(searchParams.get("page") || "1");
-      const limit = parseInt(searchParams.get("limit") || "10");
-      const search = searchParams.get("search") || undefined;
-      const source = (searchParams.get("source")?.toUpperCase() as "POS" | "ECOMMERCE" | "all") || "all";
-      const status = (searchParams.get("status")?.toUpperCase() as OrderStatus | "all") || "all";
-      const customerPhone = searchParams.get("customerPhone") || undefined;
+  return withAdminApi(async () => {
+    const { page, limit, search, source, status, customerPhone } = parseSearchParams(
+      request.nextUrl.searchParams,
+      ordersQuerySchema,
+    );
 
-      const listOrdersUseCase = container.resolve(ListOrdersUseCase);
-      const result = await listOrdersUseCase.execute({
-        page,
-        limit,
-        filters: { search, source, status, customerPhone }
-      });
+    const listOrdersUseCase = container.resolve(ListOrdersUseCase);
+    const result = await listOrdersUseCase.execute({
+      page,
+      limit,
+      filters: { search, source, status, customerPhone }
+    });
 
-      return ApiResponse.success(result);
-    } catch (error: unknown) {
-      logger.error("Error in list orders API", error as Error, { tenantId: tenant.id });
-      return ApiResponse.serverError();
-    }
+    return ApiResponse.success(result);
   });
 }
+

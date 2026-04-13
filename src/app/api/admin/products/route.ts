@@ -66,7 +66,7 @@ const saveProductUseCase = container.resolve(SaveProductUseCase);
 export async function GET(request: NextRequest) {
   return withAdminApi(async ({ tenant }) => {
     try {
-      const { searchParams } = new URL(request.url);
+      const searchParams = request.nextUrl.searchParams;
       const page = Number(searchParams.get("page")) || 1;
       const limit = Number(searchParams.get("limit")) || 10;
       const search = searchParams.get("search") || undefined;

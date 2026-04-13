@@ -12,6 +12,6 @@ export class DeleteInventoryUseCase implements IUseCase<DeleteInventoryRequest, 
   constructor(@inject(TOKENS.InventoryRepository) private inventoryRepo: IInventoryRepository) {}
 
   async execute(request: DeleteInventoryRequest): Promise<void> {
-    await this.inventoryRepo.deleteMany(request.ids);
+    await this.inventoryRepo.deactivateMany(request.ids);
   }
 }

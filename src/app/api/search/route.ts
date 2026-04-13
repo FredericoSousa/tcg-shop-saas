@@ -2,10 +2,10 @@ import "reflect-metadata";
 import { container } from "@/lib/infrastructure/container";
 import { GetStorefrontInventoryUseCase } from "@/lib/application/use-cases/get-storefront-inventory.use-case";
 import { getTenant } from "@/lib/tenant-server";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
   const q = searchParams.get("q");
   
   const tenant = await getTenant();

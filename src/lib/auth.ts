@@ -2,19 +2,9 @@ import { hash, compare } from "bcryptjs";
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 import { prisma } from "./prisma";
+import { config } from "./config";
 
-// Secret key for JWT - MUST be set in environment variables
-if (!process.env.JWT_SECRET) {
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("JWT_SECRET environment variable is not set!");
-  } else {
-    console.warn("WARNING: JWT_SECRET environment variable is not set. Using insecure fallback for development.");
-  }
-}
-
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "dev-secret-do-not-use-in-production",
-);
+const JWT_SECRET = config.jwtSecret;
 
 export interface SessionData {
   userId: string;

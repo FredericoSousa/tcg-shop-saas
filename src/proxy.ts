@@ -4,10 +4,9 @@ import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { container } from "./lib/infrastructure/container";
 import { GetTenantUseCase } from "./lib/application/use-cases/get-tenant.use-case";
+import { config as appConfig } from "./lib/config";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET || "your-secret-key-change-in-production",
-);
+const JWT_SECRET = appConfig.jwtSecret;
 
 // Routes that require authentication
 const PROTECTED_ROUTES = ["/admin"];

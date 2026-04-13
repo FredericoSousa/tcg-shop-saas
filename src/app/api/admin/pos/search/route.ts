@@ -30,7 +30,7 @@ import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 export async function GET(request: NextRequest) {
   return withAdminApi(async ({ tenant }) => {
     try {
-      const { searchParams } = new URL(request.url);
+      const searchParams = request.nextUrl.searchParams;
       const search = searchParams.get("q") || "";
       
       const limit = 20;

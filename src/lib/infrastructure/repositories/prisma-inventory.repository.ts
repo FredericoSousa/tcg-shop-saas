@@ -1,6 +1,6 @@
 import { injectable } from "tsyringe";
 import { BasePrismaRepository } from "./base-prisma.repository";
-import type { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
+import type { IInventoryRepository, StorefrontFilters } from "@/lib/domain/repositories/inventory.repository";
 import type { InventoryItem as DomainInventoryItem } from "@/lib/domain/entities/inventory";
 import { InventoryItem as PrismaInventoryItem, CardTemplate as PrismaCardTemplate, Prisma, Condition as PrismaCondition } from "@prisma/client";
 
@@ -138,7 +138,7 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
     });
   }
 
-  async deleteMany(ids: string[]): Promise<void> {
+  async deactivateMany(ids: string[]): Promise<void> {
     await this.prisma.inventoryItem.updateMany({
       where: { id: { in: ids } },
       data: { active: false, updatedAt: new Date() },
@@ -181,7 +181,7 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
     tenantId: string,
     page: number,
     limit: number,
-    filters?: any
+    filters?: StorefrontFilters
   ): Promise<{ items: DomainInventoryItem[]; total: number }> {
     const skip = (page - 1) * limit;
     

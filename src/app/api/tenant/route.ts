@@ -1,9 +1,10 @@
 import "reflect-metadata";
+import { NextRequest } from "next/server";
 import { container } from "@/lib/infrastructure/container";
 import { GetTenantUseCase } from "@/lib/application/use-cases/get-tenant.use-case";
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
   const slug = searchParams.get('slug')
 
   if (!slug) {

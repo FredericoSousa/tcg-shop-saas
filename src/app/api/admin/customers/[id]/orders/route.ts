@@ -12,7 +12,7 @@ export async function GET(
   return withAdminApi(async ({ tenant }) => {
     try {
       const { id } = await params;
-      const { searchParams } = new URL(request.url);
+      const searchParams = request.nextUrl.searchParams;
       const page = parseInt(searchParams.get("page") || "1");
       const limit = parseInt(searchParams.get("limit") || "10");
 
