@@ -197,6 +197,18 @@ async function fetchPageCards(
  * Fetch collection with parallel page processing
  * Significantly faster than sequential page fetching
  */
+async function createConfiguredPage(browser: import("puppeteer-core").Browser) {
+  const page = await browser.newPage();
+  await page.setUserAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+  await page.setExtraHTTPHeaders({
+    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Upgrade-Insecure-Requests": "1"
+  });
+  page.setDefaultTimeout(30000);
+  page.setDefaultNavigationTimeout(30000);
+  return page;
+}
+
 export async function getCollectionById(
   id: string,
   onProgress?: (progress: ImportProgress) => void,
@@ -208,11 +220,7 @@ export async function getCollectionById(
 
   try {
     browser = await getBrowser();
-    const page = await browser.newPage();
-
-    // Set reasonable timeout
-    page.setDefaultTimeout(30000);
-    page.setDefaultNavigationTimeout(30000);
+    const page = await createConfiguredPage(browser);
 
     // First, fetch first page to detect total pages
     const firstPageUrl = `https://www.ligamagic.com.br/?view=colecao/colecao&id=${id}&modoExibicao=1&page=1`;
@@ -290,7 +298,7 @@ export async function getCollectionById(
       for (let i = 0; i < pageNumbers.length; i += batchSize) {
         const batch = pageNumbers.slice(i, i + batchSize);
         if (!browser) throw new Error("Browser not initialized");
-        const pages = await Promise.all(batch.map(() => browser!.newPage()));
+        const pages = await Promise.all(batch.map(() => createConfiguredPage(browser!)));
 
         try {
           const results = await Promise.all(
