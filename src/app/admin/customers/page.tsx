@@ -25,12 +25,8 @@ import {
 } from "@/components/ui/table";
 import {
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
+import { ModalLayout } from "@/components/ui/modal-layout";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useTableState } from "@/lib/hooks/use-table-state";
@@ -40,6 +36,7 @@ import { TableSearch } from "@/components/admin/table-search";
 import { CustomerService } from "@/lib/api/services/customer.service";
 import { formatPhone } from "@/lib/utils";
 import { MaskedInput } from "@/components/ui/masked-input";
+import { ConfirmModal } from "@/components/admin/confirm-modal";
 
 
 interface Customer {
@@ -80,6 +77,8 @@ export default function CustomersPage() {
     phoneNumber: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState<{id: string, name: string} | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchCustomers = useCallback(async () => {
     setLoading(true);
@@ -152,18 +151,21 @@ export default function CustomersPage() {
     }
   };
 
-  const handleDelete = async (id: string, name: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!confirm(`Tem certeza que deseja excluir o cliente ${name}?`)) return;
+  const handleDelete = async () => {
+    if (!customerToDelete) return;
+    setIsDeleting(true);
 
     try {
-      await CustomerService.delete(id);
+      await CustomerService.delete(customerToDelete.id);
 
       toast.success("Cliente excluído com sucesso");
+      setCustomerToDelete(null);
       fetchCustomers();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro ao excluir cliente";
       toast.error(message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -295,7 +297,7 @@ export default function CustomersPage() {
                             variant="ghost"
                             size="icon"
                             className="text-muted-foreground hover:text-red-500"
-                            onClick={(e) => handleDelete(customer.id, customer.name, e)}
+                            onClick={(e) => { e.stopPropagation(); setCustomerToDelete({id: customer.id, name: customer.name}); }}
                             title="Excluir"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -321,60 +323,83 @@ export default function CustomersPage() {
       </div>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <form onSubmit={handleSubmit}>
-            <DialogHeader>
-              <DialogTitle>
-                {editingCustomer ? "Editar Cliente" : "Adicionar Novo Cliente"}
-              </DialogTitle>
-              <DialogDescription>
-                {editingCustomer
-                  ? "Atualize as informações do cliente abaixo."
-                  : "Preencha as informações para cadastrar um novo cliente."}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <label htmlFor="name" className="text-sm font-medium">Nome</label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="Nome completo"
-                  required
-                />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="email" className="text-sm font-medium">Email (Opcional)</label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  placeholder="email@exemplo.com"
-                />
-              </div>
-              <div className="grid gap-2">
-                <label htmlFor="phone" className="text-sm font-medium">Telefone</label>
-                <MaskedInput
-                  id="phone"
-                  mask="phone"
-                  value={formData.phoneNumber}
-                  onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
-                  placeholder="(00) 00000-0000"
-                  required
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" disabled={isSubmitting}>
+        <ModalLayout
+          title={editingCustomer ? "Editar Cliente" : "Adicionar Novo Cliente"}
+          description={
+            editingCustomer
+              ? "Atualize as informações do cliente abaixo."
+              : "Preencha as informações para cadastrar um novo cliente."
+          }
+          containerClassName="sm:max-w-[425px]"
+          footer={
+            <div className="flex justify-end gap-3 w-full">
+              <Button
+                variant="outline"
+                onClick={() => setIsDialogOpen(false)}
+                className="font-bold rounded-xl h-11"
+                type="button"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="submit" 
+                form="customer-form"
+                disabled={isSubmitting}
+                className="font-bold rounded-xl h-11 px-6 shadow-lg shadow-primary/10"
+              >
                 {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {editingCustomer ? "Salvar Alterações" : "Criar Cliente"}
               </Button>
-            </DialogFooter>
+            </div>
+          }
+        >
+          <form id="customer-form" onSubmit={handleSubmit} className="grid gap-6 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="name" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Nome</label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Nome completo"
+                className="h-11 rounded-xl"
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Email (Opcional)</label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                placeholder="email@exemplo.com"
+                className="h-11 rounded-xl"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="phone" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Telefone</label>
+              <MaskedInput
+                id="phone"
+                mask="phone"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                placeholder="(00) 00000-0000"
+                className="h-11 rounded-xl"
+                required
+              />
+            </div>
           </form>
-        </DialogContent>
+        </ModalLayout>
       </Dialog>
+
+      <ConfirmModal
+        open={!!customerToDelete}
+        onOpenChange={(open) => !open && setCustomerToDelete(null)}
+        onConfirm={handleDelete}
+        title="Excluir Cliente"
+        description={`Tem certeza que deseja excluir o cliente ${customerToDelete?.name}?`}
+        loading={isDeleting}
+      />
     </div>
   );
 }

@@ -40,8 +40,6 @@ export async function PATCH(request: NextRequest) {
     return ApiResponse.unauthorized("Ação não autorizada. Escopo restrito do Lojista.");
   }
 
-  const { tenant } = context;
-
   try {
     const { orderId, orderIds, status } = (await request.json()) as {
       orderId?: string;
@@ -106,7 +104,7 @@ export async function PATCH(request: NextRequest) {
     revalidatePath("/admin/inventory");
     revalidatePath("/singles");
     revalidatePath("/");
-    
+
     return ApiResponse.success({ message: "Status do pedido atualizado com sucesso" });
   } catch (err: unknown) {
     const error = err as Error;

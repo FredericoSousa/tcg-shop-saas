@@ -15,13 +15,9 @@ import {
 } from "@/components/ui/table";
 import {
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { ModalLayout } from "@/components/ui/modal-layout";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -35,6 +31,7 @@ import { useTableState } from "@/lib/hooks/use-table-state";
 import { FilterSection } from "@/components/admin/filter-section";
 import { TableSearch } from "@/components/admin/table-search";
 import { UserService } from "@/lib/api/services/user.service";
+import { ConfirmModal } from "@/components/admin/confirm-modal";
 
 
 interface User {
@@ -58,6 +55,8 @@ export default function UsersPage() {
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState<"ADMIN" | "USER">("USER");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<{id: string, username: string} | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -66,8 +65,16 @@ export default function UsersPage() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const data = await UserService.list(search);
-      setUsers(data.data);
+      const response = await UserService.list(search);
+      let usersArray = [];
+      if (Array.isArray(response)) {
+        usersArray = response;
+      } else if (response && Array.isArray(response.data)) {
+        usersArray = response.data;
+      } else if (response?.data?.items && Array.isArray(response.data.items)) {
+        usersArray = response.data.items;
+      }
+      setUsers(usersArray);
     } catch (error) {
       console.error(error);
       toast.error("Erro ao carregar usuários");
@@ -105,17 +112,20 @@ export default function UsersPage() {
     }
   };
 
-  const handleDeleteUser = async (id: string, username: string) => {
-    if (!confirm(`Tem certeza que deseja excluir o usuário ${username}?`)) return;
-
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    setIsDeleting(true);
     try {
-      await UserService.delete(id);
+      await UserService.delete(userToDelete.id);
 
       toast.success("Usuário excluído com sucesso");
+      setUserToDelete(null);
       fetchUsers();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Erro desconhecido";
       toast.error(message);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -134,60 +144,75 @@ export default function UsersPage() {
                 </Button>
               }
             />
-            <DialogContent className="sm:max-w-[425px]">
-              <form onSubmit={handleCreateUser}>
-                <DialogHeader>
-                  <DialogTitle>Adicionar Novo Usuário</DialogTitle>
-                  <DialogDescription>
-                    Crie um novo usuário para acessar o painel administrativo.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <label htmlFor="username" className="text-sm font-medium">Usuário</label>
-                    <Input
-                      id="username"
-                      value={newUsername}
-                      onChange={(e) => setNewUsername(e.target.value)}
-                      placeholder="Nome de usuário"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label htmlFor="password" className="text-sm font-medium">Senha</label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="********"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <label htmlFor="role" className="text-sm font-medium">Nível de Acesso</label>
-                    <Select
-                      value={newRole}
-                      onValueChange={(value) => setNewRole(value as "ADMIN" | "USER")}
-                    >
-                      <SelectTrigger id="role">
-                        <SelectValue placeholder="Selecione o nível">
-                          {newRole === "ADMIN" ? "Administrador" : "Usuário Comum"}
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="USER">Usuário Comum</SelectItem>
-                        <SelectItem value="ADMIN">Administrador</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="submit" disabled={isSubmitting}>
+            <ModalLayout
+              title="Adicionar Novo Usuário"
+              description="Crie um novo usuário para acessar o painel administrativo."
+              containerClassName="sm:max-w-[425px]"
+              footer={
+                <div className="flex justify-end gap-3 w-full">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsCreateDialogOpen(false)}
+                    className="font-bold rounded-xl h-11"
+                    type="button"
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    form="user-form"
+                    disabled={isSubmitting}
+                    className="font-bold rounded-xl h-11 px-6 shadow-lg shadow-primary/10"
+                  >
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Criar Usuário
                   </Button>
-                </DialogFooter>
+                </div>
+              }
+            >
+              <form id="user-form" onSubmit={handleCreateUser} className="grid gap-6 py-4">
+                <div className="grid gap-2">
+                  <label htmlFor="username" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Usuário</label>
+                  <Input
+                    id="username"
+                    value={newUsername}
+                    onChange={(e) => setNewUsername(e.target.value)}
+                    placeholder="Nome de usuário"
+                    className="h-11 rounded-xl"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Senha</label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="********"
+                    className="h-11 rounded-xl"
+                    required
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <label htmlFor="role" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Nível de Acesso</label>
+                  <Select
+                    value={newRole}
+                    onValueChange={(value) => setNewRole(value as "ADMIN" | "USER")}
+                  >
+                    <SelectTrigger id="role" className="h-11 rounded-xl">
+                      <SelectValue placeholder="Selecione o nível">
+                        {newRole === "ADMIN" ? "Administrador" : "Usuário Comum"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      <SelectItem value="USER">Usuário Comum</SelectItem>
+                      <SelectItem value="ADMIN">Administrador</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </form>
-            </DialogContent>
+            </ModalLayout>
           </Dialog>
         }
       />
@@ -250,7 +275,7 @@ export default function UsersPage() {
                           variant="ghost"
                           size="icon"
                           className="text-muted-foreground hover:text-red-500 hover:bg-red-50"
-                          onClick={() => handleDeleteUser(user.id, user.username)}
+                          onClick={() => setUserToDelete({ id: user.id, username: user.username })}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -263,6 +288,15 @@ export default function UsersPage() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={!!userToDelete}
+        onOpenChange={(open) => !open && setUserToDelete(null)}
+        onConfirm={handleDeleteUser}
+        title="Excluir Usuário"
+        description={`Tem certeza que deseja excluir o usuário ${userToDelete?.username}?`}
+        loading={isDeleting}
+      />
     </div>
   );
 }

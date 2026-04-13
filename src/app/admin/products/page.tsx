@@ -7,7 +7,6 @@ import { ListProductsUseCase } from "@/lib/application/use-cases/list-products.u
 import { ListCategoriesUseCase } from "@/lib/application/use-cases/list-categories.use-case";
 import { ProductDialog } from "./product-dialog";
 import { CategoriesDialog } from "./categories-dialog";
-import { getAdminContext } from "@/lib/tenant-server";
 
 const listProductsUseCase = container.resolve(ListProductsUseCase);
 const listCategoriesUseCase = container.resolve(ListCategoriesUseCase);
@@ -15,14 +14,13 @@ const listCategoriesUseCase = container.resolve(ListCategoriesUseCase);
 export default async function ProductsPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const { tenant } = await getAdminContext();
   const searchParams = await props.searchParams;
   const page = Number(searchParams?.page) || 1;
   const limit = Number(searchParams?.limit) || 10;
   const search = typeof searchParams?.search === "string" ? searchParams.search : undefined;
   const categoryId = typeof searchParams?.category === "string" ? searchParams.category : undefined;
 
-  const { items, pageCount } = await listProductsUseCase.execute({ page, limit, search, categoryId });
+  const { items, pageCount, total } = await listProductsUseCase.execute({ page, limit, search, categoryId });
   const categories = await listCategoriesUseCase.execute();
 
   return (
@@ -45,7 +43,7 @@ export default async function ProductsPage(props: {
       />
 
       <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden p-0">
-        <DataTable data={items} pageCount={pageCount} categories={categories} />
+        <DataTable data={items} pageCount={pageCount} total={total} categories={categories} />
       </div>
     </div>
   );

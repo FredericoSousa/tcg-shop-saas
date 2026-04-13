@@ -1,10 +1,10 @@
 import "reflect-metadata";
 import { notFound } from "next/navigation";
-import { 
-  ArrowLeft, 
-  Mail, 
-  Phone, 
-  Calendar, 
+import {
+  ArrowLeft,
+  Mail,
+  Phone,
+  Calendar,
   User as UserIcon,
   Users
 } from "lucide-react";
@@ -16,19 +16,17 @@ import { formatPhone, formatCurrency } from "@/lib/utils";
 import { CustomerOrdersTable } from "@/components/admin/customer-orders-table";
 import { CustomerCreditSection } from "@/components/admin/customer-credit-section";
 import { PageHeader } from "@/components/admin/page-header";
-import { getAdminContext } from "@/lib/tenant-server";
 
 export default async function CustomerDetailsPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { tenant } = await getAdminContext();
   const { id } = await params;
-  
+
   const getCustomer = container.resolve(GetCustomerUseCase);
   const result = await getCustomer.execute(id);
-  
+
   if (!result) {
     notFound();
   }
@@ -78,7 +76,7 @@ export default async function CustomerDetailsPage({
               <h1 className="text-2xl font-bold text-foreground mb-1">{customer.name}</h1>
               <StatusBadge status={customer.deletedAt ? "INACTIVE" : "ACTIVE"} />
             </div>
-            
+
             <div className="p-6 space-y-4">
               <div className="flex items-center gap-3 text-sm">
                 <div className="p-2 bg-muted rounded-lg text-muted-foreground">
