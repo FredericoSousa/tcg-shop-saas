@@ -2,6 +2,9 @@ import { NextRequest } from "next/server";
 import { getCollectionById } from "@/lib/scrapers/liga-magic-scraper";
 import type { ImportProgress } from "@/lib/scrapers/liga-magic-scraper";
 
+// Allows the function to run longer on Vercel (up to 60s for Hobby/Pro limits, 300s max for Pro)
+export const maxDuration = 300;
+
 /**
  * SSE endpoint for streaming LigaMagic collection import progress
  * Usage: const source = new EventSource(`/api/import-collection-stream?id=123456`)
@@ -65,8 +68,9 @@ export async function GET(request: NextRequest) {
   return new Response(stream, {
     headers: {
       "Content-Type": "text/event-stream",
-      "Cache-Control": "no-cache",
+      "Cache-Control": "no-cache, no-transform",
       Connection: "keep-alive",
+      "Content-Encoding": "none",
     },
   });
 }
