@@ -37,24 +37,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 import Image from "next/image";
-import { QuickAddButton } from "@/components/shop/quick-add-button";
-
-
-type ShopItem = {
-  id: string;
-  price: number;
-  quantity: number;
-  condition: string;
-  language: string;
-  extras: string[];
-  cardTemplate?: {
-    name: string;
-    set: string;
-    imageUrl: string | null;
-    backImageUrl?: string | null;
-    metadata: any;
-  } | null;
-};
+import { MTGCard, MTGCardItem } from "@/components/shop/mtg-card";
+import { LiveSearch } from "@/components/storefront/live-search";
 
 export function ShopClient({
   initialInventory,
@@ -64,7 +48,7 @@ export function ShopClient({
   currentPage,
 }: {
   tenantId: string;
-  initialInventory: ShopItem[];
+  initialInventory: MTGCardItem[];
   availableFilters: {
     colors: string[];
     types: string[];
@@ -91,18 +75,8 @@ export function ShopClient({
   const searchQuery = searchParams.get("q") || "";
   const sortOption = searchParams.get("sort") || "name_asc";
 
-  // Track recently added items for visual feedback
-  const [addedItems, setAddedItems] = useState<Record<string, boolean>>({});
   const [setSearch, setSetSearch] = useState("");
   const [subtypeSearch, setSubtypeSearch] = useState("");
-  const [localQuery, setLocalQuery] = useState(searchQuery);
-  const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    setLocalQuery(searchQuery);
-  }, [searchQuery]);
-  const [imageLoaded, setImageLoaded] = useState<Record<string, boolean>>({});
-  const { addItem } = useCart();
 
   const updateFilters = (key: string, value: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -233,24 +207,6 @@ export function ShopClient({
   const { colors, types, subtypes, extras, sets, languages } = availableFilters;
   const filteredInventory = initialInventory;
   const totalPages = pageCount;
-
-  const handleAddToCart = (item: ShopItem) => {
-    addItem({
-      inventoryId: item.id,
-      name: item.cardTemplate?.name || "Card",
-      set: item.cardTemplate?.set || "N/A",
-      imageUrl: item.cardTemplate?.imageUrl || null,
-      price: item.price,
-      quantity: 1,
-      maxStock: item.quantity,
-    });
-
-    // Show visual feedback
-    setAddedItems((prev) => ({ ...prev, [item.id]: true }));
-    setTimeout(() => {
-      setAddedItems((prev) => ({ ...prev, [item.id]: false }));
-    }, 1500);
-  };
 
   return (
     <div className="flex flex-col md:flex-row gap-8 items-start">
@@ -489,15 +445,11 @@ export function ShopClient({
         <div className="mb-6 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b pb-6">
           <div className="flex flex-col sm:flex-row w-full gap-4 xl:w-auto">
             <div className="relative w-full sm:w-80">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
+              <LiveSearch 
+                defaultValue={searchQuery} 
+                onSearch={(q) => updateFilters("q", q)} 
+                inputClassName="h-9 w-full bg-background shadow-sm border-input" 
                 placeholder="Buscar cartas pelo nome..."
-                value={localQuery}
-                onChange={(e) => setLocalQuery(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") updateFilters("q", localQuery);
-                }}
-                className="pl-9 h-9 border-input shadow-sm w-full bg-background"
               />
             </div>
             <select
@@ -804,158 +756,9 @@ export function ShopClient({
         ) : (
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
-              {filteredInventory.map((item: ShopItem) => {
-                const stockStatus =
-                  item.quantity > 3
-                    ? "text-green-600 bg-green-50"
-                    : item.quantity > 1
-                      ? "text-amber-600 bg-amber-50"
-                      : "text-red-600 bg-red-50";
-
-                return (
-                  <div
-                    key={item.id}
-                    className="group relative flex flex-col bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden hover:border-primary/30 transition-all duration-300"
-                  >
-                    <div className="aspect-[2/3] w-full bg-zinc-50 relative overflow-hidden flex items-center justify-center">
-                      {item.cardTemplate?.imageUrl ? (
-                        <div className="relative h-full w-full group/image overflow-hidden">
-                          {!imageLoaded[item.id] && (
-                            <Skeleton className="absolute inset-0 z-0 bg-zinc-100 animate-pulse" />
-                          )}
-                          <Image
-                            src={
-                              flippedCards[item.id] &&
-                                item.cardTemplate.backImageUrl
-                                ? item.cardTemplate.backImageUrl
-                                : item.cardTemplate.imageUrl
-                            }
-                            alt={item.cardTemplate.name}
-                            fill
-                            sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-                            className={`object-cover w-full h-full transition-transform duration-500 group-hover/image:scale-105 ${imageLoaded[item.id] ? "opacity-100 z-10" : "opacity-0"}`}
-                            loading="lazy"
-                            onLoad={() =>
-                              setImageLoaded((prev) => ({
-                                ...prev,
-                                [item.id]: true,
-                              }))
-                            }
-                          />
-                          
-                          {/* Minimal Overlay on Hover */}
-                          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 z-20" />
-
-                          <QuickAddButton item={{
-                            inventoryId: item.id,
-                            name: item.cardTemplate.name,
-                            set: item.cardTemplate.set,
-                            imageUrl: item.cardTemplate.imageUrl,
-                            price: item.price,
-                            maxStock: item.quantity
-                          }} />
-
-                          {item.cardTemplate.backImageUrl && (
-                            <button
-                              onClick={() =>
-                                setFlippedCards((prev) => ({
-                                  ...prev,
-                                  [item.id]: !prev[item.id],
-                                }))
-                              }
-                              className="absolute top-2 left-2 bg-white/90 hover:bg-white text-zinc-900 p-1.5 rounded-lg transition-all duration-200 z-30 opacity-0 group-hover:opacity-100 shadow-md border border-zinc-100"
-                              title={
-                                flippedCards[item.id]
-                                  ? "Ver frente"
-                                  : "Ver verso"
-                              }
-                            >
-                              <RotateCcw className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-zinc-200 text-[10px] font-bold uppercase tracking-wider space-y-2">
-                          <div className="w-12 h-16 border border-dashed border-zinc-200 rounded-lg flex items-center justify-center bg-white">
-                            ?
-                          </div>
-                          <span>Sem Imagem</span>
-                        </div>
-                      )}
-                      
-                      {item.cardTemplate?.metadata?.foil && (
-                        <div className="absolute top-2 right-2 bg-amber-400 text-zinc-950 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-30 uppercase tracking-wider">
-                          Foil
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="p-4 flex flex-col gap-2.5 flex-1 relative z-10">
-                      <h3
-                        className="font-bold text-zinc-900 text-sm leading-tight min-h-[2.5rem] group-hover:text-primary transition-colors line-clamp-2"
-                        title={item.cardTemplate?.name}
-                      >
-                        <Link href={`/singles/${item.id}`}>
-                          {item.cardTemplate?.name}
-                        </Link>
-                      </h3>
-                      
-                      <div className="flex items-center flex-wrap gap-1.5">
-                        <SetBadge
-                          setCode={item.cardTemplate?.set || ""}
-                          className="gap-1 shadow-none bg-zinc-50 border-zinc-100 px-1.5 py-0.5 rounded"
-                          iconClassName="h-3 w-3"
-                          textClassName="text-[10px] font-bold text-zinc-400"
-                        />
-                        <span
-                          className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
-                            item.condition === 'NM' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                            item.condition === 'SP' ? 'bg-blue-50 text-blue-600 border-blue-100' :
-                            'bg-zinc-50 text-zinc-400 border-zinc-100'
-                          }`}
-                        >
-                          {item.condition}
-                        </span>
-                      </div>
-                      
-                      <div className="mt-auto pt-3 border-t border-zinc-50 flex flex-col gap-3">
-                        <div className="flex items-baseline justify-between">
-                          <span className="font-black text-xl text-zinc-950 tracking-tight">
-                            {formatCurrency(item.price)}
-                          </span>
-                          <span className={`text-[10px] font-bold ${
-                            item.quantity > 3 ? 'text-zinc-400' : 'text-amber-600'
-                          }`}>
-                            {item.quantity} un.
-                          </span>
-                        </div>
-                        
-                        <Button
-                          size="sm"
-                          className={`w-full font-bold text-xs h-9 rounded-xl transition-all duration-300 ${
-                            addedItems[item.id] 
-                              ? "bg-emerald-500 hover:bg-emerald-600 text-white" 
-                              : "bg-zinc-950 hover:bg-primary text-white"
-                          }`}
-                          onClick={() => handleAddToCart(item)}
-                        >
-                          {addedItems[item.id] ? (
-                            <span className="flex items-center gap-1.5">
-                              <Check className="w-3.5 h-3.5" />
-                              Adicionado
-                            </span>
-                          ) : (
-                            <span className="flex items-center gap-1.5">
-                              <ShoppingCart className="w-3.5 h-3.5" />
-                              Comprar
-                            </span>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {filteredInventory.map((item: MTGCardItem) => (
+                <MTGCard key={item.id} item={item} variant="store" />
+              ))}
             </div>
 
             {/* Pagination Controls */}

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { ShoppingBag, Sparkles, Shield, Truck, ChevronRight } from 'lucide-react'
 import { SetBadge } from '@/components/ui/set-badge'
 import { formatCurrency } from '@/lib/utils/format'
+import { MTGCard } from '@/components/shop/mtg-card'
 
 export default async function HomePage() {
   const tenant = await getTenant();
@@ -46,7 +47,7 @@ export default async function HomePage() {
       <section className="relative min-h-[60vh] flex items-center bg-zinc-950 text-white overflow-hidden py-24">
         {/* Subtle Background effect */}
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_theme(colors.primary)_0%,_transparent_70%)]" />
-        
+
         <div className="relative container mx-auto px-6 z-10">
           <div className="max-w-4xl mx-auto text-center space-y-12">
             {/* Brand Mark */}
@@ -90,8 +91,8 @@ export default async function HomePage() {
               <h2 className="text-2xl font-black uppercase tracking-tighter italic">
                 Últimas <span className="text-primary">Novidades</span>
               </h2>
-              <Link 
-                href="/singles?sort=id_desc" 
+              <Link
+                href="/singles?sort=id_desc"
                 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-950 transition-colors flex items-center gap-2 group"
               >
                 Ver Todas
@@ -101,28 +102,11 @@ export default async function HomePage() {
 
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
               {recentCards.map((item) => (
-                <Link
+                <MTGCard
                   key={item.id}
-                  href={`/singles/${item.id}`}
-                  className="group block space-y-3"
-                >
-                  <div className="aspect-[2/3] relative rounded-2xl overflow-hidden bg-white border border-zinc-100 transition-all duration-300 group-hover:border-primary/30">
-                    {item.cardTemplate?.imageUrl && (
-                      <img 
-                        src={item.cardTemplate.imageUrl} 
-                        alt={item.cardTemplate.name}
-                        className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500"
-                      />
-                    )}
-                  </div>
-                  <div className="px-1 space-y-0.5">
-                    <h4 className="font-bold text-sm text-zinc-900 truncate group-hover:text-primary transition-colors">{item.cardTemplate?.name}</h4>
-                    <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">{item.cardTemplate?.set}</span>
-                      <span className="font-black text-primary text-sm">{formatCurrency(item.price)}</span>
-                    </div>
-                  </div>
-                </Link>
+                  item={{ ...item, price: Number(item.price) }}
+                  variant="store"
+                />
               ))}
             </div>
           </div>
@@ -136,44 +120,22 @@ export default async function HomePage() {
             <h2 className="text-2xl font-black uppercase tracking-tighter italic">
               Cards de <span className="text-primary">Destaque</span>
             </h2>
-            <Link 
-                href="/singles" 
-                className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-950 transition-colors flex items-center gap-2 group"
-              >
-                Catalogos Completo
-                <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
-              </Link>
+            <Link
+              href="/singles"
+              className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-950 transition-colors flex items-center gap-2 group"
+            >
+              Catalogos Completo
+              <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
+            </Link>
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
             {featuredCards.map((item) => (
-              <div
+              <MTGCard
                 key={item.id}
-                className="group relative flex flex-col bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden hover:border-primary/30 transition-all duration-300"
-              >
-                <div className="aspect-[2/3] w-full bg-zinc-50 relative overflow-hidden flex items-center justify-center">
-                  {item.cardTemplate?.imageUrl && (
-                    <img
-                      src={item.cardTemplate.imageUrl}
-                      alt={item.cardTemplate.name}
-                      className="object-cover w-full h-full grayscale-[0.2] group-hover:grayscale-0 transition-all duration-500"
-                      loading="lazy"
-                    />
-                  )}
-                  <Link href={`/singles/${item.id}`} className="absolute inset-0 z-20" />
-                </div>
-                <div className="p-4 flex flex-col gap-2">
-                  <h3 className="font-bold text-zinc-900 text-sm leading-tight line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
-                    {item.cardTemplate?.name}
-                  </h3>
-                  <div className="flex items-center justify-between mt-auto pt-3 border-t border-zinc-50">
-                    <SetBadge setCode={item.cardTemplate?.set || ''} className="bg-transparent p-0" iconClassName="h-3 w-3" textClassName="text-[10px] font-bold text-zinc-400" />
-                    <span className="font-black text-primary text-sm">
-                      {formatCurrency(item.price)}
-                    </span>
-                  </div>
-                </div>
-              </div>
+                item={{ ...item, price: Number(item.price) } as any}
+                variant="store"
+              />
             ))}
           </div>
         </section>

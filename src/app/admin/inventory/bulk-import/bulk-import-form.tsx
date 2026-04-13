@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Loader2,
@@ -494,7 +494,19 @@ export function BulkImportForm() {
   const handleReset = () => {
     setStep("input");
     setItems([]);
+    setImportProgress(null);
+    setIsStreamingProgress(false);
+    setProcessProgress({ current: 0, total: 0 });
+    setImportMode("text");
   };
+
+  // Ensure state is 100% clean if restored by Next.js router cache
+  useEffect(() => {
+    handleReset();
+    setTextInput("");
+    setLigamagicId("");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="bg-card rounded-xl shadow-lg border overflow-hidden">
