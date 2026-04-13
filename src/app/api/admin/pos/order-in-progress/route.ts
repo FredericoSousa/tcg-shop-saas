@@ -1,9 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextResponse, connection } from "next/server";
 import { container } from "@/lib/infrastructure/container";
 import { TOKENS } from "@/lib/infrastructure/container";
 import type { IOrderRepository } from "@/lib/domain/repositories/order.repository";
 
 export async function GET(request: Request) {
+  await connection();
   try {
     const { searchParams } = new URL(request.url);
     const customerId = searchParams.get("customerId");
