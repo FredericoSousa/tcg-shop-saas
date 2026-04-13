@@ -19,6 +19,7 @@ import { ProductService } from "@/lib/api/services/product.service";
 import { MaskedInput } from "@/components/ui/masked-input";
 import { parseCurrency } from "@/lib/utils/format";
 import { ModalLayout } from "@/components/ui/modal-layout";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 interface ProductDialogProps {
   children?: React.ReactNode;
@@ -213,34 +214,26 @@ export function ProductDialog({
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1" htmlFor="stock">Estoque Inicial</label>
-              <Input
-                id="stock"
-                type="number"
-                value={formData.stock}
-                onChange={(e) =>
-                  setFormData({ ...formData, stock: e.target.value })
-                }
-                placeholder="0"
-                className="h-11 rounded-xl font-bold"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1" htmlFor="imageUrl">URL da Imagem</label>
-              <Input
-                id="imageUrl"
-                value={formData.imageUrl}
-                onChange={(e) =>
-                  setFormData({ ...formData, imageUrl: e.target.value })
-                }
-                placeholder="https://..."
-                className="h-11 rounded-xl"
-              />
-            </div>
+          <div className="grid gap-2">
+            <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1" htmlFor="stock">Estoque Inicial</label>
+            <Input
+              id="stock"
+              type="number"
+              value={formData.stock}
+              onChange={(e) =>
+                setFormData({ ...formData, stock: e.target.value })
+              }
+              placeholder="0"
+              className="h-11 rounded-xl font-bold"
+              required
+            />
           </div>
+          <ImageUpload
+            label="Imagem do Produto"
+            value={formData.imageUrl || null}
+            onChange={(url) => setFormData({ ...formData, imageUrl: url ?? "" })}
+            folder="products"
+          />
           <div className="flex items-center space-x-2 py-3 px-3 bg-muted/20 rounded-xl border border-dashed">
             <input
               type="checkbox"

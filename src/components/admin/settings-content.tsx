@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ImageUpload } from "@/components/ui/image-upload";
 
 interface TenantSettings {
   name: string;
@@ -196,25 +197,21 @@ export function SettingsContent() {
             )}
 
             {activeTab === "appearance" && (
-              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">URL do Logo</label>
-                  <Input 
-                    name="logoUrl" 
-                    value={settings.logoUrl || ""} 
-                    onChange={handleChange} 
-                    placeholder="https://exemplo.com/logo.png"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-foreground">URL do Favicon</label>
-                  <Input 
-                    name="faviconUrl" 
-                    value={settings.faviconUrl || ""} 
-                    onChange={handleChange} 
-                    placeholder="https://exemplo.com/favicon.ico"
-                  />
-                </div>
+              <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <ImageUpload
+                  label="Logo da Loja"
+                  value={settings.logoUrl}
+                  onChange={(url) => setSettings(prev => ({ ...prev, logoUrl: url ?? "" }))}
+                  folder="tenant-logos"
+                />
+                <ImageUpload
+                  label="Favicon"
+                  value={settings.faviconUrl}
+                  onChange={(url) => setSettings(prev => ({ ...prev, faviconUrl: url ?? "" }))}
+                  folder="tenant-favicons"
+                  accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml"
+                  compact
+                />
               </div>
             )}
 
