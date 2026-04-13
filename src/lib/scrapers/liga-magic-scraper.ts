@@ -85,20 +85,42 @@ function processRawCards(rawCards: RawCard[]): CollectionCard[] {
   }
 }
 
-async function fetchHtml(url: string): Promise<string> {
-  const response = await fetch(url, {
+async function fetchHtml(url: string, useProxy = false): Promise<string> {
+  const fetchUrl = useProxy ? `https://corsproxy.io/?${encodeURIComponent(url)}` : url;
+  const response = await fetch(fetchUrl, {
     headers: {
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-      "Accept": "text/html",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36",
+      "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
       "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+      "Cache-Control": "max-age=0",
+      "Sec-Ch-Ua": '"Google Chrome";v="129", "Not=A?Brand";v="8", "Chromium";v="129"',
+      "Sec-Ch-Ua-Mobile": "?0",
+      "Sec-Ch-Ua-Platform": '"Windows"',
+      "Sec-Fetch-Dest": "document",
+      "Sec-Fetch-Mode": "navigate",
+      "Sec-Fetch-Site": "none",
+      "Sec-Fetch-User": "?1",
+      "Upgrade-Insecure-Requests": "1"
     }
   });
 
   if (!response.ok) {
+    if (!useProxy && response.status === 403) {
+      logger.warn(`403 received, trying proxy for ${url}`, { action: "fetch_proxy_fallback" });
+      return fetchHtml(url, true);
+    }
     throw new Error(`Failed to fetch ${url}, status: ${response.status}`);
   }
 
-  return response.text();
+  const html = await response.text();
+  
+  // Ligamagic Cloudflare block payload usually contains
+  if (!useProxy && (html.includes("cf-browser-verification") || html.includes("Just a moment..."))) {
+    logger.warn(`Cloudflare JS Challenge received, trying proxy for ${url}`, { action: "fetch_proxy_fallback" });
+    return fetchHtml(url, true);
+  }
+
+  return html;
 }
 
 async function fetchPageCards(
