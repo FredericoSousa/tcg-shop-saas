@@ -85,7 +85,7 @@ function processRawCards(rawCards: RawCard[]): CollectionCard[] {
   }
 }
 
-async function fetchHtml(url: string, useProxy = false): Promise<string> {
+async function fetchHtml(url: string, useProxy = process.env.NODE_ENV !== "development"): Promise<string> {
   const fetchUrl = useProxy ? `https://corsproxy.io/?${encodeURIComponent(url)}` : url;
   const response = await fetch(fetchUrl, {
     headers: {

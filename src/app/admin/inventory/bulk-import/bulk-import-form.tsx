@@ -481,7 +481,9 @@ export function BulkImportForm() {
           toast.error(`✗ ${totalErrors} card(s) falharam ao salvar.`);
         }
 
-        router.push("/admin/inventory");
+        setTextInput("");
+        setLigamagicId("");
+        handleReset();
       } catch (error) {
         const msg = error instanceof Error ? error.message : "Erro ao salvar";
         toast.error(msg);
