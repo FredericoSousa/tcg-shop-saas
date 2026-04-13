@@ -49,7 +49,7 @@ describe('Customer Use Cases', () => {
       const useCase = new ListCustomersUseCase(customerRepo);
       customerRepo.findPaginated.mockResolvedValue({ items: [], total: 10 });
 
-      const result = await useCase.execute({ page: 1, limit: 5 });
+      const result = await useCase.execute({ page: 1, limit: 5, filters: {} });
       expect(result.total).toBe(10);
       expect(result.pageCount).toBe(2);
     });

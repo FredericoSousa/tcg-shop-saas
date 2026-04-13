@@ -22,38 +22,38 @@ describe('Product & Category Use Cases', () => {
   describe('SaveProductUseCase', () => {
     it('should create a new product', async () => {
       const useCase = new SaveProductUseCase(productRepo);
-      await useCase.execute({ name: 'P1', price: 10, stock: 5, categoryId: 'cat1' });
+      await useCase.execute({ name: 'P1', price: 10, stock: 5, categoryId: 'cat1', allowNegativeStock: false });
       expect(productRepo.save).toHaveBeenCalled();
     });
 
     it('should update an existing product', async () => {
       const useCase = new SaveProductUseCase(productRepo);
-      await useCase.execute({ id: 'p1', name: 'New P1', price: 20, stock: 10, categoryId: 'cat1' });
+      await useCase.execute({ id: 'p1', name: 'New P1', price: 20, stock: 10, categoryId: 'cat1', allowNegativeStock: false });
       expect(productRepo.update).toHaveBeenCalledWith('p1', expect.anything());
     });
 
     it('should fail with invalid price', async () => {
       const useCase = new SaveProductUseCase(productRepo);
-      await expect(useCase.execute({ name: 'P1', price: -10, stock: 5, categoryId: 'cat1' }))
+      await expect(useCase.execute({ name: 'P1', price: -10, stock: 5, categoryId: 'cat1', allowNegativeStock: false }))
         .rejects.toThrow();
     });
 
     it('should fail with invalid imageUrl', async () => {
       const useCase = new SaveProductUseCase(productRepo);
-      await expect(useCase.execute({ name: 'P1', price: 10, stock: 5, categoryId: 'cat1', imageUrl: 'invalid-url' }))
+      await expect(useCase.execute({ name: 'P1', price: 10, stock: 5, categoryId: 'cat1', allowNegativeStock: false, imageUrl: 'invalid-url' }))
         .rejects.toThrow();
     });
 
     it('should fail with empty name', async () => {
       const useCase = new SaveProductUseCase(productRepo);
-      await expect(useCase.execute({ name: '', price: 10, stock: 5, categoryId: 'cat1' }))
+      await expect(useCase.execute({ name: '', price: 10, stock: 5, categoryId: 'cat1', allowNegativeStock: false }))
         .rejects.toThrow();
     });
 
     it('should handle repository errors', async () => {
       const useCase = new SaveProductUseCase(productRepo);
       productRepo.save.mockRejectedValue(new Error('DB Error'));
-      await expect(useCase.execute({ name: 'P1', price: 10, stock: 5, categoryId: 'cat1' }))
+      await expect(useCase.execute({ name: 'P1', price: 10, stock: 5, categoryId: 'cat1', allowNegativeStock: false }))
         .rejects.toThrow('DB Error');
     });
   });
