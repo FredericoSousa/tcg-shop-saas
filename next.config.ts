@@ -44,7 +44,7 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium'],
+  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium', 'jsdom'],
   webpack: (config, { isServer }) => {
     if (isServer) {
       config.externals.push('@sparticuz/chromium');
