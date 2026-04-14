@@ -1,47 +1,10 @@
 import { injectable, inject } from "tsyringe";
 import { TOKENS } from "../../infrastructure/container";
-import type { ITenantRepository, IUserRepository } from "@/lib/domain/repositories/tenant.repository";
-import { Tenant, User, UserRole } from "@/lib/domain/entities/tenant";
+import type { IUserRepository } from "@/lib/domain/repositories/user.repository";
+import { User, UserRole } from "@/lib/domain/entities/tenant";
 import { hashPassword } from "@/lib/auth";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
-
-@injectable()
-export class UpdateSettingsUseCase implements IUseCase<{ id: string; data: Partial<Tenant> }, Tenant> {
-  constructor(@inject(TOKENS.TenantRepository) private tenantRepo: ITenantRepository) {}
-
-  async execute(request: { id: string; data: Partial<Tenant> }): Promise<Tenant> {
-    const { id, data } = request;
-    const allowedFields: (keyof Tenant)[] = [
-      "name", "logoUrl", "faviconUrl", "description", "address", 
-      "phone", "email", "instagram", "whatsapp", "facebook", "twitter"
-    ];
-
-    const updateData: Record<string, unknown> = {};
-    for (const field of allowedFields) {
-      if (data[field] !== undefined) {
-        updateData[field as string] = data[field];
-      }
-    }
-
-    return this.tenantRepo.update(id, updateData as Partial<Tenant>);
-  }
-}
-
-@injectable()
-export class ListUsersUseCase implements IUseCase<void, Partial<User>[]> {
-  constructor(@inject(TOKENS.UserRepository) private userRepo: IUserRepository) {}
-
-  async execute(): Promise<Partial<User>[]> {
-    const users = await this.userRepo.findAll();
-    return users.map(u => ({
-      id: u.id,
-      username: u.username,
-      role: u.role,
-      createdAt: u.createdAt,
-    }));
-  }
-}
 
 export interface SaveUserRequest {
   id?: string;

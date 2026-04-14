@@ -30,6 +30,7 @@ import { toast } from "sonner";
 import { useTableState } from "@/lib/hooks/use-table-state";
 import { FilterSection } from "@/components/admin/filter-section";
 import { TableSearch } from "@/components/admin/table-search";
+import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { UserService } from "@/lib/api/services/user.service";
 import { ConfirmModal } from "@/components/admin/confirm-modal";
 
@@ -42,16 +43,28 @@ interface User {
 
 interface UsersClientProps {
   initialUsers: User[];
+  initialTotal: number;
+  initialPageCount: number;
 }
 
-export function UsersClient({ initialUsers }: UsersClientProps) {
+export function UsersClient({ 
+  initialUsers, 
+  initialTotal, 
+  initialPageCount 
+}: UsersClientProps) {
   const {
+    page,
+    limit,
     search,
+    setPage,
+    setLimit,
     setSearch,
     isPending,
   } = useTableState();
 
   const [users, setUsers] = useState<User[]>(initialUsers);
+  const [total, setTotal] = useState(initialTotal);
+  const [pageCount, setPageCount] = useState(initialPageCount);
   const [loading, setLoading] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newUsername, setNewUsername] = useState("");
@@ -64,29 +77,26 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await UserService.list(search);
-      let usersArray = [];
-      if (Array.isArray(response)) {
-        usersArray = response;
-      } else if (response && Array.isArray(response.data)) {
-        usersArray = response.data;
-      } else if (response?.data?.items && Array.isArray(response.data.items)) {
-        usersArray = response.data.items;
+      const result = await UserService.list({ page, limit, search });
+      if (result.success && result.data) {
+        setUsers(result.data.items || []);
+        setTotal(result.data.total || 0);
+        setPageCount(result.data.pageCount || 1);
+      } else if (Array.isArray(result)) {
+        // Fallback for legacy response format if needed
+        setUsers(result);
       }
-      setUsers(usersArray);
     } catch (error) {
       console.error(error);
       toast.error("Erro ao carregar usuários");
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [page, limit, search]);
 
   useEffect(() => {
-    // Skip initial fetch if using initial data
-    if (search === "") return;
     fetchUsers();
-  }, [fetchUsers, search]);
+  }, [fetchUsers]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -292,6 +302,16 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
             </Table>
           )}
         </div>
+        {!loading && (
+          <DataTablePagination
+            page={page}
+            pageCount={pageCount}
+            total={total}
+            limit={limit}
+            onPageChange={setPage}
+            onLimitChange={setLimit}
+          />
+        )}
       </div>
 
       <ConfirmModal

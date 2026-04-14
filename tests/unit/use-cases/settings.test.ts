@@ -1,7 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mock, MockProxy } from 'vitest-mock-extended';
-import { UpdateSettingsUseCase, ListUsersUseCase, SaveUserUseCase } from '@/lib/application/use-cases/settings-users.use-case';
-import type { ITenantRepository, IUserRepository } from '@/lib/domain/repositories/tenant.repository';
+import { UpdateSettingsUseCase } from '@/lib/application/use-cases/update-settings.use-case';
+import { ListUsersUseCase } from '@/lib/application/use-cases/list-users.use-case';
+import { SaveUserUseCase } from '@/lib/application/use-cases/save-user.use-case';
+import type { ITenantRepository } from '@/lib/domain/repositories/tenant.repository';
+import type { IUserRepository } from '@/lib/domain/repositories/user.repository';
 
 vi.mock('@/lib/auth', () => ({
   hashPassword: vi.fn(() => Promise.resolve('hashed-password')),
@@ -30,11 +33,11 @@ describe('Settings & User Use Cases', () => {
   });
 
   describe('ListUsersUseCase', () => {
-    it('should list all users', async () => {
+    it('should list users with pagination', async () => {
       const useCase = new ListUsersUseCase(userRepo);
-      userRepo.findAll.mockResolvedValue([]);
-      await useCase.execute();
-      expect(userRepo.findAll).toHaveBeenCalled();
+      userRepo.findPaginated.mockResolvedValue({ items: [], total: 0 });
+      await useCase.execute({ page: 1, limit: 10 });
+      expect(userRepo.findPaginated).toHaveBeenCalledWith(1, 10, undefined);
     });
   });
 

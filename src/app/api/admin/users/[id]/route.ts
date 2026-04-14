@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container, TOKENS } from "@/lib/infrastructure/container";
-import type { IUserRepository } from "@/lib/domain/repositories/tenant.repository";
+import type { IUserRepository } from "@/lib/domain/repositories/user.repository";
 import { logger } from "@/lib/logger";
 
 export async function DELETE(

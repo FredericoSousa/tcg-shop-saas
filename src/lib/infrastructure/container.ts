@@ -6,7 +6,7 @@ import { PrismaCustomerRepository } from "./repositories/prisma-customer.reposit
 import { PrismaOrderRepository } from "./repositories/prisma-order.repository";
 import { PrismaProductRepository } from "./repositories/prisma-product.repository";
 import { PrismaTenantRepository } from "./repositories/prisma-tenant.repository";
-import { PrismaUserRepository } from "./repositories/prisma-tenant.repository";
+import { PrismaUserRepository } from "./repositories/prisma-user.repository";
 import { PrismaReportsRepository } from "./repositories/prisma-reports.repository";
 import { PrismaCustomerCreditLedgerRepository } from "./repositories/prisma-customer-credit-ledger.repository";
 
