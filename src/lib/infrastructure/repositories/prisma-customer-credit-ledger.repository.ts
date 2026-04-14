@@ -4,15 +4,19 @@ import { ICustomerCreditLedgerRepository } from "@/lib/domain/repositories/custo
 import { CustomerCreditLedger as DomainCreditLedger, CreditLedgerType, CreditLedgerSource } from "@/lib/domain/entities/customer-credit-ledger";
 import { Prisma, CustomerCreditLedger as PrismaCreditLedger } from "@prisma/client";
 
+type PrismaCreditLedgerWithOrder = PrismaCreditLedger & {
+  order?: { friendlyId: string | null } | null;
+};
+
 @injectable()
 export class PrismaCustomerCreditLedgerRepository extends BasePrismaRepository implements ICustomerCreditLedgerRepository {
-  private mapToDomain(item: PrismaCreditLedger): DomainCreditLedger {
+  private mapToDomain(item: PrismaCreditLedgerWithOrder): DomainCreditLedger {
     return {
       id: item.id,
       tenantId: item.tenantId,
       customerId: item.customerId,
       orderId: item.orderId,
-      orderFriendlyId: (item as any).order?.friendlyId,
+      orderFriendlyId: item.order?.friendlyId || undefined,
       amount: Number(item.amount),
       type: item.type as CreditLedgerType,
       source: item.source as CreditLedgerSource,
@@ -21,8 +25,8 @@ export class PrismaCustomerCreditLedgerRepository extends BasePrismaRepository i
     };
   }
 
-  async save(ledger: Omit<DomainCreditLedger, "id" | "createdAt">, tx?: any): Promise<DomainCreditLedger> {
-    const prismaClient = tx || this.prisma;
+  async save(ledger: Omit<DomainCreditLedger, "id" | "createdAt">, tx?: unknown): Promise<DomainCreditLedger> {
+    const prismaClient = (tx as Prisma.TransactionClient) || this.prisma;
     const saved = await prismaClient.customerCreditLedger.create({
       data: {
         tenantId: ledger.tenantId,

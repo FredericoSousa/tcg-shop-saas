@@ -24,10 +24,11 @@ export async function POST(
     }));
 
     return NextResponse.json(result);
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error finalizing order:", error);
+    const message = error instanceof Error ? error.message : "Internal Server Error";
     return NextResponse.json(
-      { error: error.message || "Internal Server Error" },
+      { error: message },
       { status: 400 }
     );
   }

@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { CartDrawer } from "@/components/shop/cart-drawer";
-import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -10,17 +9,15 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { Search, Loader2, Menu, ShoppingBag } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { formatCurrency } from "@/lib/utils/format";
-import { SetBadge } from "@/components/ui/set-badge";
+import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { LiveSearch } from "@/components/storefront/live-search";
 
 export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | null; description?: string | null } | null }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const router = useRouter();
   const pathname = usePathname();
 
   return (
@@ -41,7 +38,7 @@ export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | 
                 <SheetHeader className="p-6 border-b border-zinc-50 text-left">
                   <SheetTitle className="flex items-center gap-3">
                     {tenant?.logoUrl ? (
-                      <img src={tenant.logoUrl} alt={tenant.name} className="h-8 w-auto object-contain" />
+                      <Image src={tenant.logoUrl} alt={tenant.name || "Logo"} width={32} height={32} className="h-8 w-auto object-contain" />
                     ) : (
                       <div className="w-8 h-8 rounded-lg bg-zinc-950 flex items-center justify-center shadow-lg">
                         <span className="text-white font-black text-sm uppercase">
@@ -79,9 +76,9 @@ export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | 
                   {pathname === "/" && (
                     <div className="space-y-4">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-2">Busca Rápida</p>
-                      <LiveSearch 
-                        inputClassName="h-11 bg-zinc-50 border-zinc-100 rounded-xl focus:ring-primary/20 focus:border-primary" 
-                        onResultClick={() => setIsMobileMenuOpen(false)} 
+                      <LiveSearch
+                        inputClassName="h-11 bg-zinc-50 border-zinc-100 rounded-xl focus:ring-primary/20 focus:border-primary"
+                        onResultClick={() => setIsMobileMenuOpen(false)}
                       />
                     </div>
                   )}
@@ -100,7 +97,7 @@ export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | 
         <div className="mr-8 flex">
           <Link href="/" className="flex items-center space-x-3 group">
             {tenant?.logoUrl ? (
-              <img src={tenant.logoUrl} alt={tenant.name} className="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
+              <Image src={tenant.logoUrl} alt={tenant.name || "Logo"} width={32} height={32} className="h-8 w-auto object-contain transition-transform group-hover:scale-105" />
             ) : (
               <div className="w-8 h-8 rounded-lg bg-zinc-950 flex items-center justify-center shadow-lg transition-transform group-hover:scale-110">
                 <span className="text-white font-black text-sm uppercase">
@@ -132,9 +129,9 @@ export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | 
 
         <div className="flex flex-1 items-center justify-end gap-2 md:gap-6 ml-4">
           {pathname === "/" && (
-            <LiveSearch 
-              className="hidden lg:block max-w-[320px]" 
-              onResultClick={() => setIsMobileMenuOpen(false)} 
+            <LiveSearch
+              className="hidden lg:block max-w-[320px]"
+              onResultClick={() => setIsMobileMenuOpen(false)}
             />
           )}
 

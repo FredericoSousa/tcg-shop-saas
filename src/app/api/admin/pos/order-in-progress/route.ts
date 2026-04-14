@@ -24,13 +24,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Standardize items for the frontend cart
-    const formattedItems = order.items?.map(item => ({
-      id: item.productId || "",
-      name: (item as any).product?.name || "Produto", // Repository include product
-      imageUrl: (item as any).product?.imageUrl,
-      price: Number(item.priceAtPurchase),
-      quantity: item.quantity,
-    })) || [];
+    const formattedItems = order.items?.map(item => {
+      const product = (item as { product?: { name: string, imageUrl: string | null } }).product;
+      return {
+        id: item.productId || "",
+        name: product?.name || "Produto", 
+        imageUrl: product?.imageUrl,
+        price: Number(item.priceAtPurchase),
+        quantity: item.quantity,
+      };
+    }) || [];
 
     return NextResponse.json({
       success: true,
@@ -41,10 +44,11 @@ export async function GET(request: NextRequest) {
         items: formattedItems,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Order in progress error:", error);
+    const message = error instanceof Error ? error.message : "Erro ao buscar pedido em andamento";
     return NextResponse.json(
-      { success: false, message: error.message || "Erro ao buscar pedido em andamento" },
+      { success: false, message },
       { status: 500 }
     );
   }

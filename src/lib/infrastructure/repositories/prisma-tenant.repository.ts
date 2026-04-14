@@ -1,8 +1,8 @@
 import { injectable } from "tsyringe";
 import { BasePrismaRepository } from "./base-prisma.repository";
 import { ITenantRepository } from "@/lib/domain/repositories/tenant.repository";
-import { Tenant as DomainTenant, User as DomainUser, UserRole } from "@/lib/domain/entities/tenant";
-import { Tenant as PrismaTenant, User as PrismaUser } from "@prisma/client";
+import { Tenant as DomainTenant } from "@/lib/domain/entities/tenant";
+import { Tenant as PrismaTenant } from "@prisma/client";
 
 @injectable()
 export class PrismaTenantRepository extends BasePrismaRepository implements ITenantRepository {

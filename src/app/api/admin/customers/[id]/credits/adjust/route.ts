@@ -21,8 +21,9 @@ export async function POST(
       });
       
       return ApiResponse.success(result);
-    } catch (error: any) {
-      return ApiResponse.badRequest(error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro desconhecido";
+      return ApiResponse.badRequest(message);
     }
   });
 }

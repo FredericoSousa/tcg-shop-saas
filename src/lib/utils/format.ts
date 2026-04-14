@@ -47,8 +47,8 @@ export function formatCurrency(
   
   if (typeof value === "string") {
     numValue = parseFloat(value);
-  } else if (value && typeof value === "object" && "toNumber" in value && typeof (value as any).toNumber === "function") {
-    numValue = (value as any).toNumber();
+  } else if (value && typeof value === "object" && "toNumber" in value && typeof (value as unknown as { toNumber: unknown }).toNumber === "function") {
+    numValue = (value as unknown as { toNumber: () => number }).toNumber();
   } else {
     numValue = value as number;
   }
@@ -88,8 +88,8 @@ export function formatDecimal(value: number | string | Decimal | null | undefine
   
   if (typeof value === "string") {
     numValue = parseFloat(value);
-  } else if (value && typeof value === "object" && "toNumber" in value && typeof (value as any).toNumber === "function") {
-    numValue = (value as any).toNumber();
+  } else if (value && typeof value === "object" && "toNumber" in value && typeof (value as unknown as { toNumber: unknown }).toNumber === "function") {
+    numValue = (value as unknown as { toNumber: () => number }).toNumber();
   } else {
     numValue = value as number;
   }

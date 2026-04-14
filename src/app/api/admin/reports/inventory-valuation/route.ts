@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { container } from "@/lib/infrastructure/container";
 import { GetInventoryValuationUseCase } from "@/lib/application/use-cases/get-inventory-valuation.use-case";
 import { validateAdminApi } from "@/lib/tenant-server";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const context = await validateAdminApi();
     if (!context) {

@@ -43,8 +43,8 @@ interface Customer {
   name: string;
   email: string | null;
   phoneNumber: string;
-  deletedAt: string | null;
-  createdAt: string | Date;
+  deletedAt: Date | null;
+  createdAt: Date | null;
 }
 
 interface CustomersClientProps {
@@ -86,7 +86,7 @@ export function CustomersClient({
     phoneNumber: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [customerToDelete, setCustomerToDelete] = useState<{id: string, name: string} | null>(null);
+  const [customerToDelete, setCustomerToDelete] = useState<{ id: string, name: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchCustomers = useCallback(async () => {
@@ -279,10 +279,10 @@ export function CustomersClient({
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                  {formatPhone(customer.phoneNumber)}
+                    {formatPhone(customer.phoneNumber)}
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {new Date(customer.createdAt).toLocaleDateString("pt-BR")}
+                    {customer.createdAt ? new Date(customer.createdAt).toLocaleDateString("pt-BR") : "—"}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2 text-right">
@@ -311,7 +311,7 @@ export function CustomersClient({
                             variant="ghost"
                             size="icon"
                             className="text-muted-foreground hover:text-red-500"
-                            onClick={(e) => { e.stopPropagation(); setCustomerToDelete({id: customer.id, name: customer.name}); }}
+                            onClick={(e) => { e.stopPropagation(); setCustomerToDelete({ id: customer.id, name: customer.name }); }}
                             title="Excluir"
                           >
                             <Trash2 className="h-4 w-4" />
@@ -355,8 +355,8 @@ export function CustomersClient({
               >
                 Cancelar
               </Button>
-              <Button 
-                type="submit" 
+              <Button
+                type="submit"
                 form="customer-form"
                 disabled={isSubmitting}
                 className="font-bold rounded-xl h-11 px-6 shadow-lg shadow-primary/10"

@@ -4,7 +4,6 @@ import { POSCheckoutUseCase } from '@/lib/application/use-cases/pos-checkout.use
 import type { IOrderRepository } from '@/lib/domain/repositories/order.repository';
 import type { IProductRepository } from '@/lib/domain/repositories/product.repository';
 import type { ICustomerRepository } from '@/lib/domain/repositories/customer.repository';
-import { prisma } from '@/lib/prisma';
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {

@@ -40,7 +40,7 @@ export async function getTenant() {
     }
 
     return getCachedTenant(tenantId);
-  } catch (error) {
+  } catch {
     // If headers() is called during static generation, it may throw or return empty
     // We return null to allow the build to proceed with a default state if applicable
     return null;

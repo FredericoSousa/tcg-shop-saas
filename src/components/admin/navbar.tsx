@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, ChevronDown, UserCog, DollarSign, Cuboid, Settings, LogOut } from "lucide-react";
+import { Menu, UserCog, DollarSign, Cuboid, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -9,8 +9,7 @@ import {
   SheetTitle,
   SheetHeader,
 } from "@/components/ui/sheet";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { LayoutDashboard, Package, ShoppingCart, Users } from "lucide-react";
 
@@ -32,9 +31,8 @@ interface NavbarProps {
 import { PanelLeft } from "lucide-react";
 import { useSidebar } from "./sidebar-provider";
 
-export function Navbar({ username }: NavbarProps) {
+export function Navbar({ }: NavbarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const { toggleSidebar, isCollapsed } = useSidebar();
 
   // Find current page name for breadcrumb title

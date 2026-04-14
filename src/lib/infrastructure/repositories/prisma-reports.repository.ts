@@ -287,7 +287,7 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
       }
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return Object.entries(monthlyData)
       .map(([month, revenue]) => ({ month, revenue }))
       .reverse() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -367,7 +367,7 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
       }
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return Object.entries(dailyRevenue)
       .map(([day, amount]) => ({ day, amount }))
       .reverse() as any; // eslint-disable-line @typescript-eslint/no-explicit-any

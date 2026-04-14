@@ -19,7 +19,7 @@ export interface BulkInventoryItemRequest {
   extras?: string[];
 }
 
-export interface AddBulkInventoryRequest extends Array<BulkInventoryItemRequest> {}
+export type AddBulkInventoryRequest = BulkInventoryItemRequest[];
 
 export interface BulkInventoryResult {
   cardName: string;
@@ -27,7 +27,7 @@ export interface BulkInventoryResult {
   error?: string;
 }
 
-export interface AddBulkInventoryResponse extends Array<BulkInventoryResult> {}
+export type AddBulkInventoryResponse = BulkInventoryResult[];
 
 @injectable()
 export class AddBulkInventoryUseCase implements IUseCase<AddBulkInventoryRequest, AddBulkInventoryResponse> {
@@ -95,7 +95,7 @@ export class AddBulkInventoryUseCase implements IUseCase<AddBulkInventoryRequest
 
     // 4. Group items into updates and creates
     const itemsToCreate: Parameters<IInventoryRepository["createMany"]>[0] = [];
-    const updatePromises: Promise<any>[] = [];
+    const updatePromises: Promise<unknown>[] = [];
 
     for (const itemRequest of request) {
       const cardName = nameMap.get(itemRequest.scryfallId);

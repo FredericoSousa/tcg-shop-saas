@@ -11,10 +11,9 @@ import { AuthService } from "@/lib/api/services/auth.service";
 
 interface LoginFormProps {
   tenantId: string;
-  tenantName: string;
 }
 
-export function LoginForm({ tenantId, tenantName }: LoginFormProps) {
+export function LoginForm({ tenantId }: LoginFormProps) {
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");

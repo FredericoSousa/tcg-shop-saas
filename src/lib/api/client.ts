@@ -4,7 +4,7 @@ export class ApiError extends Error {
   constructor(
     public message: string,
     public status: number,
-    public data?: any
+    public data?: unknown
   ) {
     super(message);
     this.name = "ApiError";
@@ -16,7 +16,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
   
   if (!response.ok) {
     throw new ApiError(
-      data.message || response.statusText || "Request failed",
+      (data as { message?: string }).message || response.statusText || "Request failed",
       response.status,
       data
     );
@@ -38,7 +38,7 @@ export const apiClient = {
     return handleResponse<ApiResponseData<T>>(response);
   },
 
-  async post<T>(url: string, body?: any, options?: RequestInit): Promise<ApiResponseData<T>> {
+  async post<T>(url: string, body?: unknown, options?: RequestInit): Promise<ApiResponseData<T>> {
     const response = await fetch(url, {
       ...options,
       method: "POST",
@@ -51,7 +51,7 @@ export const apiClient = {
     return handleResponse<ApiResponseData<T>>(response);
   },
 
-  async put<T>(url: string, body?: any, options?: RequestInit): Promise<ApiResponseData<T>> {
+  async put<T>(url: string, body?: unknown, options?: RequestInit): Promise<ApiResponseData<T>> {
     const response = await fetch(url, {
       ...options,
       method: "PUT",
@@ -64,7 +64,7 @@ export const apiClient = {
     return handleResponse<ApiResponseData<T>>(response);
   },
 
-  async patch<T>(url: string, body?: any, options?: RequestInit): Promise<ApiResponseData<T>> {
+  async patch<T>(url: string, body?: unknown, options?: RequestInit): Promise<ApiResponseData<T>> {
     const response = await fetch(url, {
       ...options,
       method: "PATCH",
@@ -77,7 +77,7 @@ export const apiClient = {
     return handleResponse<ApiResponseData<T>>(response);
   },
 
-  async delete<T>(url: string, body?: any, options?: RequestInit): Promise<ApiResponseData<T>> {
+  async delete<T>(url: string, body?: unknown, options?: RequestInit): Promise<ApiResponseData<T>> {
     const response = await fetch(url, {
       ...options,
       method: "DELETE",

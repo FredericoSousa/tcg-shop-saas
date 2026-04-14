@@ -1,15 +1,15 @@
 import { NextResponse } from "next/server";
 
-export interface ApiResponseData<T = any> {
+export interface ApiResponseData<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
   error?: {
     code: string;
-    details?: any;
+    details?: unknown;
   };
   meta?: {
-    [key: string]: any;
+    [key: string]: unknown;
     pagination?: {
       total: number;
       page: number;
@@ -24,7 +24,7 @@ export class ApiResponse {
     return NextResponse.json(data, { status });
   }
 
-  static success<T>(data?: T, message?: string, meta?: any) {
+  static success<T>(data?: T, message?: string, meta?: Record<string, unknown>) {
     return this.json({
       success: true,
       data,
@@ -45,7 +45,7 @@ export class ApiResponse {
     return this.success(data, message);
   }
 
-  static badRequest(message: string, code: string = "BAD_REQUEST", details?: any) {
+  static badRequest(message: string, code: string = "BAD_REQUEST", details?: unknown) {
     return this.json({
       success: false,
       message,
@@ -77,7 +77,7 @@ export class ApiResponse {
     }, 404);
   }
 
-  static serverError(message: string = "Internal Server Error", code: string = "INTERNAL_SERVER_ERROR", details?: any) {
+  static serverError(message: string = "Internal Server Error", code: string = "INTERNAL_SERVER_ERROR", details?: unknown) {
     return this.json({
       success: false,
       message,

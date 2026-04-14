@@ -13,7 +13,7 @@ export class EntityNotFoundError extends DomainError {
 }
 
 export class ValidationError extends DomainError {
-  constructor(message: string, public readonly details?: any) {
+  constructor(message: string, public readonly details?: unknown) {
     super(message, "VALIDATION_ERROR");
   }
 }

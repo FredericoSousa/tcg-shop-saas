@@ -68,7 +68,7 @@ export async function getSession(): Promise<SessionData | null> {
     if (!token) return null;
 
     return verifySessionToken(token);
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -86,7 +86,7 @@ export async function setSessionCookie(token: string): Promise<void> {
       maxAge: config.sessionCookieMaxAge,
       path: "/",
     });
-  } catch (error) {
+  } catch {
     // Ignore errors during build/SSG
   }
 }
@@ -98,7 +98,7 @@ export async function clearSessionCookie(): Promise<void> {
   try {
     const cookieStore = await cookies();
     cookieStore.delete("session");
-  } catch (error) {
+  } catch {
     // Ignore errors during build/SSD
   }
 }

@@ -1,19 +1,19 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { 
-  Settings, 
-  Palette, 
-  Globe, 
-  MessageSquare, 
   Mail, 
   Phone, 
   MapPin, 
   Camera, 
   Send,
   Save,
-  Loader2
+  Loader2,
+  Settings,
+  Palette,
+  Globe,
+  MessageSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,7 +39,7 @@ interface SettingsContentProps {
 }
 
 export function SettingsContent({ initialSettings }: SettingsContentProps) {
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<TenantSettings>({
     name: initialSettings.name || "",

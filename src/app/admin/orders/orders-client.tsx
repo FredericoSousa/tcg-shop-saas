@@ -2,7 +2,7 @@
 
 import { OrderStatus } from "@prisma/client";
 import Link from "next/link";
-import { ArrowRight, FilterIcon, Check } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { cn, formatPhone, formatCurrency } from "@/lib/utils";
 import * as React from "react";
 import {
@@ -17,14 +17,13 @@ import { useTableState } from "@/lib/hooks/use-table-state";
 import { FilterSection } from "@/components/admin/filter-section";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { TableSearch } from "@/components/admin/table-search";
-import { Button } from "@/components/ui/button";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
 } from "@/components/ui/table";
 import { OrderBulkActionsBar } from "@/components/admin/orders/order-bulk-actions-bar";
 import { Badge } from "@/components/ui/badge";
@@ -65,14 +64,14 @@ export type OrderType = {
 
 
 
-const OrderTableView = ({ 
-  items, 
-  selectedIds, 
+const OrderTableView = ({
+  items,
+  selectedIds,
   onSelect,
-  onSelectAll 
-}: { 
-  items: OrderType[]; 
-  selectedIds: string[]; 
+  onSelectAll
+}: {
+  items: OrderType[];
+  selectedIds: string[];
   onSelect: (id: string) => void;
   onSelectAll: () => void;
 }) => (
@@ -130,9 +129,8 @@ const OrderTableView = ({
                 </div>
               </TableCell>
               <TableCell className="text-center">
-                <Badge variant="outline" className={`text-[9px] font-black uppercase tracking-tighter ${
-                  order.source === "POS" ? "bg-blue-100/50 text-blue-700" : "bg-emerald-100/50 text-emerald-700"
-                }`}>
+                <Badge variant="outline" className={`text-[9px] font-black uppercase tracking-tighter ${order.source === "POS" ? "bg-blue-100/50 text-blue-700" : "bg-emerald-100/50 text-emerald-700"
+                  }`}>
                   {order.source === "POS" ? "PDV" : "E-COM"}
                 </Badge>
               </TableCell>
@@ -143,8 +141,8 @@ const OrderTableView = ({
                 {formatCurrency(order.totalAmount)}
               </TableCell>
               <TableCell>
-                <Badge 
-                  variant="outline" 
+                <Badge
+                  variant="outline"
                   className={cn(
                     "font-bold uppercase tracking-wider text-[10px]",
                     order.status === "PENDING" && "bg-yellow-100 text-yellow-700 border-yellow-200",
@@ -153,9 +151,9 @@ const OrderTableView = ({
                     order.status === "CANCELLED" && "bg-red-100 text-red-700 border-red-200"
                   )}
                 >
-                  {order.status === "PENDING" ? "Pendente" : 
-                   order.status === "PAID" ? "Pago" : 
-                   order.status === "SHIPPED" ? "Enviado" : "Cancelado"}
+                  {order.status === "PENDING" ? "Pendente" :
+                    order.status === "PAID" ? "Pago" :
+                      order.status === "SHIPPED" ? "Enviado" : "Cancelado"}
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
@@ -171,11 +169,11 @@ const OrderTableView = ({
   </div>
 );
 
-export function OrdersClient({ 
-  initialOrders, 
-  total, 
-  pageCount 
-}: { 
+export function OrdersClient({
+  initialOrders,
+  total,
+  pageCount
+}: {
   initialOrders: OrderType[];
   total: number;
   pageCount: number;
@@ -213,7 +211,7 @@ export function OrdersClient({
   };
 
   const handleSelectOrder = (id: string) => {
-    setSelectedIds(prev => 
+    setSelectedIds(prev =>
       prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
     );
   };
@@ -231,9 +229,9 @@ export function OrdersClient({
   return (
     <div className="space-y-6">
       <FilterSection resultsCount={total}>
-        <TableSearch 
-          value={search} 
-          onChange={setSearch} 
+        <TableSearch
+          value={search}
+          onChange={setSearch}
           placeholder="Buscar por código ou cliente..."
           isLoading={isPending}
         />
@@ -268,11 +266,11 @@ export function OrdersClient({
         </Select>
 
         <div className="flex-1 w-full overflow-visible">
-          <CustomerSelector 
-            selectedCustomer={selectedCustomer} 
-            onSelect={handleCustomerSelect} 
-            hideLabel 
-            size="sm" 
+          <CustomerSelector
+            selectedCustomer={selectedCustomer}
+            onSelect={handleCustomerSelect}
+            hideLabel
+            size="sm"
           />
         </div>
       </FilterSection>
@@ -282,7 +280,7 @@ export function OrdersClient({
       </div>
 
 
-      <DataTablePagination 
+      <DataTablePagination
         page={page}
         pageCount={pageCount}
         total={total}
@@ -300,7 +298,7 @@ export function OrdersClient({
             clearSelection();
             // The status update API revalidates path, 
             // but we might need a router refresh or just trust revalidation
-            window.location.reload(); 
+            window.location.reload();
           }}
         />
       )}

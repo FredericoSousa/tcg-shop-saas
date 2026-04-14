@@ -1,6 +1,6 @@
 "use client";
 
-import { useCart, CartItem } from "@/store/use-cart";
+import { useCart } from "@/store/use-cart";
 import { Plus, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -24,9 +24,9 @@ export function QuickAddButton({ item }: QuickAddButtonProps) {
   const handleAdd = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     setIsAdding(true);
-    
+
     addItem({
       inventoryId: item.inventoryId,
       name: item.name,
@@ -47,9 +47,8 @@ export function QuickAddButton({ item }: QuickAddButtonProps) {
   return (
     <Button
       size="sm"
-      className={`absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 h-8 w-8 p-0 rounded-lg shadow-lg bg-primary hover:bg-primary/90 text-white z-20 ${
-        isAdding ? "scale-90" : "scale-100"
-      }`}
+      className={`absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 h-8 w-8 p-0 rounded-lg shadow-lg bg-primary hover:bg-primary/90 text-white z-20 ${isAdding ? "scale-90" : "scale-100"
+        }`}
       onClick={handleAdd}
       title="Adicionar ao carrinho"
     >

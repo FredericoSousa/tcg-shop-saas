@@ -24,6 +24,7 @@ export type MTGCardItem = {
     set: string;
     imageUrl: string | null;
     backImageUrl?: string | null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     metadata?: any;
   } | null;
 };
@@ -43,7 +44,7 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
   const handleAddToCart = (e?: React.MouseEvent) => {
     e?.preventDefault();
     e?.stopPropagation();
-    
+
     addItem({
       inventoryId: item.id,
       name: item.cardTemplate?.name || "Card",
@@ -61,7 +62,7 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
   const isStore = variant === "store";
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
@@ -83,9 +84,8 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
               alt={item.cardTemplate.name}
               fill
               sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
-              className={`object-cover w-full h-full transition-transform duration-500 group-hover/image:scale-105 ${
-                isImageLoaded ? "opacity-100 z-10" : "opacity-0"
-              }`}
+              className={`object-cover w-full h-full transition-transform duration-500 group-hover/image:scale-105 ${isImageLoaded ? "opacity-100 z-10" : "opacity-0"
+                }`}
               loading="lazy"
               onLoad={() => setIsImageLoaded(true)}
             />
@@ -152,7 +152,7 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
                 {item.cardTemplate.name.split(" // ")[0]}
                 <br />
                 <span className="text-[10px] text-zinc-500 font-medium">
-                  // {item.cardTemplate.name.split(" // ").slice(1).join(" // ")}
+                  {"// "}{item.cardTemplate.name.split(" // ").slice(1).join(" // ")}
                 </span>
               </>
             ) : (
@@ -169,13 +169,12 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
             textClassName="text-[10px] font-bold text-zinc-400"
           />
           <span
-            className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${
-              item.condition === "NM"
+            className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${item.condition === "NM"
                 ? "bg-emerald-50 text-emerald-600 border-emerald-100"
                 : item.condition === "SP"
-                ? "bg-blue-50 text-blue-600 border-blue-100"
-                : "bg-zinc-50 text-zinc-400 border-zinc-100"
-            }`}
+                  ? "bg-blue-50 text-blue-600 border-blue-100"
+                  : "bg-zinc-50 text-zinc-400 border-zinc-100"
+              }`}
           >
             {item.condition}
           </span>
@@ -188,9 +187,8 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
             </span>
             {isStore && (
               <span
-                className={`text-[10px] font-bold ${
-                  item.quantity > 3 ? "text-zinc-400" : "text-amber-600"
-                }`}
+                className={`text-[10px] font-bold ${item.quantity > 3 ? "text-zinc-400" : "text-amber-600"
+                  }`}
               >
                 {item.quantity} un.
               </span>
@@ -200,11 +198,10 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
           {isStore && (
             <Button
               size="sm"
-              className={`w-full font-bold text-xs h-9 rounded-xl transition-all duration-300 ${
-                isAdded
+              className={`w-full font-bold text-xs h-9 rounded-xl transition-all duration-300 ${isAdded
                   ? "bg-emerald-500 hover:bg-emerald-600 text-white"
                   : "bg-zinc-950 hover:bg-primary text-white"
-              }`}
+                }`}
               onClick={handleAddToCart}
             >
               {isAdded ? (

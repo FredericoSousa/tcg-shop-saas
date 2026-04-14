@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
+import Image from 'next/image'
 import { useCart } from "@/store/use-cart";
 import {
   Sheet,
@@ -16,7 +17,7 @@ import { Input } from '@/components/ui/input'
 import { ShoppingCart, Plus, Minus, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
-import { formatPhone, formatCurrency } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { MaskedInput } from '@/components/ui/masked-input'
 
 const checkoutSchema = z.object({
@@ -161,8 +162,12 @@ export function CartDrawer() {
                   <div key={item.inventoryId} className="flex gap-4 border-b pb-4 last:border-0 items-center hover:bg-muted/10 p-2 rounded-lg transition-colors">
                     <div className="h-20 w-14 bg-muted/30 rounded overflow-hidden shrink-0 border border-muted flex items-center justify-center relative">
                       {item.imageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                        <Image 
+                          src={item.imageUrl} 
+                          alt={item.name} 
+                          fill 
+                          className="object-cover" 
+                        />
                       ) : (
                         <ImageIcon className="h-4 w-4 text-muted-foreground opacity-50" />
                       )}

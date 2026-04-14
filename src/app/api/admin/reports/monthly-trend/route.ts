@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { container } from "@/lib/infrastructure/container";
 import { GetMonthlyRevenueTrendUseCase } from "@/lib/application/use-cases/get-monthly-revenue-trend.use-case";
 import { validateAdminApi } from "@/lib/tenant-server";
@@ -21,7 +20,7 @@ import { ApiResponse } from "@/lib/infrastructure/http/api-response";
  *             schema:
  *               $ref: '#/components/schemas/ApiResponse'
  */
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const context = await validateAdminApi();
     if (!context) {

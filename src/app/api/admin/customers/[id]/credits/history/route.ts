@@ -15,8 +15,9 @@ export async function GET(
       const history = await useCase.execute({ customerId: id });
       
       return ApiResponse.success(history);
-    } catch (error: any) {
-      return ApiResponse.badRequest(error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro desconhecido";
+      return ApiResponse.badRequest(message);
     }
   });
 }

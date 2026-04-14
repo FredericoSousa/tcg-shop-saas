@@ -29,7 +29,6 @@ export function CartPanel({
   onCheckout,
   onFinalize,
   isSubmitting,
-  activeOrderId,
   activeOrderFriendlyId,
 }: CartPanelProps) {
   const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0);

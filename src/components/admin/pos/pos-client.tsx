@@ -24,7 +24,6 @@ export function POSClient() {
   const [isLoadingOrder, setIsLoadingOrder] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [totalAmount, setTotalAmount] = useState(0);
 
   const subtotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
@@ -43,8 +42,8 @@ export function POSClient() {
         setActiveOrderId(null);
         setActiveOrderFriendlyId(null);
       }
-    } catch (error) {
-      console.error("Error fetching order:", error);
+    } catch {
+      console.error("Error fetching order");
       toast.error("Erro ao carregar pedido em andamento");
     } finally {
       setIsLoadingOrder(false);
@@ -107,7 +106,6 @@ export function POSClient() {
     
     // First, save current changes if any
     handleCheckout().then(() => {
-      setTotalAmount(subtotal);
       setIsPaymentDialogOpen(true);
     });
   };
@@ -157,8 +155,8 @@ export function POSClient() {
       } else {
         toast.error(result.message || "Erro ao processar venda");
       }
-    } catch (error) {
-      console.error("Checkout error:", error);
+    } catch {
+      console.error("Checkout error");
       toast.error("Erro na comunicação com o servidor");
     } finally {
       setIsSubmitting(false);

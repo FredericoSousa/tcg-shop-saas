@@ -1,4 +1,11 @@
 import { apiClient } from "../client";
+import { Customer } from "@/lib/domain/entities/customer";
+
+export interface PaginatedResult<T> {
+  items: T[];
+  total: number;
+  pageCount: number;
+}
 
 export interface ListCustomersParams {
   page: number;
@@ -22,22 +29,22 @@ export const CustomerService = {
     if (params.search) query.append("search", params.search);
     if (params.includeDeleted) query.append("includeDeleted", "true");
 
-    return apiClient.get<any>(`/api/admin/customers?${query.toString()}`);
+    return apiClient.get<PaginatedResult<Customer>>(`/api/admin/customers?${query.toString()}`);
   },
 
   async create(data: CustomerDto) {
-    return apiClient.post("/api/admin/customers", data);
+    return apiClient.post<Customer>("/api/admin/customers", data);
   },
 
   async update(id: string, data: CustomerDto) {
-    return apiClient.put(`/api/admin/customers/${id}`, data);
+    return apiClient.put<Customer>(`/api/admin/customers/${id}`, data);
   },
 
   async delete(id: string) {
-    return apiClient.delete(`/api/admin/customers/${id}`);
+    return apiClient.delete<void>(`/api/admin/customers/${id}`);
   },
 
   async restore(id: string) {
-    return apiClient.patch(`/api/admin/customers/${id}`);
+    return apiClient.patch<void>(`/api/admin/customers/${id}`);
   },
 };

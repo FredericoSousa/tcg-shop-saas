@@ -6,11 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Trash2, Edit3, Loader2, X, Check } from "lucide-react";
 import {
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { InventoryService } from "@/lib/api/services/inventory.service";

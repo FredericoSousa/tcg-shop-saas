@@ -59,8 +59,9 @@ export function AdjustCreditDialog({ customerId, onSuccess }: AdjustCreditDialog
       setOpen(false);
       setAmount("");
       setDescription("");
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro desconhecido";
+      toast.error(message);
     } finally {
       setLoading(false);
     }

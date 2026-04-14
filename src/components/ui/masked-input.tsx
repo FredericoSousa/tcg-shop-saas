@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { Input } from "./input";
-import { formatPhone, unmaskPhone, formatCurrency, parseCurrency, formatDecimal } from "@/lib/utils/format";
+import { formatPhone, unmaskPhone, formatCurrency, formatDecimal } from "@/lib/utils/format";
 
 interface MaskedInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "onChange"> {
   mask: "phone" | "currency" | "decimal";
@@ -28,7 +28,7 @@ const MaskedInput = React.forwardRef<HTMLInputElement, MaskedInputProps>(
     }, [value, mask]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      let rawValue = e.target.value;
+      const rawValue = e.target.value;
       let formattedValue = "";
       let finalValue: string | number = "";
 

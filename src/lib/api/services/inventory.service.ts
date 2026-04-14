@@ -30,7 +30,8 @@ export const InventoryService = {
   },
 
   async importLigaMagic(collectionId: string) {
-    return apiClient.post<any>("/api/inventory/import-ligamagic", { collectionId });
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return apiClient.post<any[]>("/api/inventory/import-ligamagic", { collectionId });
   },
 
   async deleteItems(ids: string[]) {

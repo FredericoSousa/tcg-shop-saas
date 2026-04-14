@@ -32,21 +32,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   PackageOpen,
-  Trash2,
   X,
-  Loader2,
 } from "lucide-react";
-import { toast } from "sonner";
 import { useTableState } from "@/lib/hooks/use-table-state";
 import { FilterSection } from "@/components/admin/filter-section";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
@@ -81,8 +69,6 @@ export function DataTable<TData, TValue>({
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
-  const [isDeleting, setIsDeleting] = React.useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = React.useState(false);
 
   // Sync TanStack column filters with URL
   const columnFilters = React.useMemo(() => {
@@ -132,6 +118,7 @@ export function DataTable<TData, TValue>({
     return Array.from(extras).sort();
   }, [data]);
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,
@@ -158,16 +145,6 @@ export function DataTable<TData, TValue>({
   const selectedCount = table.getFilteredSelectedRowModel().rows.length;
   const hasActiveFilters = columnFilters.length > 0 || search;
 
-  const handleBulkDelete = () => {
-    // This is now handled by the BulkActionsBar component
-    // We just need to refresh the table data and clear selection
-    setRowSelection({});
-    // router.refresh() or similar could be better but Tanstack table handles its own state
-    // The parent component (InventoryPage) fetches data. 
-    // We can rely on router.refresh() via window.location.reload() or a more reach-friendly way.
-    window.location.reload(); 
-  };
-
   const handleClearFilters = () => {
     clearFilters(["cardTemplate_set", "condition", "language", "extras"]);
   };
@@ -175,10 +152,10 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-4 w-full">
       <FilterSection resultsCount={serverTotal || data.length}>
-        <TableSearch 
-          value={search} 
-          onChange={setSearch} 
-          placeholder="Buscar por nome..." 
+        <TableSearch
+          value={search}
+          onChange={setSearch}
+          placeholder="Buscar por nome..."
           isLoading={isPending}
         />
 
@@ -379,8 +356,8 @@ export function DataTable<TData, TValue>({
             )}
           </TableBody>
         </Table>
-        
-        <DataTablePagination 
+
+        <DataTablePagination
           page={page}
           pageCount={serverPageCount || table.getPageCount() || 1}
           total={serverTotal || data.length}

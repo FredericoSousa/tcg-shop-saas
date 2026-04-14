@@ -9,8 +9,8 @@ export type OrderRelation = Order & {
 export interface IOrderRepository {
   findById(id: string): Promise<Order | null>;
   save(order: Order, items: Omit<OrderItem, "id" | "orderId">[]): Promise<Order>;
-  updateStatus(id: string, status: OrderStatus, tx?: any): Promise<void>;
-  savePayments(orderId: string, payments: { method: PaymentMethodType; amount: number }[], tx?: any): Promise<void>;
+  updateStatus(id: string, status: OrderStatus, tx?: unknown): Promise<void>;
+  savePayments(orderId: string, payments: { method: PaymentMethodType; amount: number }[], tx?: unknown): Promise<void>;
   findPaginated(
     page: number,
     limit: number,

@@ -6,7 +6,7 @@ import { Prisma, Order as PrismaOrder, OrderItem as PrismaOrderItem, Customer as
 
 type PrismaOrderWithRelations = PrismaOrder & {
   items?: PrismaOrderItem[];
-  payments?: any[]; // Prisma doesn't always export all types if not generated yet, using any for now or I can check if OrderPayment is available
+  payments?: { id: string; orderId: string; method: string; amount: Prisma.Decimal; createdAt: Date }[];
   customer?: PrismaCustomer | null;
 };
 
@@ -30,15 +30,15 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
       items: item.items?.map((oi: PrismaOrderItem) => ({
         id: oi.id,
         orderId: oi.orderId,
-        inventoryItemId: oi.inventoryItemId,
-        productId: oi.productId,
+        inventoryItemId: oi.inventoryItemId || undefined,
+        productId: oi.productId || undefined,
         quantity: oi.quantity,
         priceAtPurchase: Number(oi.priceAtPurchase),
       })),
-      payments: item.payments?.map((p: any) => ({
+      payments: item.payments?.map((p) => ({
         id: p.id,
         orderId: p.orderId,
-        method: p.method as any,
+        method: p.method as PaymentMethodType,
         amount: Number(p.amount),
         createdAt: p.createdAt,
       })),
@@ -59,13 +59,14 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
         }
       },
     });
-    return item ? this.mapToDomain(item) : null;
+    return item ? this.mapToDomain(item as PrismaOrderWithRelations) : null;
   }
 
   async save(order: DomainOrder, items: Omit<DomainOrderItem, "id" | "orderId">[]): Promise<DomainOrder> {
     const saved = await this.prisma.order.create({
       data: {
         customerId: order.customerId,
+        tenantId: order.tenantId,
         totalAmount: new Prisma.Decimal(order.totalAmount),
         status: order.status,
         source: order.source,
@@ -78,15 +79,15 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
             priceAtPurchase: new Prisma.Decimal(item.priceAtPurchase),
           })),
         },
-      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      } as Prisma.OrderUncheckedCreateInput,
       include: { customer: true, items: true },
     });
 
-    return this.mapToDomain(saved);
+    return this.mapToDomain(saved as PrismaOrderWithRelations);
   }
 
-  async updateStatus(id: string, status: OrderStatus, tx?: any): Promise<void> {
-    const prismaClient = tx || this.prisma;
+  async updateStatus(id: string, status: OrderStatus, tx?: unknown): Promise<void> {
+    const prismaClient = (tx as Prisma.TransactionClient) || this.prisma;
     await prismaClient.order.update({
       where: { id },
       data: { status },
@@ -131,7 +132,7 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
     ]);
 
     return {
-      items: items.map(this.mapToDomain.bind(this)),
+      items: (items as PrismaOrderWithRelations[]).map(this.mapToDomain.bind(this)),
       total,
     };
   }
@@ -145,7 +146,7 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
       },
       include: { items: true, customer: true },
     });
-    return item ? this.mapToDomain(item) : null;
+    return item ? this.mapToDomain(item as PrismaOrderWithRelations) : null;
   }
 
   async appendToOrder(orderId: string, items: { productId: string; quantity: number; priceAtPurchase: number }[], totalAmountIncrement: number): Promise<void> {
@@ -181,8 +182,8 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
     });
   }
 
-  async savePayments(orderId: string, payments: { method: PaymentMethodType; amount: number }[], tx?: any): Promise<void> {
-    const prismaClient = tx || this.prisma;
+  async savePayments(orderId: string, payments: { method: PaymentMethodType; amount: number }[], tx?: unknown): Promise<void> {
+    const prismaClient = (tx as Prisma.TransactionClient) || this.prisma;
     await prismaClient.orderPayment.createMany({
       data: payments.map((p) => ({
         orderId,

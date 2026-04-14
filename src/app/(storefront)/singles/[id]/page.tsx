@@ -10,6 +10,7 @@ import { SetBadge } from "@/components/ui/set-badge";
 import { formatCurrency } from "@/lib/utils/format";
 import { ChevronRight, ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
+import Image from "next/image";
 
 export async function generateMetadata(props: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const params = await props.params;
@@ -68,8 +69,8 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
       </div>
 
       <div className="container mx-auto px-6 py-12 md:py-20">
-        <Link 
-          href="/singles" 
+        <Link
+          href="/singles"
           className="inline-flex items-center gap-2 text-zinc-400 hover:text-zinc-950 transition-all font-black text-xs uppercase tracking-widest mb-12 group"
         >
           <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
@@ -85,7 +86,7 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
               <h2 className="text-3xl font-black uppercase italic tracking-tighter">
                 Mais da coleção <span className="text-primary">{getItem.cardTemplate?.set?.toUpperCase()}</span>
               </h2>
-              <Link 
+              <Link
                 href={`/singles?set=${getItem.cardTemplate?.set}`}
                 className="text-xs font-black uppercase tracking-widest text-zinc-400 hover:text-primary transition-colors"
               >
@@ -102,8 +103,8 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
                 >
                   <div className="aspect-[2/3] relative rounded-3xl overflow-hidden bg-zinc-100 border border-zinc-200 transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-2">
                     {related.cardTemplate?.imageUrl && (
-                      <img 
-                        src={related.cardTemplate.imageUrl} 
+                      <Image
+                        src={related.cardTemplate.imageUrl}
                         alt={related.cardTemplate.name}
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />

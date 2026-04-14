@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { SetBadge } from "@/components/ui/set-badge";
@@ -17,6 +18,14 @@ interface LiveSearchProps {
   placeholder?: string;
 }
 
+interface SearchResult {
+  id: string;
+  name: string;
+  set: string;
+  price: number;
+  imageUrl?: string;
+}
+
 export function LiveSearch({ 
   defaultValue = "", 
   onSearch, 
@@ -26,7 +35,7 @@ export function LiveSearch({
   placeholder = "Buscar cartas..." 
 }: LiveSearchProps) {
   const [query, setQuery] = useState(defaultValue);
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const router = useRouter();
@@ -116,9 +125,9 @@ export function LiveSearch({
                 onClick={handleResultClick}
                 className="flex items-center gap-3 p-2 rounded-xl hover:bg-zinc-50 transition-all group"
               >
-                <div className="h-12 w-9 bg-zinc-100 rounded overflow-hidden flex-shrink-0 border border-zinc-100">
+                <div className="h-12 w-9 bg-zinc-100 rounded overflow-hidden flex-shrink-0 border border-zinc-100 relative">
                   {item.imageUrl && (
-                    <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+                    <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">

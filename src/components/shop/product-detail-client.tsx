@@ -11,7 +11,20 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 
 interface ProductDetailClientProps {
-  item: any;
+  item: {
+    id: string;
+    price: number;
+    quantity: number;
+    condition: string;
+    language?: string;
+    extras?: string[];
+    cardTemplate?: {
+      name: string;
+      set: string;
+      imageUrl: string | null;
+      backImageUrl?: string | null;
+    } | null;
+  };
 }
 
 export function ProductDetailClient({ item }: ProductDetailClientProps) {
@@ -53,7 +66,7 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
                   {item.cardTemplate?.imageUrl ? (
                     <Image
                       src={item.cardTemplate.imageUrl}
-                      alt={item.cardTemplate.name}
+                      alt={item.cardTemplate.name || "Product image"}
                       fill
                       priority
                       className="object-cover"
@@ -73,8 +86,8 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
                 <div className="absolute inset-0 backface-hidden rotate-y-180">
                   <div className="relative w-full h-full rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 bg-zinc-900">
                     <Image
-                      src={item.cardTemplate.backImageUrl!}
-                      alt={`${item.cardTemplate.name} Back`}
+                      src={item.cardTemplate?.backImageUrl || ""}
+                      alt={`${item.cardTemplate?.name || "Product"} Back`}
                       fill
                       className="object-cover"
                     />
@@ -115,7 +128,7 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
               {item.condition}
             </span>
             <LanguageBadge 
-              language={item.language} 
+              language={item.language || "EN"} 
               className="bg-zinc-100 border-zinc-200 text-zinc-500 h-8 rounded-xl px-3" 
             />
           </div>
@@ -126,7 +139,7 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
           
           <p className="text-zinc-500 font-medium text-lg leading-relaxed max-w-xl">
             {item.cardTemplate?.name} - {item.cardTemplate?.set?.toUpperCase()} - {item.condition} - {item.language?.toUpperCase()} 
-            {item.extras?.length > 0 && ` - ${item.extras.join(", ")}`}
+            {(item.extras?.length ?? 0) > 0 && ` - ${item.extras?.join(", ")}`}
           </p>
         </div>
 

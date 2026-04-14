@@ -35,13 +35,14 @@ export class PrismaCustomerRepository extends BasePrismaRepository implements IC
   }
 
   async save(customer: DomainCustomer): Promise<DomainCustomer> {
-    const data = {
+    const data: Prisma.CustomerUncheckedCreateInput = {
       name: customer.name,
       email: customer.email,
       phoneNumber: customer.phoneNumber,
+      tenantId: customer.tenantId,
     };
 
-    const saved = await this.prisma.customer.create({ data: data as any }); // eslint-disable-line @typescript-eslint/no-explicit-any
+    const saved = await this.prisma.customer.create({ data });
     return this.mapToDomain(saved);
   }
 
@@ -116,7 +117,8 @@ export class PrismaCustomerRepository extends BasePrismaRepository implements IC
         name: data.name || "",
         phoneNumber,
         email: data.email || null,
-      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        tenantId,
+      },
     });
     return this.mapToDomain(customer);
   }
@@ -128,8 +130,8 @@ export class PrismaCustomerRepository extends BasePrismaRepository implements IC
     });
   }
 
-  async updateCreditBalance(id: string, amount: number, tx?: any): Promise<void> {
-    const prismaClient = tx || this.prisma;
+  async updateCreditBalance(id: string, amount: number, tx?: unknown): Promise<void> {
+    const prismaClient = (tx as Prisma.TransactionClient) || this.prisma;
     await prismaClient.customer.update({
       where: { id },
       data: {

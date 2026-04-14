@@ -1,7 +1,7 @@
 import { injectable, inject } from "tsyringe";
 import { TOKENS } from "../../infrastructure/container";
+import { UserRole } from "@/lib/domain/entities/tenant";
 import type { IUserRepository } from "@/lib/domain/repositories/user.repository";
-import { User } from "@/lib/domain/entities/tenant";
 import { IUseCase } from "./use-case.interface";
 
 export interface ListUsersRequest {
@@ -11,14 +11,19 @@ export interface ListUsersRequest {
 }
 
 export interface ListUsersResponse {
-  items: Partial<User>[];
+  items: {
+    id: string;
+    username: string;
+    role: UserRole;
+    createdAt: Date;
+  }[];
   total: number;
   pageCount: number;
 }
 
 @injectable()
 export class ListUsersUseCase implements IUseCase<ListUsersRequest, ListUsersResponse> {
-  constructor(@inject(TOKENS.UserRepository) private userRepo: IUserRepository) {}
+  constructor(@inject(TOKENS.UserRepository) private userRepo: IUserRepository) { }
 
   async execute(request: ListUsersRequest): Promise<ListUsersResponse> {
     const page = Math.max(1, request.page);
@@ -26,12 +31,12 @@ export class ListUsersUseCase implements IUseCase<ListUsersRequest, ListUsersRes
     const { search } = request;
 
     const { items, total } = await this.userRepo.findPaginated(page, limit, search);
-    
+
     return {
       items: items.map(u => ({
         id: u.id,
         username: u.username,
-        role: u.role,
+        role: u.role as "ADMIN" | "USER",
         createdAt: u.createdAt,
       })),
       total,

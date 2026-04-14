@@ -4,7 +4,6 @@ import { PlaceOrderUseCase } from '@/lib/application/use-cases/place-order.use-c
 import type { IOrderRepository } from '@/lib/domain/repositories/order.repository';
 import type { IInventoryRepository } from '@/lib/domain/repositories/inventory.repository';
 import type { ICustomerRepository } from '@/lib/domain/repositories/customer.repository';
-import { prisma } from '@/lib/prisma';
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {

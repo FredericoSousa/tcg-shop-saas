@@ -2,9 +2,8 @@ import { getTenant } from '@/lib/tenant-server'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import { ShoppingBag, Sparkles, Shield, Truck, ChevronRight } from 'lucide-react'
-import { SetBadge } from '@/components/ui/set-badge'
-import { formatCurrency } from '@/lib/utils/format'
-import { MTGCard } from '@/components/shop/mtg-card'
+import { MTGCard, MTGCardItem } from '@/components/shop/mtg-card'
+import Image from 'next/image'
 
 export default async function HomePage() {
   const tenant = await getTenant();
@@ -53,7 +52,7 @@ export default async function HomePage() {
             {/* Brand Mark */}
             <div className="inline-block">
               {tenant?.logoUrl ? (
-                <img src={tenant.logoUrl} alt={shopName} className="h-20 w-auto object-contain mx-auto drop-shadow-2xl" />
+                <Image src={tenant.logoUrl} alt={shopName} className="h-20 w-auto object-contain mx-auto drop-shadow-2xl" />
               ) : (
                 <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mx-auto shadow-2xl">
                   <span className="text-4xl font-black text-white">{shopName.charAt(0)}</span>
@@ -133,7 +132,7 @@ export default async function HomePage() {
             {featuredCards.map((item) => (
               <MTGCard
                 key={item.id}
-                item={{ ...item, price: Number(item.price) } as any}
+                item={{ ...item, price: Number(item.price) } as MTGCardItem}
                 variant="store"
               />
             ))}

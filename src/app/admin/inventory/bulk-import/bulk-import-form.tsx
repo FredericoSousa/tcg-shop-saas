@@ -17,7 +17,6 @@ import {
 import type { BulkItemResult } from "@/lib/types/inventory";
 import type { ImportProgress } from "@/lib/scrapers/liga-magic-scraper";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import {
   Select,
   SelectContent,
@@ -157,7 +156,6 @@ export function BulkImportForm() {
   );
   const [isStreamingProgress, setIsStreamingProgress] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
 
   // === Helper: Merge duplicate cards by key ===
   const mergeDuplicateCards = (cards: ParsedLine[]): ParsedLine[] => {
@@ -196,7 +194,7 @@ export function BulkImportForm() {
       const chunk = batchRequest.slice(i, i + CHUNK_SIZE);
       const apiResponse = await ScryfallService.resolveBatch(chunk);
       if (!apiResponse.success) throw new Error(apiResponse.message || "Erro na resolução em lote");
-      
+
       const chunkResults = apiResponse.data || [];
       results = results.concat(chunkResults);
       setProcessProgress({
@@ -505,7 +503,7 @@ export function BulkImportForm() {
     handleReset();
     setTextInput("");
     setLigamagicId("");
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, []);
 
   return (
@@ -517,8 +515,8 @@ export function BulkImportForm() {
             <button
               onClick={() => setImportMode("text")}
               className={`flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 px-6 py-3.5 text-sm font-semibold transition-all rounded-lg mx-1 ${importMode === "text"
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
             >
               <FileText className="h-4 w-4" />
@@ -528,8 +526,8 @@ export function BulkImportForm() {
             <button
               onClick={() => setImportMode("ligamagic")}
               className={`flex-1 md:flex-none flex items-center justify-center md:justify-start gap-2 px-6 py-3.5 text-sm font-semibold transition-all rounded-lg mx-1 ${importMode === "ligamagic"
-                  ? "bg-primary text-primary-foreground shadow-md"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                ? "bg-primary text-primary-foreground shadow-md"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
                 }`}
             >
               <Globe className="h-4 w-4" />
@@ -827,8 +825,8 @@ export function BulkImportForm() {
                   <tr
                     key={index}
                     className={`border-b transition-colors hover:bg-muted/50 ${item.status === "error"
-                        ? "bg-red-50/50"
-                        : "bg-background"
+                      ? "bg-red-50/50"
+                      : "bg-background"
                       }`}
                   >
                     <td className="py-3 px-4">

@@ -92,7 +92,7 @@ async function LoginContent() {
           <p className="text-slate-500">Faça login para continuar</p>
         </div>
 
-        <LoginForm tenantId={tenantId} tenantName={tenantName} />
+        <LoginForm tenantId={tenantId} />
 
         {/* Footer Info */}
         <div className="mt-10 text-center space-y-6">

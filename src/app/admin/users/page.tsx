@@ -16,7 +16,7 @@ export default async function UsersPage(props: {
 
   return (
     <UsersClient 
-      initialUsers={items as any} 
+      initialUsers={items} 
       initialTotal={total} 
       initialPageCount={pageCount} 
     />

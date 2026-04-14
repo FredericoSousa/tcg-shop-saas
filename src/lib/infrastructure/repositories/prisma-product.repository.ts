@@ -58,7 +58,8 @@ export class PrismaProductRepository extends BasePrismaRepository implements IPr
         stock: product.stock,
         allowNegativeStock: product.allowNegativeStock,
         categoryId: product.categoryId,
-      } as any,
+        tenantId: product.tenantId,
+      } as Prisma.ProductUncheckedCreateInput,
     });
     return this.mapToDomain(saved);
   }
@@ -153,7 +154,8 @@ export class PrismaProductRepository extends BasePrismaRepository implements IPr
         name: category.name,
         description: category.description,
         showOnEcommerce: category.showOnEcommerce,
-      } as any, // eslint-disable-line @typescript-eslint/no-explicit-any
+        tenantId: category.tenantId,
+      } as Prisma.ProductCategoryUncheckedCreateInput,
     });
     return this.mapCategoryToDomain(saved);
   }

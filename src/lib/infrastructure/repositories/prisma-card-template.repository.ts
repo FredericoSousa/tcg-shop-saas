@@ -20,7 +20,7 @@ export class PrismaCardTemplateRepository extends BasePrismaRepository implement
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   private mapScryfallToDomain(card: ScryfallCard): DomainCardTemplate {
     return {
       id: "",

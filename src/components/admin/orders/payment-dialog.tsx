@@ -1,15 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -18,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PaymentMethodType } from "@/lib/domain/entities/order";
-import { Trash2, Plus, Wallet, Loader2, CreditCard, Banknote, Landmark, Smartphone, MoreHorizontal } from "lucide-react";
+import { Trash2, Plus, Wallet, Loader2, CreditCard, Banknote, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import { ModalLayout } from "@/components/ui/modal-layout";
 import { MaskedInput } from "@/components/ui/masked-input";
@@ -102,7 +95,7 @@ export function PaymentDialog({
     setPayments(newPayments);
   };
 
-  const updatePayment = (index: number, field: keyof PaymentEntry, value: any) => {
+  const updatePayment = (index: number, field: keyof PaymentEntry, value: string | number) => {
     const newPayments = [...payments];
     newPayments[index] = { ...newPayments[index], [field]: value };
     setPayments(newPayments);
@@ -137,8 +130,9 @@ export function PaymentDialog({
       toast.success("Pedido finalizado com sucesso!");
       onSuccess();
       onClose();
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro ao finalizar pedido";
+      toast.error(message);
     } finally {
       setIsSubmitting(false);
     }
@@ -172,18 +166,18 @@ export function PaymentDialog({
                 </span>
               </div>
             </div>
-            
+
             <div className="flex justify-end gap-3">
-              <Button 
-                variant="outline" 
-                onClick={onClose} 
+              <Button
+                variant="outline"
+                onClick={onClose}
                 disabled={isSubmitting}
                 className="font-bold rounded-xl h-11"
               >
                 Cancelar
               </Button>
-              <Button 
-                onClick={handleSubmit} 
+              <Button
+                onClick={handleSubmit}
                 disabled={isSubmitting || remaining > 0.01}
                 className="font-bold rounded-xl h-11 px-6 shadow-lg shadow-primary/10"
               >
@@ -209,80 +203,80 @@ export function PaymentDialog({
           <div className="space-y-4">
             {payments.map((payment, index) => {
               const methodData = PAYMENT_METHODS.find(m => m.value === payment.method);
-              
+
               return (
-              <div key={index} className="group flex flex-col gap-3 p-4 border border-zinc-200/60 rounded-2xl bg-white/50 hover:bg-white hover:border-zinc-300 transition-all duration-300 shadow-sm">
-                <div className="flex gap-3 items-end">
-                  <div className="flex-1 space-y-2">
-                    <label className="text-[10px] text-muted-foreground uppercase font-black tracking-widest ml-1">Forma</label>
-                    <Select
-                      value={payment.method}
-                      onValueChange={(v) => updatePayment(index, "method", v)}
-                    >
-                      <SelectTrigger className="h-11 rounded-xl bg-muted/20 border-zinc-200/50">
-                        <SelectValue placeholder="Selecione">
-                          <div className="flex items-center gap-2">
-                            {payment.method === 'CASH' && <Banknote className="w-4 h-4 text-emerald-500" />}
-                            {payment.method === 'CREDIT_CARD' && <CreditCard className="w-4 h-4 text-blue-500" />}
-                            {payment.method === 'PIX' && <Smartphone className="w-4 h-4 text-teal-500" />}
-                            {payment.method === 'STORE_CREDIT' && <Wallet className="w-4 h-4 text-amber-500" />}
-                            {methodData?.label}
-                          </div>
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl">
-                        {PAYMENT_METHODS.map((m) => (
-                          <SelectItem key={m.value} value={m.value}>
+                <div key={index} className="group flex flex-col gap-3 p-4 border border-zinc-200/60 rounded-2xl bg-white/50 hover:bg-white hover:border-zinc-300 transition-all duration-300 shadow-sm">
+                  <div className="flex gap-3 items-end">
+                    <div className="flex-1 space-y-2">
+                      <label className="text-[10px] text-muted-foreground uppercase font-black tracking-widest ml-1">Forma</label>
+                      <Select
+                        onValueChange={(v) => updatePayment(index, "method", v as string)}
+                      >
+                        <SelectTrigger className="h-11 rounded-xl bg-muted/20 border-zinc-200/50">
+                          <SelectValue placeholder="Selecione">
                             <div className="flex items-center gap-2">
-                              {m.value === 'CASH' && <Banknote className="w-3.5 h-3.5" />}
-                              {m.value === 'CREDIT_CARD' && <CreditCard className="w-3.5 h-3.5" />}
-                              {m.value === 'PIX' && <Smartphone className="w-3.5 h-3.5" />}
-                              {m.value === 'STORE_CREDIT' && <Wallet className="w-3.5 h-3.5" />}
-                              {m.label}
+                              {payment.method === 'CASH' && <Banknote className="w-4 h-4 text-emerald-500" />}
+                              {payment.method === 'CREDIT_CARD' && <CreditCard className="w-4 h-4 text-blue-500" />}
+                              {payment.method === 'PIX' && <Smartphone className="w-4 h-4 text-teal-500" />}
+                              {payment.method === 'STORE_CREDIT' && <Wallet className="w-4 h-4 text-amber-500" />}
+                              {methodData?.label}
                             </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          {PAYMENT_METHODS.map((m) => (
+                            <SelectItem key={m.value} value={m.value}>
+                              <div className="flex items-center gap-2">
+                                {m.value === 'CASH' && <Banknote className="w-3.5 h-3.5" />}
+                                {m.value === 'CREDIT_CARD' && <CreditCard className="w-3.5 h-3.5" />}
+                                {m.value === 'PIX' && <Smartphone className="w-3.5 h-3.5" />}
+                                {m.value === 'STORE_CREDIT' && <Wallet className="w-3.5 h-3.5" />}
+                                {m.label}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="w-32 space-y-2">
+                      <label className="text-[10px] text-muted-foreground uppercase font-black tracking-widest ml-1">Valor</label>
+                      <MaskedInput
+                        mask="currency"
+                        value={payment.amount.toFixed(2)}
+                        onValueChange={(val) => updatePayment(index, "amount", parseCurrency(String(val)))}
+                        className="h-11 rounded-xl font-mono tabular-nums font-bold text-base bg-muted/20 border-zinc-200/50"
+                      />
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground hover:text-destructive h-11 w-11 flex-shrink-0 hover:bg-destructive/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
+                      onClick={() => removePayment(index)}
+                      disabled={payments.length === 1}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <div className="w-32 space-y-2">
-                    <label className="text-[10px] text-muted-foreground uppercase font-black tracking-widest ml-1">Valor</label>
-                    <MaskedInput
-                      mask="currency"
-                      value={payment.amount.toFixed(2)}
-                      onValueChange={(val) => updatePayment(index, "amount", parseCurrency(String(val)))}
-                      className="h-11 rounded-xl font-mono tabular-nums font-bold text-base bg-muted/20 border-zinc-200/50"
-                    />
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-destructive h-11 w-11 flex-shrink-0 hover:bg-destructive/5 rounded-xl opacity-0 group-hover:opacity-100 transition-all"
-                    onClick={() => removePayment(index)}
-                    disabled={payments.length === 1}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+
+                  {payment.method === "STORE_CREDIT" && (
+                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50/50 border border-amber-100 rounded-xl text-xs animate-in slide-in-from-top-2">
+                      <Wallet className="w-3.5 h-3.5 text-amber-500" />
+                      <span className="text-amber-700 font-medium">Saldo disponível:</span>
+                      {loadingBalance ? (
+                        <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
+                      ) : (
+                        <span className={cn(
+                          "font-black text-sm tabular-nums",
+                          customerBalance && customerBalance >= payment.amount ? 'text-emerald-600' : 'text-destructive'
+                        )}>
+                          R$ {customerBalance?.toFixed(2) || "0.00"}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
-                
-                {payment.method === "STORE_CREDIT" && (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-amber-50/50 border border-amber-100 rounded-xl text-xs animate-in slide-in-from-top-2">
-                    <Wallet className="w-3.5 h-3.5 text-amber-500" />
-                    <span className="text-amber-700 font-medium">Saldo disponível:</span>
-                    {loadingBalance ? (
-                      <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
-                    ) : (
-                      <span className={cn(
-                        "font-black text-sm tabular-nums",
-                        customerBalance && customerBalance >= payment.amount ? 'text-emerald-600' : 'text-destructive'
-                      )}>
-                        R$ {customerBalance?.toFixed(2) || "0.00"}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-            )})}
+              )
+            })}
           </div>
 
           <Button

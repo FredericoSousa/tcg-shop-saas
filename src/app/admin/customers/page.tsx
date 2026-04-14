@@ -13,20 +13,20 @@ export default async function CustomersPage(props: {
   const includeDeleted = searchParams?.includeDeleted === "true";
 
   const listCustomersUseCase = container.resolve(ListCustomersUseCase);
-  const { items, total, pageCount } = await listCustomersUseCase.execute({ 
-    page, 
-    limit, 
+  const { items, total, pageCount } = await listCustomersUseCase.execute({
+    page,
+    limit,
     filters: {
       search,
       includeDeleted
-    } 
+    }
   });
 
   return (
-    <CustomersClient 
-      initialCustomers={items as any} 
-      initialTotal={total} 
-      initialPageCount={pageCount} 
+    <CustomersClient
+      initialCustomers={items}
+      initialTotal={total}
+      initialPageCount={pageCount}
     />
   );
 }

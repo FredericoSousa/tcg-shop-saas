@@ -1,12 +1,9 @@
 "use client";
 
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import Link from "next/link";
-
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Accordion,
   AccordionContent,
@@ -21,20 +18,15 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
-import { useCart } from "@/store/use-cart";
 import { SetBadge } from "@/components/ui/set-badge";
 import { LanguageBadge } from "@/components/ui/language-badge";
 import { cn } from "@/lib/utils";
-import { formatCurrency } from "@/lib/utils/format";
 import {
   PackageOpen,
   Check,
   ChevronLeft,
   ChevronRight,
-  ShoppingCart,
   Filter,
-  Search,
-  RotateCcw,
 } from "lucide-react";
 import Image from "next/image";
 import { MTGCard, MTGCardItem } from "@/components/shop/mtg-card";
@@ -445,10 +437,10 @@ export function ShopClient({
         <div className="mb-6 flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 border-b pb-6">
           <div className="flex flex-col sm:flex-row w-full gap-4 xl:w-auto">
             <div className="relative w-full sm:w-80">
-              <LiveSearch 
-                defaultValue={searchQuery} 
-                onSearch={(q) => updateFilters("q", q)} 
-                inputClassName="h-9 w-full bg-background shadow-sm border-input" 
+              <LiveSearch
+                defaultValue={searchQuery}
+                onSearch={(q) => updateFilters("q", q)}
+                inputClassName="h-9 w-full bg-background shadow-sm border-input"
                 placeholder="Buscar cartas pelo nome..."
               />
             </div>

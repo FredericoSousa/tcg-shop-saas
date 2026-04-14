@@ -43,7 +43,7 @@ export class GetStorefrontInventoryUseCase implements IUseCase<GetStorefrontInve
     const allItems = await this.inventoryRepo.findAllActive(tenantId);
     
     // 1. Basic filtering
-    let filtered = allItems.filter(item => {
+    const filtered = allItems.filter(item => {
       const meta = item.cardTemplate?.metadata as unknown as CardMetadata;
       if (filters?.color) {
         const expectedColors = Array.isArray(filters.color) ? filters.color : filters.color.split(',');

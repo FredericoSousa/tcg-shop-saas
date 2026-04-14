@@ -13,5 +13,5 @@ export interface ICustomerRepository {
   getStats(id: string): Promise<CustomerStats>;
   upsert(phoneNumber: string, data: { name?: string; email?: string }): Promise<Customer>;
   delete(id: string): Promise<void>;
-  updateCreditBalance(id: string, amount: number, tx?: any): Promise<void>;
+  updateCreditBalance(id: string, amount: number, tx?: unknown): Promise<void>;
 }

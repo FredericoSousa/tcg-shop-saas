@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Check, Sparkles, Search, XCircle, Info } from "lucide-react";
+import { Loader2, Check, Sparkles, Search, XCircle } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -23,6 +23,7 @@ import { InventoryService } from "@/lib/api/services/inventory.service";
 import { MaskedInput } from "@/components/ui/masked-input";
 import { parseCurrency } from "@/lib/utils/format";
 import { ModalLayout } from "@/components/ui/modal-layout";
+import Image from "next/image";
 
 const VALID_EXTRAS = [
   { value: "FOIL", label: "Foil" },
@@ -222,7 +223,7 @@ export function AddCardDialog() {
                   )}
                 </div>
               </label>
-              
+
               <div className="min-h-[100px] border border-dashed rounded-2xl bg-muted/5 overflow-hidden flex flex-col transition-all duration-500">
                 {isSearching ? (
                   <div className="p-4 space-y-3">
@@ -237,14 +238,14 @@ export function AddCardDialog() {
                     ))}
                   </div>
                 ) : !hasSearched ? (
-                  <Feedback 
-                    type="search" 
-                    description="Digite o nome de uma carta acima para começar a busca global." 
+                  <Feedback
+                    type="search"
+                    description="Digite o nome de uma carta acima para começar a busca global."
                     className="flex-1"
                   />
                 ) : results.length === 0 ? (
-                  <Feedback 
-                    type="empty" 
+                  <Feedback
+                    type="empty"
                     title="Nenhum card encontrado"
                     description={`Não encontramos resultados para "${query}". Verifique a ortografia ou tente outro termo.`}
                     className="flex-1"
@@ -258,54 +259,53 @@ export function AddCardDialog() {
                     {results
                       .filter(card => !selectedCardId || card.id === selectedCardId)
                       .map((card) => {
-                      const imageUrl = card.image_uris?.small || card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || "";
-                      const isSelected = selectedCardId === card.id;
-                      
-                      return (
-                        <label
-                          key={card.id}
-                          className={`group flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all duration-300 border-2 relative overflow-hidden ${
-                            isSelected 
-                              ? "bg-primary/10 border-primary shadow-sm ring-1 ring-primary/20" 
+                        const imageUrl = card.image_uris?.small || card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || "";
+                        const isSelected = selectedCardId === card.id;
+
+                        return (
+                          <label
+                            key={card.id}
+                            className={`group flex items-center gap-4 p-3 rounded-xl cursor-pointer transition-all duration-300 border-2 relative overflow-hidden ${isSelected
+                              ? "bg-primary/10 border-primary shadow-sm ring-1 ring-primary/20"
                               : "border-zinc-200/50 hover:border-zinc-300 bg-white/50"
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name="scryfallId"
-                            value={card.id}
-                            className="sr-only"
-                            checked={isSelected}
-                            onChange={() => setSelectedCardId(card.id)}
-                            required
-                          />
-                          <div className="w-14 h-20 relative bg-muted rounded-lg shrink-0 overflow-hidden border border-zinc-200/30 shadow-sm transition-transform duration-500 group-hover:scale-105">
-                            {imageUrl && (
-                              <img
-                                src={imageUrl}
-                                alt={card.name}
-                                className="object-cover w-full h-full"
-                                loading="lazy"
-                              />
-                            )}
-                          </div>
-                          <div className="flex flex-col flex-1 min-w-0">
-                            <span className="font-bold text-base tracking-tight leading-tight mb-0.5 truncate group-hover:text-primary transition-colors">
-                              {(card.printed_name as string) || card.name}
-                            </span>
-                            <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 capitalize">
-                              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                              {card.set_name} · <span className="uppercase text-[10px] font-black">{card.set}</span>
-                            </span>
-                          </div>
-                          {isSelected && (
-                            <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground rounded-full p-1 shadow-md">
-                              <Check className="h-3.5 w-3.5" />
+                              }`}
+                          >
+                            <input
+                              type="radio"
+                              name="scryfallId"
+                              value={card.id}
+                              className="sr-only"
+                              checked={isSelected}
+                              onChange={() => setSelectedCardId(card.id)}
+                              required
+                            />
+                            <div className="w-14 h-20 relative bg-muted rounded-lg shrink-0 overflow-hidden border border-zinc-200/30 shadow-sm transition-transform duration-500 group-hover:scale-105">
+                              {imageUrl && (
+                                <Image
+                                  src={imageUrl}
+                                  alt={card.name}
+                                  className="object-cover w-full h-full"
+                                  loading="lazy"
+                                />
+                              )}
                             </div>
-                          )}
-                        </label>
-                      );
-                    })}
+                            <div className="flex flex-col flex-1 min-w-0">
+                              <span className="font-bold text-base tracking-tight leading-tight mb-0.5 truncate group-hover:text-primary transition-colors">
+                                {(card.printed_name as string) || card.name}
+                              </span>
+                              <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 capitalize">
+                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                                {card.set_name} · <span className="uppercase text-[10px] font-black">{card.set}</span>
+                              </span>
+                            </div>
+                            {isSelected && (
+                              <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-primary text-primary-foreground rounded-full p-1 shadow-md">
+                                <Check className="h-3.5 w-3.5" />
+                              </div>
+                            )}
+                          </label>
+                        );
+                      })}
                   </div>
                 )}
               </div>
@@ -323,13 +323,13 @@ export function AddCardDialog() {
                       Preço Unitário (R$)
                     </label>
                     <MaskedInput
-                        id="price"
-                        mask="currency"
-                        name="price"
-                        required
-                        placeholder="R$ 0,00"
-                        className="h-12 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary/40 rounded-xl font-mono tabular-nums font-bold"
-                      />
+                      id="price"
+                      mask="currency"
+                      name="price"
+                      required
+                      placeholder="R$ 0,00"
+                      className="h-12 transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary/40 rounded-xl font-mono tabular-nums font-bold"
+                    />
                   </div>
                   <div className="space-y-2">
                     <label
@@ -424,11 +424,10 @@ export function AddCardDialog() {
                       return (
                         <label
                           key={extra.value}
-                          className={`flex items-center gap-2 p-2.5 rounded-xl border-2 cursor-pointer transition-all duration-300 ${
-                            isSelected
-                              ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/20"
-                              : "border-zinc-200/50 hover:border-zinc-300 bg-muted/30"
-                          }`}
+                          className={`flex items-center gap-2 p-2.5 rounded-xl border-2 cursor-pointer transition-all duration-300 ${isSelected
+                            ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/20"
+                            : "border-zinc-200/50 hover:border-zinc-300 bg-muted/30"
+                            }`}
                         >
                           <input
                             type="checkbox"

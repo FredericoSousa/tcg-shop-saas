@@ -1,6 +1,6 @@
 "use client";
 
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 
 interface ChartData {
   day: string;
@@ -34,9 +34,9 @@ export function DashboardChart({ data, title, total }: DashboardChartProps) {
           <div key={i} className="flex-1 flex flex-col items-center gap-3 group/bar">
             {/* Bar with tooltip-like hover */}
             <div className="relative w-full flex items-end justify-center group/bar">
-               <div 
+              <div
                 className="w-full max-w-[40px] bg-primary/20 rounded-t-lg transition-all duration-500 ease-out group-hover/bar:bg-primary/40 relative overflow-hidden"
-                style={{ 
+                style={{
                   height: `${(item.amount / maxAmount) * 100}%`,
                   transitionDelay: `${i * 50}ms`
                 }}
@@ -44,13 +44,13 @@ export function DashboardChart({ data, title, total }: DashboardChartProps) {
                 {/* Shiny effect */}
                 <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/5 to-white/10 opacity-0 group-hover/bar:opacity-100 transition-opacity" />
               </div>
-              
+
               {/* Tooltip on hover */}
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 font-bold border border-zinc-700 shadow-xl">
                 R$ {item.amount.toLocaleString('pt-BR')}
               </div>
             </div>
-            
+
             <span className="text-[10px] font-bold text-muted-foreground group-hover/bar:text-foreground transition-colors uppercase">
               {item.day}
             </span>

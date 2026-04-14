@@ -101,7 +101,7 @@ export function ProductDialog({
       if (product) {
         await ProductService.update(product.id, body);
       } else {
-        await ProductService.create(body as any);
+        await ProductService.create(body);
       }
 
       toast.success(

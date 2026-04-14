@@ -41,8 +41,9 @@ export function CustomerCreditSection({ customerId, initialBalance }: CustomerCr
       if (!response.ok) throw new Error("Falha ao carregar extrato de créditos");
       const result = await response.json();
       setHistory(result.success ? result.data : []);
-    } catch (error: any) {
-      toast.error(error.message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Erro desconhecido";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
