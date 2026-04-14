@@ -256,80 +256,52 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
     sixMonthsAgo.setDate(1);
     sixMonthsAgo.setHours(0, 0, 0, 0);
 
-    const orders = await this.prisma.order.findMany({
-      where: {
-        tenantId,
-        status: { not: 'CANCELLED' },
-        createdAt: { gte: sixMonthsAgo }
-      },
-      select: {
-        totalAmount: true,
-        createdAt: true
-      }
-    });
+    const rawResults = await this.prisma.$queryRaw<any[]>`
+      SELECT 
+        TO_CHAR(DATE_TRUNC('month', created_at), 'Mon') as month_label,
+        SUM(total_amount)::float as revenue,
+        DATE_TRUNC('month', created_at) as month_date
+      FROM orders
+      WHERE tenant_id = ${tenantId}::uuid
+        AND status != 'CANCELLED'
+        AND created_at >= ${sixMonthsAgo}
+      GROUP BY DATE_TRUNC('month', created_at)
+      ORDER BY month_date ASC
+    `;
 
-    const monthlyData: Record<string, number> = {};
-    const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    // Map labels to translate or format if needed, though SQL does most work
+    const monthsMap: Record<string, string> = {
+      'Jan': 'Jan', 'Feb': 'Fev', 'Mar': 'Mar', 'Apr': 'Abr', 'May': 'Mai', 'Jun': 'Jun',
+      'Jul': 'Jul', 'Aug': 'Ago', 'Sep': 'Set', 'Oct': 'Out', 'Nov': 'Nov', 'Dec': 'Dez'
+    };
 
-    // Initialize last 6 months
-    for (let i = 0; i < 6; i++) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const label = months[d.getMonth()];
-      monthlyData[label] = 0;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    orders.forEach((order: any) => {
-      const label = months[order.createdAt.getMonth()];
-      if (monthlyData[label] !== undefined) {
-        monthlyData[label] += Number(order.totalAmount);
-      }
-    });
-
-     
-    return Object.entries(monthlyData)
-      .map(([month, revenue]) => ({ month, revenue }))
-      .reverse() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    return rawResults.map(r => ({
+      month: monthsMap[r.month_label] || r.month_label,
+      revenue: Number(r.revenue)
+    }));
   }
 
   async getInventoryValuationBySet(tenantId: string): Promise<InventoryValuation[]> {
-    const items = await this.prisma.inventoryItem.findMany({
-      where: {
-        tenantId,
-        active: true,
-        quantity: { gt: 0 }
-      },
-      select: {
-        price: true,
-        quantity: true,
-        cardTemplate: {
-          select: {
-            set: true
-          }
-        }
-      }
-    });
+    const rawResults = await this.prisma.$queryRaw<any[]>`
+      SELECT 
+        ct.set as "set",
+        SUM(ii.price * ii.quantity)::float as value,
+        SUM(ii.quantity)::int as count
+      FROM inventory_items ii
+      JOIN card_templates ct ON ct.id = ii.card_template_id
+      WHERE ii.tenant_id = ${tenantId}::uuid
+        AND ii.active = true
+        AND ii.quantity > 0
+      GROUP BY ct.set
+      ORDER BY value DESC
+      LIMIT 10
+    `;
 
-    const valuationMap: Record<string, { value: number; count: number }> = {};
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    items.forEach((item: any) => {
-      const setName = item.cardTemplate.set;
-      if (!valuationMap[setName]) {
-        valuationMap[setName] = { value: 0, count: 0 };
-      }
-      valuationMap[setName].value += Number(item.price) * item.quantity;
-      valuationMap[setName].count += item.quantity;
-    });
-
-    const results = Object.entries(valuationMap).map(([set, data]) => ({
-      set,
-      value: data.value,
-      count: data.count
+    return rawResults.map(r => ({
+      set: r.set,
+      value: Number(r.value),
+      count: Number(r.count)
     }));
-
-    return results.sort((a, b) => b.value - a.value).slice(0, 10);
   }
 
   async getWeeklyRevenue(tenantId: string): Promise<{ day: string; amount: number }[]> {
@@ -337,39 +309,25 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
-    const results = await this.prisma.order.groupBy({
-      by: ['createdAt'],
-      where: {
-        tenantId,
-        status: { not: 'CANCELLED' },
-        createdAt: { gte: sevenDaysAgo }
-      },
-      _sum: {
-        totalAmount: true
-      }
-    });
+    const rawResults = await this.prisma.$queryRaw<any[]>`
+      SELECT 
+        TO_CHAR(created_at, 'D') as day_of_week,
+        SUM(total_amount)::float as amount
+      FROM orders
+      WHERE tenant_id = ${tenantId}::uuid
+        AND status != 'CANCELLED'
+        AND created_at >= ${sevenDaysAgo}
+      GROUP BY DATE_TRUNC('day', created_at), TO_CHAR(created_at, 'D')
+      ORDER BY DATE_TRUNC('day', created_at) ASC
+    `;
 
-    const days = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
-    const dailyRevenue: Record<string, number> = {};
+    const dayNames: Record<string, string> = {
+      '1': 'Dom', '2': 'Seg', '3': 'Ter', '4': 'Qua', '5': 'Qui', '6': 'Sex', '7': 'Sáb'
+    };
 
-    // Initialize last 7 days
-    for (let i = 0; i < 7; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      dailyRevenue[days[d.getDay()]] = 0;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    results.forEach((order: any) => {
-      const day = days[order.createdAt.getDay()];
-      if (dailyRevenue[day] !== undefined) {
-        dailyRevenue[day] += Number(order._sum.totalAmount || 0);
-      }
-    });
-
-     
-    return Object.entries(dailyRevenue)
-      .map(([day, amount]) => ({ day, amount }))
-      .reverse() as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    return rawResults.map(r => ({
+      day: dayNames[r.day_of_week] || r.day_of_week,
+      amount: Number(r.amount)
+    }));
   }
 }

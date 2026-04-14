@@ -1,4 +1,12 @@
 import { NextResponse } from "next/server";
+import { 
+  DomainError, 
+  EntityNotFoundError, 
+  ValidationError, 
+  UnauthorizedError, 
+  InsufficientFundsError, 
+  ConflictError 
+} from "@/lib/domain/errors/domain.error";
 
 export interface ApiResponseData<T = unknown> {
   success: boolean;
@@ -83,5 +91,30 @@ export class ApiResponse {
       message,
       error: { code, details },
     }, 500);
+  }
+
+  static fromError(error: unknown) {
+    if (error instanceof DomainError) {
+      if (error instanceof EntityNotFoundError) {
+        return this.notFound(error.message, error.code);
+      }
+      if (error instanceof ValidationError) {
+        return this.badRequest(error.message, error.code, error.details);
+      }
+      if (error instanceof UnauthorizedError) {
+        return this.unauthorized(error.message, error.code);
+      }
+      if (error instanceof InsufficientFundsError) {
+        return this.badRequest(error.message, error.code);
+      }
+      if (error instanceof ConflictError) {
+        return this.json({ success: false, message: error.message, error: { code: error.code } }, 409);
+      }
+      
+      return this.badRequest(error.message, error.code);
+    }
+
+    const err = error as Error;
+    return this.serverError(err.message || "Ocorreu um erro inesperado.");
   }
 }

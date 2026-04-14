@@ -7,6 +7,11 @@ import { PaymentMethodType } from "@/lib/domain/entities/order";
 import { prisma } from "@/lib/prisma";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
+import { 
+  EntityNotFoundError, 
+  BusinessRuleViolationError, 
+  InsufficientFundsError 
+} from "@/lib/domain/errors/domain.error";
 
 export interface FinalizeOrderRequest {
   orderId: string;
@@ -34,17 +39,17 @@ export class FinalizeOrderUseCase implements IUseCase<FinalizeOrderRequest, Fina
 
     const order = await this.orderRepo.findById(orderId);
     if (!order) {
-      throw new Error("Pedido não encontrado.");
+      throw new EntityNotFoundError("Pedido", orderId);
     }
 
     if (order.status !== "PENDING") {
-      throw new Error("Apenas pedidos pendentes podem ser finalizados.");
+      throw new BusinessRuleViolationError("Apenas pedidos pendentes podem ser finalizados.");
     }
 
     const totalPaid = payments.reduce((acc, p) => acc + p.amount, 0);
 
     if (totalPaid < order.totalAmount - 0.01) {
-      throw new Error(`Valor total pago (R$ ${totalPaid.toFixed(2)}) é inferior ao total do pedido (R$ ${order.totalAmount.toFixed(2)}).`);
+      throw new BusinessRuleViolationError(`Valor total pago (R$ ${totalPaid.toFixed(2)}) é inferior ao total do pedido (R$ ${order.totalAmount.toFixed(2)}).`);
     }
 
     const customerCreditPayment = payments.find(p => p.method === "STORE_CREDIT");
@@ -53,10 +58,10 @@ export class FinalizeOrderUseCase implements IUseCase<FinalizeOrderRequest, Fina
       // 1. Handle Store Credit deduction
       if (customerCreditPayment) {
         const customer = await this.customerRepo.findById(order.customerId);
-        if (!customer) throw new Error("Cliente não encontrado.");
+        if (!customer) throw new EntityNotFoundError("Cliente", order.customerId);
 
         if (customer.creditBalance < customerCreditPayment.amount) {
-          throw new Error("Saldo de créditos insuficiente.");
+          throw new InsufficientFundsError("Saldo de créditos insuficiente.");
         }
 
         await this.customerRepo.updateCreditBalance(order.customerId, -customerCreditPayment.amount, tx);

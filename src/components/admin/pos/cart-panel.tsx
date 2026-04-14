@@ -53,7 +53,7 @@ export function CartPanel({
           <AnimatePresence mode="popLayout">
             {/* Existing Items in Command */}
             {existingItems.length > 0 && (
-              <div className="space-y-3 opacity-60">
+              <div key="existing-items-section" className="space-y-3 opacity-60">
                 <div className="flex items-center gap-2 px-1">
                   <Receipt className="h-3 w-3 text-muted-foreground" />
                   <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Já na Comanda</span>
@@ -90,7 +90,7 @@ export function CartPanel({
 
             {/* New Items to be Added */}
             {items.length > 0 ? (
-              <div className="space-y-3">
+              <div key="new-items-section" className="space-y-3">
                 <div className="flex items-center gap-2 px-1">
                   <Plus className="h-3 w-3 text-primary" />
                   <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Para Adicionar</span>
@@ -149,7 +149,7 @@ export function CartPanel({
                 ))}
               </div>
             ) : existingItems.length === 0 && (
-              <div className="h-full flex flex-col items-center justify-center text-muted-foreground/40 text-center space-y-4 py-20">
+              <div key="empty-cart-message" className="h-full flex flex-col items-center justify-center text-muted-foreground/40 text-center space-y-4 py-20">
                 <div className="p-6 bg-muted/50 rounded-full border-2 border-dashed">
                   <ShoppingCart className="h-10 w-10 opacity-20" />
                 </div>
@@ -203,7 +203,7 @@ export function CartPanel({
             onClick={onCheckout}
             disabled={isSubmitting || items.length === 0 || !selectedCustomer}
           >
-            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4" /> SALVAR</>}
+            {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4" /> SALVAR (F2)</>}
           </Button>
 
           <Button
@@ -211,7 +211,7 @@ export function CartPanel({
             onClick={onFinalize}
             disabled={isSubmitting || subtotal === 0 || !selectedCustomer}
           >
-            PAGAR
+            PAGAR (F9)
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>

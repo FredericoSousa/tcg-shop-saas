@@ -101,7 +101,7 @@ describe("FinalizeOrderUseCase", () => {
     orderRepo.findById.mockResolvedValue(null);
 
     await expect(useCase.execute({ orderId: "non-existent", payments: [] }))
-      .rejects.toThrow("Pedido não encontrado.");
+      .rejects.toThrow("Pedido with ID non-existent not found");
   });
 
   it("should throw error if order is already paid", async () => {

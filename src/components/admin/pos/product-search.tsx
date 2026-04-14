@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, Plus } from "lucide-react";
 import Image from "next/image";
@@ -15,11 +15,22 @@ interface ProductSearchProps {
   onSelect: (product: Omit<CartItem, "quantity">) => void;
 }
 
-export function ProductSearch({ onSelect }: ProductSearchProps) {
-  const [query, setQuery] = useState("");
-  const [results, setResults] = useState<ProductType[]>([]);
-  const [loading, setLoading] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+export interface ProductSearchHandle {
+  focusSearch: () => void;
+}
+
+export const ProductSearch = forwardRef<ProductSearchHandle, ProductSearchProps>(
+  ({ onSelect }, ref) => {
+    const [query, setQuery] = useState("");
+    const [results, setResults] = useState<ProductType[]>([]);
+    const [loading, setLoading] = useState(false);
+    const searchInputRef = useRef<HTMLInputElement>(null);
+
+    useImperativeHandle(ref, () => ({
+      focusSearch: () => {
+        searchInputRef.current?.focus();
+      },
+    }));
 
   useEffect(() => {
     const handler = setTimeout(async () => {
@@ -64,7 +75,7 @@ export function ProductSearch({ onSelect }: ProductSearchProps) {
           ref={searchInputRef}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Buscar produto pelo nome..."
+          placeholder="Buscar produto pelo nome... (F1)"
           className="pl-9 h-11"
           autoFocus
         />
@@ -144,3 +155,6 @@ export function ProductSearch({ onSelect }: ProductSearchProps) {
     </div>
   );
 }
+);
+
+ProductSearch.displayName = "ProductSearch";

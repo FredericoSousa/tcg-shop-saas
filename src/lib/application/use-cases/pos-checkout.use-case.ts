@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
 import { generateOrderFriendlyId } from "@/lib/utils/order-utils";
+import { ValidationError } from "@/lib/domain/errors/domain.error";
 
 export interface POSCheckoutRequest {
   items: {
@@ -54,7 +55,7 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
         }, tx);
         customerId = customer.id;
       } else {
-        throw new Error("Cliente ou Telefone é obrigatório.");
+        throw new ValidationError("Cliente ou Telefone é obrigatório.");
       }
 
       // 3. Check for existing PENDING POS order

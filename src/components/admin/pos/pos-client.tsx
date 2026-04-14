@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { ProductSearch } from "./product-search";
 import { CartPanel } from "./cart-panel";
 import { CustomerSelector, CustomerType } from "./customer-selector";
+import { ProductSearchHandle } from "./product-search";
 import { toast } from "sonner";
 import { PaymentDialog } from "../orders/payment-dialog";
 import { Loader2, UserPlus, ShoppingBag, CreditCard, Search as SearchIcon, Maximize2, Minimize2 } from "lucide-react";
@@ -19,6 +20,7 @@ export type CartItem = {
 
 export function POSClient() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<ProductSearchHandle>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [existingItems, setExistingItems] = useState<CartItem[]>([]);
@@ -195,6 +197,18 @@ export function POSClient() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // F1 - Focus Search
+      if (e.key === "F1") {
+        e.preventDefault();
+        searchRef.current?.focusSearch();
+      }
+
+      // Ctrl+F - Focus Search (standard shortcut)
+      if (e.key === "f" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        searchRef.current?.focusSearch();
+      }
+
       // F9 - Finalize
       if (e.key === "F9" && selectedCustomer && subtotal > 0 && !isSubmitting) {
         e.preventDefault();
@@ -205,6 +219,15 @@ export function POSClient() {
       if (e.key === "F2" && selectedCustomer && cart.length > 0 && !isSubmitting) {
         e.preventDefault();
         handleCheckout();
+      }
+
+      // Esc - Clear or Exit
+      if (e.key === "Escape") {
+        if (isPaymentDialogOpen) {
+          setIsPaymentDialogOpen(false);
+        } else if (selectedCustomer && cart.length === 0 && existingItems.length === 0) {
+          setSelectedCustomer(null);
+        }
       }
     };
 
@@ -323,7 +346,7 @@ export function POSClient() {
                 )}
               </div>
               <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
-                <ProductSearch onSelect={addToCart} />
+                <ProductSearch ref={searchRef} onSelect={addToCart} />
               </div>
             </div>
 

@@ -80,10 +80,8 @@ export async function POST(request: NextRequest) {
 
       return ApiResponse.success({ orderId, friendlyId });
     } catch (error: unknown) {
-      const err = error as Error;
-      logger.error("POS Checkout Error", err, { tenantId: tenant.id });
-      
-      return ApiResponse.serverError(err.message || "Erro no processamento do PDV.");
+      logger.error("POS Checkout Error", error as Error, { tenantId: tenant.id });
+      return ApiResponse.fromError(error);
     }
   });
 }

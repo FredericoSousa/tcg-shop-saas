@@ -29,3 +29,15 @@ export class BusinessRuleViolationError extends DomainError {
     super(message, "BUSINESS_RULE_VIOLATION");
   }
 }
+
+export class InsufficientFundsError extends DomainError {
+  constructor(message: string = "Saldo insuficiente para completar a operação") {
+    super(message, "INSUFFICIENT_FUNDS");
+  }
+}
+
+export class ConflictError extends DomainError {
+  constructor(message: string) {
+    super(message, "CONFLICT");
+  }
+}
