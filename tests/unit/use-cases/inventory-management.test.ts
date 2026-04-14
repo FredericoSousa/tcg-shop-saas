@@ -4,6 +4,8 @@ import { AddInventoryUseCase } from '@/lib/application/use-cases/add-inventory.u
 import { UpdateInventoryUseCase } from '@/lib/application/use-cases/update-inventory.use-case';
 import { BulkUpdateInventoryUseCase } from '@/lib/application/use-cases/bulk-update-inventory.use-case';
 import { DeleteInventoryUseCase } from '@/lib/application/use-cases/delete-inventory.use-case';
+import { GetInventoryItemUseCase } from '@/lib/application/use-cases/get-inventory-item.use-case';
+import { ListInventoryUseCase } from '@/lib/application/use-cases/list-inventory.use-case';
 import type { IInventoryRepository, ICardTemplateRepository } from '@/lib/domain/repositories/inventory.repository';
 
 // Mock scryfall
@@ -82,6 +84,34 @@ describe('Inventory Management Use Cases', () => {
       const useCase = new DeleteInventoryUseCase(inventoryRepo);
       await useCase.execute({ ids: ['1', '2'] });
       expect(inventoryRepo.deactivateMany).toHaveBeenCalledWith(['1', '2']);
+    });
+  });
+
+  describe('GetInventoryItemUseCase', () => {
+    it('should return item if found and belongs to tenant', async () => {
+      const useCase = new GetInventoryItemUseCase(inventoryRepo);
+      inventoryRepo.findById.mockResolvedValue({ id: 'inv-1', tenantId: 't1' } as any);
+      
+      const result = await useCase.execute({ id: 'inv-1', tenantId: 't1' });
+      expect(result?.id).toBe('inv-1');
+    });
+
+    it('should return null if item belongs to another tenant', async () => {
+      const useCase = new GetInventoryItemUseCase(inventoryRepo);
+      inventoryRepo.findById.mockResolvedValue({ id: 'inv-1', tenantId: 'other' } as any);
+      
+      const result = await useCase.execute({ id: 'inv-1', tenantId: 't1' });
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('ListInventoryUseCase', () => {
+    it('should return paginated items', async () => {
+      const useCase = new ListInventoryUseCase(inventoryRepo);
+      inventoryRepo.findPaginated.mockResolvedValue({ items: [], total: 50 });
+      
+      const result = await useCase.execute({ page: 1, limit: 10 });
+      expect(result.pageCount).toBe(5);
     });
   });
 });

@@ -5,6 +5,7 @@ import { GetProductUseCase } from '@/lib/application/use-cases/get-product.use-c
 import { ListProductsUseCase } from '@/lib/application/use-cases/list-products.use-case';
 import { ListCategoriesUseCase } from '@/lib/application/use-cases/list-categories.use-case';
 import { SaveCategoryUseCase } from '@/lib/application/use-cases/save-category.use-case';
+import { DeleteProductUseCase } from '@/lib/application/use-cases/delete-product.use-case';
 import type { IProductRepository } from '@/lib/domain/repositories/product.repository';
 
 vi.mock('../../tenant-context', () => ({
@@ -93,6 +94,30 @@ describe('Product & Category Use Cases', () => {
       const useCase = new SaveCategoryUseCase(productRepo);
       await expect(useCase.execute({ name: '' }))
         .rejects.toThrow();
+    });
+
+    it('should update existing category', async () => {
+      const useCase = new SaveCategoryUseCase(productRepo);
+      await useCase.execute({ id: 'cat1', name: 'Updated Cat' });
+      expect(productRepo.updateCategory).toHaveBeenCalledWith('cat1', { name: 'Updated Cat' });
+    });
+  });
+
+  describe('ListCategoriesUseCase', () => {
+    it('should return categories from repository', async () => {
+      const useCase = new ListCategoriesUseCase(productRepo);
+      productRepo.findCategories.mockResolvedValue([]);
+      const result = await useCase.execute();
+      expect(result).toEqual([]);
+      expect(productRepo.findCategories).toHaveBeenCalled();
+    });
+  });
+
+  describe('DeleteProductUseCase', () => {
+    it('should call repository delete', async () => {
+      const useCase = new DeleteProductUseCase(productRepo);
+      await useCase.execute({ id: 'p1' });
+      expect(productRepo.delete).toHaveBeenCalledWith('p1');
     });
   });
 });

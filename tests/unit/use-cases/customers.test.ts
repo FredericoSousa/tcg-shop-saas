@@ -7,20 +7,32 @@ import { LookupCustomerUseCase } from '@/lib/application/use-cases/lookup-custom
 import { UpdateCustomerUseCase } from '@/lib/application/use-cases/update-customer.use-case';
 import { GetCustomerInsightsUseCase } from '@/lib/application/use-cases/get-customer-insights.use-case';
 import { GetCustomerRankingUseCase } from '@/lib/application/use-cases/get-customer-ranking.use-case';
+import { AdjustCustomerCreditUseCase } from '@/lib/application/use-cases/adjust-customer-credit.use-case';
+import { DeleteCustomerUseCase } from '@/lib/application/use-cases/delete-customer.use-case';
+import { GetCustomerCreditHistoryUseCase } from '@/lib/application/use-cases/get-customer-credit-history.use-case';
+import { GetCustomerOrdersUseCase } from '@/lib/application/use-cases/get-customer-orders.use-case';
 import type { ICustomerRepository } from '@/lib/domain/repositories/customer.repository';
 import type { IReportsRepository } from '@/lib/domain/repositories/report.repository';
+import type { ICustomerCreditLedgerRepository } from '@/lib/domain/repositories/customer-credit-ledger.repository';
+import type { IOrderRepository } from '@/lib/domain/repositories/order.repository';
 
-vi.mock('../../tenant-context', () => ({
-  getTenantId: vi.fn(() => 'test-tenant-id'),
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    $transaction: vi.fn((callback) => callback('mock-tx')),
+  },
 }));
 
 describe('Customer Use Cases', () => {
   let customerRepo: MockProxy<ICustomerRepository>;
   let reportsRepo: MockProxy<IReportsRepository>;
+  let ledgerRepo: MockProxy<ICustomerCreditLedgerRepository>;
+  let orderRepo: MockProxy<IOrderRepository>;
 
   beforeEach(() => {
     customerRepo = mock<ICustomerRepository>();
     reportsRepo = mock<IReportsRepository>();
+    ledgerRepo = mock<ICustomerCreditLedgerRepository>();
+    orderRepo = mock<IOrderRepository>();
     vi.clearAllMocks();
   });
 
@@ -86,6 +98,54 @@ describe('Customer Use Cases', () => {
       const useCase = new GetCustomerRankingUseCase(reportsRepo);
       await useCase.execute({ tenantId: 't1', limit: 3 });
       expect(reportsRepo.getTopCustomersByLTV).toHaveBeenCalledWith('t1', 3);
+    });
+  });
+
+  describe('AdjustCustomerCreditUseCase', () => {
+    it('should adjust credit balance correctly', async () => {
+      const useCase = new AdjustCustomerCreditUseCase(customerRepo, ledgerRepo);
+      customerRepo.findById.mockResolvedValue({ id: 'c1', creditBalance: 10 } as any);
+      ledgerRepo.computeBalance.mockResolvedValue(10);
+
+      await useCase.execute({ customerId: 'c1', amount: 5, description: 'Bonus' });
+
+      expect(customerRepo.updateCreditBalance).toHaveBeenCalledWith('c1', 5, 'mock-tx');
+      expect(ledgerRepo.save).toHaveBeenCalled();
+    });
+
+    it('should throw error on insufficient balance for debit', async () => {
+      const useCase = new AdjustCustomerCreditUseCase(customerRepo, ledgerRepo);
+      customerRepo.findById.mockResolvedValue({ id: 'c1', creditBalance: 10 } as any);
+      ledgerRepo.computeBalance.mockResolvedValue(10);
+
+      await expect(useCase.execute({ customerId: 'c1', amount: -15, description: 'Debit' }))
+        .rejects.toThrow('Saldo insuficiente de créditos.');
+    });
+  });
+
+  describe('DeleteCustomerUseCase', () => {
+    it('should soft delete a customer', async () => {
+      const useCase = new DeleteCustomerUseCase(customerRepo);
+      await useCase.execute({ id: 'c1' });
+      expect(customerRepo.delete).toHaveBeenCalledWith('c1');
+    });
+  });
+
+  describe('GetCustomerCreditHistoryUseCase', () => {
+    it('should return credit ledger items', async () => {
+      const useCase = new GetCustomerCreditHistoryUseCase(ledgerRepo);
+      ledgerRepo.findByCustomerId.mockResolvedValue([]);
+      await useCase.execute({ customerId: 'c1' });
+      expect(ledgerRepo.findByCustomerId).toHaveBeenCalledWith('c1');
+    });
+  });
+
+  describe('GetCustomerOrdersUseCase', () => {
+    it('should return customer orders', async () => {
+      const useCase = new GetCustomerOrdersUseCase(orderRepo);
+      orderRepo.findPaginated.mockResolvedValue({ items: [], total: 0 });
+      await useCase.execute({ customerId: 'c1', page: 1, limit: 10 });
+      expect(orderRepo.findPaginated).toHaveBeenCalledWith(1, 10, { customerId: 'c1' });
     });
   });
 });
