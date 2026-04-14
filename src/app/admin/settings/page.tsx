@@ -1,8 +1,11 @@
 import { PageHeader } from "@/components/admin/page-header";
 import { Settings } from "lucide-react";
 import { SettingsContent } from "@/components/admin/settings-content";
+import { getAdminContext } from "@/lib/tenant-server";
 
-export default function AdminSettingsPage() {
+export default async function AdminSettingsPage() {
+  const { tenant } = await getAdminContext();
+
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
       <PageHeader
@@ -11,7 +14,7 @@ export default function AdminSettingsPage() {
         icon={Settings}
       />
 
-      <SettingsContent />
+      <SettingsContent initialSettings={tenant} />
     </div>
   );
 }

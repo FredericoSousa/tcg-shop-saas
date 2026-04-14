@@ -34,56 +34,28 @@ interface TenantSettings {
   twitter: string | null;
 }
 
-export function SettingsContent() {
-  const [loading, setLoading] = useState(true);
+interface SettingsContentProps {
+  initialSettings: TenantSettings;
+}
+
+export function SettingsContent({ initialSettings }: SettingsContentProps) {
+  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<TenantSettings>({
-    name: "",
-    logoUrl: "",
-    faviconUrl: "",
-    description: "",
-    address: "",
-    phone: "",
-    email: "",
-    instagram: "",
-    whatsapp: "",
-    facebook: "",
-    twitter: "",
+    name: initialSettings.name || "",
+    logoUrl: initialSettings.logoUrl || "",
+    faviconUrl: initialSettings.faviconUrl || "",
+    description: initialSettings.description || "",
+    address: initialSettings.address || "",
+    phone: initialSettings.phone || "",
+    email: initialSettings.email || "",
+    instagram: initialSettings.instagram || "",
+    whatsapp: initialSettings.whatsapp || "",
+    facebook: initialSettings.facebook || "",
+    twitter: initialSettings.twitter || "",
   });
 
   const [activeTab, setActiveTab] = useState("general");
-
-  useEffect(() => {
-    async function fetchSettings() {
-      try {
-        const response = await fetch("/api/admin/settings");
-        if (!response.ok) throw new Error("Falha ao carregar configurações");
-        const result = await response.json();
-        if (result.success && result.data) {
-          const data = result.data;
-          setSettings({
-            name: data.name || "",
-            logoUrl: data.logoUrl || "",
-            faviconUrl: data.faviconUrl || "",
-            description: data.description || "",
-            address: data.address || "",
-            phone: data.phone || "",
-            email: data.email || "",
-            instagram: data.instagram || "",
-            whatsapp: data.whatsapp || "",
-            facebook: data.facebook || "",
-            twitter: data.twitter || "",
-          });
-        }
-      } catch (error) {
-        toast.error("Erro ao carregar configurações");
-        console.error(error);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchSettings();
-  }, []);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
