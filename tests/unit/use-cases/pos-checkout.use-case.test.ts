@@ -7,7 +7,7 @@ import type { ICustomerRepository } from '@/lib/domain/repositories/customer.rep
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
-    $transaction: vi.fn((callback) => callback()),
+    $transaction: vi.fn((callback) => callback('mock-tx')),
   },
 }));
 
@@ -45,8 +45,8 @@ describe('POSCheckoutUseCase', () => {
 
     // Assert
     expect(result.orderId).toBe('o-pos-1');
-    expect(productRepo.decrementStock).toHaveBeenCalledWith('p-1', 2);
-    expect(orderRepo.save).toHaveBeenCalled();
+    expect(productRepo.decrementStock).toHaveBeenCalledWith('p-1', 2, 'mock-tx');
+    expect(orderRepo.save).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'mock-tx');
   });
 
   it('should append to an existing pending POS order', async () => {
@@ -63,7 +63,7 @@ describe('POSCheckoutUseCase', () => {
 
     // Assert
     expect(result.orderId).toBe('o-existing');
-    expect(orderRepo.appendToOrder).toHaveBeenCalledWith('o-existing', expect.anything(), 100);
+    expect(orderRepo.appendToOrder).toHaveBeenCalledWith('o-existing', expect.anything(), 100, 'mock-tx');
     expect(orderRepo.save).not.toHaveBeenCalled();
   });
 });

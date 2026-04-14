@@ -105,9 +105,10 @@ export class PrismaCustomerRepository extends BasePrismaRepository implements IC
     };
   }
 
-  async upsert(phoneNumber: string, data: { name?: string; email?: string }): Promise<DomainCustomer> {
+  async upsert(phoneNumber: string, data: { name?: string; email?: string }, tx?: unknown): Promise<DomainCustomer> {
     const tenantId = this.currentTenantId;
-    const customer = await this.prisma.customer.upsert({
+    const client = (tx as Prisma.TransactionClient) || this.prisma;
+    const customer = await client.customer.upsert({
       where: { phoneNumber_tenantId: { phoneNumber, tenantId } },
       update: {
         name: data.name || undefined,

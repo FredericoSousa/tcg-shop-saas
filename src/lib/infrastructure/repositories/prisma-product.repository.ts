@@ -112,8 +112,9 @@ export class PrismaProductRepository extends BasePrismaRepository implements IPr
     };
   }
 
-  async decrementStock(id: string, quantity: number): Promise<void> {
-    const result = await this.prisma.product.updateMany({
+  async decrementStock(id: string, quantity: number, tx?: unknown): Promise<void> {
+    const client = (tx as Prisma.TransactionClient) || this.prisma;
+    const result = await client.product.updateMany({
       where: {
         id,
         active: true,

@@ -6,7 +6,6 @@ import { Trash2, Minus, Plus, X, ShoppingCart, ArrowRight, Save, Loader2, Receip
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { CustomerType } from "./customer-selector";
-import { cn } from "@/lib/utils";
 
 interface CartPanelProps {
   items: CartItem[];
@@ -34,7 +33,6 @@ export function CartPanel({
   onCheckout,
   onFinalize,
   isSubmitting,
-  activeOrderId,
   activeOrderFriendlyId
 }: CartPanelProps) {
   console.log('CartPanel Render:', { items: items.map(i => i.id), existingItems: existingItems.map(i => i.id) });

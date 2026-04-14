@@ -9,7 +9,7 @@ export interface IProductRepository {
     limit: number,
     filters?: { search?: string; categoryId?: string }
   ): Promise<{ items: Product[]; total: number }>;
-  decrementStock(id: string, quantity: number): Promise<void>;
+  decrementStock(id: string, quantity: number, tx?: unknown): Promise<void>;
 
   // Categories
   findCategories(): Promise<ProductCategory[]>;

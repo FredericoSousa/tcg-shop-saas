@@ -4,8 +4,15 @@ import { IOrderRepository } from "@/lib/domain/repositories/order.repository";
 import { Order as DomainOrder, OrderStatus, OrderSource, OrderItem as DomainOrderItem, PaymentMethodType } from "@/lib/domain/entities/order";
 import { Prisma, Order as PrismaOrder, OrderItem as PrismaOrderItem, Customer as PrismaCustomer } from "@prisma/client";
 
+type PrismaOrderItemWithRelations = PrismaOrderItem & {
+  product?: { name: string; imageUrl: string | null } | null;
+  inventoryItem?: { 
+    cardTemplate?: { imageUrl: string | null } | null 
+  } | null;
+};
+
 type PrismaOrderWithRelations = PrismaOrder & {
-  items?: PrismaOrderItem[];
+  items?: PrismaOrderItemWithRelations[];
   payments?: { id: string; orderId: string; method: string; amount: Prisma.Decimal; createdAt: Date }[];
   customer?: PrismaCustomer | null;
 };
@@ -27,7 +34,7 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
         name: item.customer.name,
         phoneNumber: item.customer.phoneNumber,
       } : undefined,
-      items: item.items?.map((oi: any) => ({
+      items: item.items?.map((oi: PrismaOrderItemWithRelations) => ({
         id: oi.id,
         orderId: oi.orderId,
         inventoryItemId: oi.inventoryItemId || undefined,
@@ -66,8 +73,9 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
     return item ? this.mapToDomain(item as PrismaOrderWithRelations) : null;
   }
 
-  async save(order: DomainOrder, items: Omit<DomainOrderItem, "id" | "orderId">[]): Promise<DomainOrder> {
-    const saved = await this.prisma.order.create({
+  async save(order: DomainOrder, items: Omit<DomainOrderItem, "id" | "orderId">[], tx?: unknown): Promise<DomainOrder> {
+    const client = (tx as Prisma.TransactionClient) || this.prisma;
+    const saved = await client.order.create({
       data: {
         customerId: order.customerId,
         tenantId: order.tenantId,
@@ -141,8 +149,9 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
     };
   }
 
-  async findPendingPOSOrder(customerId: string): Promise<DomainOrder | null> {
-    const item = await this.prisma.order.findFirst({
+  async findPendingPOSOrder(customerId: string, tx?: unknown): Promise<DomainOrder | null> {
+    const client = (tx as Prisma.TransactionClient) || this.prisma;
+    const item = await client.order.findFirst({
       where: {
         customerId,
         status: "PENDING",
@@ -153,27 +162,28 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
     return item ? this.mapToDomain(item as PrismaOrderWithRelations) : null;
   }
 
-  async appendToOrder(orderId: string, items: { productId: string; quantity: number; priceAtPurchase: number }[], totalAmountIncrement: number): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
+  async appendToOrder(orderId: string, items: { productId: string; quantity: number; priceAtPurchase: number }[], totalAmountIncrement: number, tx?: unknown): Promise<void> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const execute = async (prismaClient: any) => {
       // 1. Update order total
-      await tx.order.update({
+      await prismaClient.order.update({
         where: { id: orderId },
         data: { totalAmount: { increment: new Prisma.Decimal(totalAmountIncrement) } },
       });
 
       // 2. Add/Update items
       for (const item of items) {
-        const existingItem = await tx.orderItem.findFirst({
+        const existingItem = await prismaClient.orderItem.findFirst({
           where: { orderId, productId: item.productId },
         });
 
         if (existingItem) {
-          await tx.orderItem.update({
+          await prismaClient.orderItem.update({
             where: { id: existingItem.id },
             data: { quantity: { increment: item.quantity } },
           });
         } else {
-          await tx.orderItem.create({
+          await prismaClient.orderItem.create({
             data: {
               orderId,
               productId: item.productId,
@@ -183,7 +193,15 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
           });
         }
       }
-    });
+    };
+
+    if (tx) {
+      await execute(tx as Prisma.TransactionClient);
+    } else {
+      await this.prisma.$transaction(async (prismaTx) => {
+        await execute(prismaTx);
+      });
+    }
   }
 
   async savePayments(orderId: string, payments: { method: PaymentMethodType; amount: number }[], tx?: unknown): Promise<void> {

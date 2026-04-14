@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ProductSearch } from "./product-search";
 import { CartPanel } from "./cart-panel";
 import { CustomerSelector, CustomerType } from "./customer-selector";
@@ -33,7 +33,7 @@ export function POSClient() {
   const existingTotal = existingItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const subtotal = cartTotal + existingTotal;
 
-  const toggleFullscreen = () => {
+  const toggleFullscreen = useCallback(() => {
     if (!containerRef.current) return;
 
     if (!document.fullscreenElement) {
@@ -43,7 +43,7 @@ export function POSClient() {
     } else {
       document.exitFullscreen();
     }
-  };
+  }, []);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -55,7 +55,7 @@ export function POSClient() {
   }, []);
 
   // Fetch in-progress order when customer is selected
-  const fetchInProgressOrder = async (customerId: string) => {
+  const fetchInProgressOrder = useCallback(async (customerId: string) => {
     setIsLoadingOrder(true);
     try {
       const response = await fetch(`/api/admin/pos/order-in-progress?customerId=${customerId}`);
@@ -75,9 +75,9 @@ export function POSClient() {
     } finally {
       setIsLoadingOrder(false);
     }
-  };
+  }, []);
 
-  const handleSelectCustomer = (customer: CustomerType | null) => {
+  const handleSelectCustomer = useCallback((customer: CustomerType | null) => {
     setSelectedCustomer(customer);
     setCart([]); // Importante: limpar carrinho local ao trocar de cliente
     if (customer) {
@@ -87,9 +87,9 @@ export function POSClient() {
       setActiveOrderId(null);
       setActiveOrderFriendlyId(null);
     }
-  };
+  }, [fetchInProgressOrder]);
 
-  const addToCart = (product: Omit<CartItem, "quantity">) => {
+  const addToCart = useCallback((product: Omit<CartItem, "quantity">) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
@@ -111,13 +111,13 @@ export function POSClient() {
       ];
     });
     toast.success(`${product.name} adicionado ao carrinho`);
-  };
+  }, []);
 
-  const removeFromCart = (id: string) => {
+  const removeFromCart = useCallback((id: string) => {
     setCart((prev) => prev.filter((item) => item.id !== id));
-  };
+  }, []);
 
-  const updateQuantity = (id: string, delta: number) => {
+  const updateQuantity = useCallback((id: string, delta: number) => {
     setCart((prev) =>
       prev.map((item) => {
         if (item.id === id) {
@@ -127,57 +127,17 @@ export function POSClient() {
         return item;
       })
     );
-  };
+  }, []);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // F9 - Finalize
-      if (e.key === "F9" && selectedCustomer && subtotal > 0 && !isSubmitting) {
-        e.preventDefault();
-        handleOpenFinalize();
-      }
-
-      // F2 - Save/Sync
-      if (e.key === "F2" && selectedCustomer && cart.length > 0 && !isSubmitting) {
-        e.preventDefault();
-        handleCheckout();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedCustomer, subtotal, isSubmitting, cart.length]);
-
-  const handleOpenFinalize = () => {
-    if (!selectedCustomer || subtotal <= 0) return;
-
-    // Se houver itens novos, sincroniza primeiro
-    if (cart.length > 0) {
-      handleCheckout().then(() => {
-        setIsPaymentDialogOpen(true);
-      });
-    } else {
-      setIsPaymentDialogOpen(true);
-    }
-  };
-
-  const handleFinalizeSuccess = () => {
-    setCart([]);
-    setExistingItems([]);
-    setSelectedCustomer(null);
-    setActiveOrderId(null);
-    setActiveOrderFriendlyId(null);
-  };
-
-  const handleCheckout = async () => {
+  const handleCheckout = useCallback(async () => {
     if (cart.length === 0) {
       if (selectedCustomer) fetchInProgressOrder(selectedCustomer.id);
-      return;
+      return true;
     }
 
     if (!selectedCustomer) {
       toast.error("Por favor, selecione um cliente");
-      return;
+      return false;
     }
 
     setIsSubmitting(true);
@@ -205,16 +165,60 @@ export function POSClient() {
         toast.success(`Itens adicionados à comanda!`);
         setCart([]); // LIMPA O CARRINHO LOCAL
         fetchInProgressOrder(selectedCustomer.id); // Recarrega os itens do DB
+        return true;
       } else {
         toast.error(result.message || "Erro ao processar venda");
+        return false;
       }
     } catch {
       console.error("Checkout error");
       toast.error("Erro na comunicação com o servidor");
+      return false;
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [cart, selectedCustomer, fetchInProgressOrder]);
+
+  const handleOpenFinalize = useCallback(async () => {
+    if (!selectedCustomer || subtotal <= 0) return;
+
+    // Se houver itens novos, sincroniza primeiro
+    if (cart.length > 0) {
+      const success = await handleCheckout();
+      if (success) {
+        setIsPaymentDialogOpen(true);
+      }
+    } else {
+      setIsPaymentDialogOpen(true);
+    }
+  }, [cart.length, selectedCustomer, subtotal, handleCheckout]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // F9 - Finalize
+      if (e.key === "F9" && selectedCustomer && subtotal > 0 && !isSubmitting) {
+        e.preventDefault();
+        handleOpenFinalize();
+      }
+
+      // F2 - Save/Sync
+      if (e.key === "F2" && selectedCustomer && cart.length > 0 && !isSubmitting) {
+        e.preventDefault();
+        handleCheckout();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedCustomer, subtotal, isSubmitting, cart.length, handleOpenFinalize, handleCheckout]);
+
+  const handleFinalizeSuccess = useCallback(() => {
+    setCart([]);
+    setExistingItems([]);
+    setSelectedCustomer(null);
+    setActiveOrderId(null);
+    setActiveOrderFriendlyId(null);
+  }, []);
 
   return (
     <div

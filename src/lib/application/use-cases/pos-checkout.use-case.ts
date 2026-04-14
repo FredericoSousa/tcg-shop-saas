@@ -38,10 +38,10 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
   async execute(request: POSCheckoutRequest): Promise<POSCheckoutResponse> {
     const { items, customerData } = request;
 
-    const result = await prisma.$transaction(async () => {
+    const result = await prisma.$transaction(async (tx) => {
       // 1. Decrement stock for products
       for (const item of items) {
-        await this.productRepo.decrementStock(item.productId, item.quantity);
+        await this.productRepo.decrementStock(item.productId, item.quantity, tx);
       }
 
       // 2. Resolve Customer
@@ -51,14 +51,14 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
       } else if (customerData.phoneNumber) {
         const customer = await this.customerRepo.upsert(customerData.phoneNumber, {
           name: customerData.name,
-        });
+        }, tx);
         customerId = customer.id;
       } else {
         throw new Error("Cliente ou Telefone é obrigatório.");
       }
 
       // 3. Check for existing PENDING POS order
-      const existingOrder = await this.orderRepo.findPendingPOSOrder(customerId);
+      const existingOrder = await this.orderRepo.findPendingPOSOrder(customerId, tx);
       const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
       if (existingOrder) {
@@ -66,7 +66,7 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
           productId: item.productId,
           quantity: item.quantity,
           priceAtPurchase: item.price,
-        })), totalAmount);
+        })), totalAmount, tx);
           return { orderId: existingOrder.id, friendlyId: existingOrder.friendlyId || "" };
       } else {
         const orderEntity: Order = {
@@ -85,7 +85,7 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
           productId: item.productId,
           quantity: item.quantity,
           priceAtPurchase: item.price,
-        })));
+        })), tx);
 
         return { orderId: newOrder.id, friendlyId: newOrder.friendlyId || "" };
       }

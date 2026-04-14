@@ -3,10 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { CartItem } from "./pos-client";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 
 type ProductType = Omit<CartItem, "quantity"> & {
   category?: { name: string } | null;
