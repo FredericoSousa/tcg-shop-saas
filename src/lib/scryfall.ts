@@ -2,62 +2,32 @@ import { ScryfallCard } from '@scryfall/api-types'
 
 type Card = ScryfallCard.Any
 
-interface CacheEntry {
-  data: unknown;
-  expiresAt: number;
-}
-
-const CACHE_TTL = 1000 * 60 * 60; // 1 hora de cache (em milissegundos)
-
-// Retém a instância do cache em memória durante o dev fast-refresh (HMR)
-const globalForCache = globalThis as unknown as { scryfallCache: Map<string, CacheEntry> };
-const cache = globalForCache.scryfallCache || new Map<string, CacheEntry>();
-
-if (process.env.NODE_ENV !== 'production') {
-  globalForCache.scryfallCache = cache;
-}
+const CACHE_TTL = 3600; // 1 hora de cache no edge
 
 export const scryfall = {
   /**
-   * Busca cards baseados na sintaxe do Scryfall
+   * Busca cards baseados na sintaxe do Scryfall com persistencia distribuida do App Router
    */
   async searchCards(query: string): Promise<Card[]> {
     if (!query) return [];
 
-    const cacheKey = `search:${query.toLowerCase()}`;
-    const cached = cache.get(cacheKey);
-
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.data as Card[];
-    }
-
     try {
-      // Usamos delay conforme docs da API Scryfall recomenda 100ms se fizéssemos muitas, mas para uma única fetch é ok.
-      const response = await fetch(`https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&unique=prints&include_multilingual=true`);
+      const response = await fetch(
+        `https://api.scryfall.com/cards/search?q=${encodeURIComponent(query)}&unique=prints&include_multilingual=true`,
+        { next: { revalidate: CACHE_TTL, tags: ['scryfall-search', query.substring(0, 50)] } }
+      );
 
       if (!response.ok) {
-        if (response.status === 404) {
-          // 404 significa sem resultados na API do Scryfall para a query.
-          return [];
-        }
+        if (response.status === 404) return [];
         throw new Error(`Scryfall API error: ${response.status}`);
       }
 
       const data: { data?: Card[] } = await response.json();
-      const results = data.data?.reduce((cards: Card[], card: Card) => {
+      return data.data?.reduce((cards: Card[], card: Card) => {
         const alreadyExists = cards.find(c => c.set_id === card.set_id && c.name === card.name)
-        if (!alreadyExists) {
-          return [...cards, card]
-        }
+        if (!alreadyExists) return [...cards, card]
         return cards
       }, []) ?? [];
-
-      cache.set(cacheKey, {
-        data: results,
-        expiresAt: Date.now() + CACHE_TTL
-      });
-
-      return results;
     } catch (error) {
       console.error('Erro na busca do Scryfall:', error);
       return [];
@@ -68,29 +38,17 @@ export const scryfall = {
    * Pega os detalhes exatos de um card pelo seu ID do Scryfall
    */
   async getCardById(id: string): Promise<Card | null> {
-    const cacheKey = `card:${id}`;
-    const cached = cache.get(cacheKey);
-
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.data as Card;
-    }
-
     try {
-      const response = await fetch(`https://api.scryfall.com/cards/${id}`);
+      const response = await fetch(`https://api.scryfall.com/cards/${id}`, {
+        next: { revalidate: CACHE_TTL, tags: ['scryfall-card', id] }
+      });
 
       if (!response.ok) {
         if (response.status === 404) return null;
         throw new Error(`Scryfall API error: ${response.status}`);
       }
 
-      const data = await response.json();
-
-      cache.set(cacheKey, {
-        data,
-        expiresAt: Date.now() + CACHE_TTL
-      });
-
-      return data;
+      return await response.json();
     } catch (error) {
       console.error(`Erro ao buscar Scryfall card pelo ID (${id}):`, error);
       return null;
@@ -99,7 +57,7 @@ export const scryfall = {
 
   /**
    * Busca cards em lote no Scryfall. O endpoint aceita até 75 identificadores.
-   * Divide a busca em chunks para acomodar arrays maiores.
+   * Divide a busca em chunks para acomodar arrays maiores protegendo o rate limit.
    */
   async getCardsCollection(identifiers: Array<{ id?: string, mtgo_id?: number, multiverse_id?: number, oracle_id?: string, illustration_id?: string, name?: string, set?: string, collector_number?: string }>): Promise<Card[]> {
     if (!identifiers || identifiers.length === 0) return [];
@@ -121,9 +79,7 @@ export const scryfall = {
           console.error(`Scryfall API error on collection fetch: ${response.status}`);
         } else {
           const data = await response.json();
-          if (data.data) {
-            results.push(...data.data);
-          }
+          if (data.data) results.push(...data.data);
         }
       } catch (error) {
         console.error('Erro na busca em lote do Scryfall:', error);

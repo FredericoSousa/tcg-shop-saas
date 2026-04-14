@@ -38,16 +38,18 @@ export class PrismaProductRepository extends BasePrismaRepository implements IPr
     };
   }
 
-  async findById(id: string): Promise<DomainProduct | null> {
-    const item = await this.prisma.product.findFirst({
+  async findById(id: string, tx?: unknown): Promise<DomainProduct | null> {
+    const client = (tx as Prisma.TransactionClient) || this.prisma;
+    const item = await client.product.findFirst({
       where: { id, deletedAt: null },
       include: { category: true },
     });
     return item ? this.mapToDomain(item) : null;
   }
 
-  async save(product: DomainProduct): Promise<DomainProduct> {
-    const saved = await this.prisma.product.create({
+  async save(product: DomainProduct, tx?: unknown): Promise<DomainProduct> {
+    const client = (tx as Prisma.TransactionClient) || this.prisma;
+    const saved = await client.product.create({
       data: {
         name: product.name,
         description: product.description,
@@ -61,8 +63,9 @@ export class PrismaProductRepository extends BasePrismaRepository implements IPr
     return this.mapToDomain(saved);
   }
 
-  async update(id: string, data: Partial<DomainProduct>): Promise<DomainProduct> {
-    const updated = await this.prisma.product.update({
+  async update(id: string, data: Partial<DomainProduct>, tx?: unknown): Promise<DomainProduct> {
+    const client = (tx as Prisma.TransactionClient) || this.prisma;
+    const updated = await client.product.update({
       where: { id },
       data: {
         name: data.name,

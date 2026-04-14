@@ -1,9 +1,9 @@
 import { Product, ProductCategory } from "../entities/product";
 
 export interface IProductRepository {
-  findById(id: string): Promise<Product | null>;
-  save(product: Product): Promise<Product>;
-  update(id: string, data: Partial<Product>): Promise<Product>;
+  findById(id: string, tx?: unknown): Promise<Product | null>;
+  save(product: Product, tx?: unknown): Promise<Product>;
+  update(id: string, data: Partial<Product>, tx?: unknown): Promise<Product>;
   findPaginated(
     page: number,
     limit: number,

@@ -6,6 +6,7 @@ import { getAdminContext } from "@/lib/tenant-server";
 import { SidebarProvider } from "@/components/admin/sidebar-provider";
 import { AdminLayoutShell } from "@/components/admin/admin-layout-shell";
 import { Feedback } from "@/components/ui/feedback";
+import { ErrorBoundary } from "@/components/admin/error-boundary";
 
 export default function AdminLayout({
   children,
@@ -35,7 +36,9 @@ async function AuthenticatedContent({ children }: { children: ReactNode }) {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       }>
-        {children}
+        <ErrorBoundary>
+          {children}
+        </ErrorBoundary>
       </Suspense>
     </AdminLayoutShell>
   );

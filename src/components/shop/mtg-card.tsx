@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "framer-motion";
 import { Check, ShoppingCart, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -60,7 +61,13 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
   const isStore = variant === "store";
 
   return (
-    <div className="group relative flex flex-col bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden hover:border-primary/30 transition-all duration-300">
+    <motion.div 
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 20 }}
+      className="group relative flex flex-col bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden hover:border-primary/30 transition-shadow duration-300 hover:shadow-lg"
+    >
       <div className="aspect-[2/3] w-full bg-zinc-50 relative overflow-hidden flex items-center justify-center">
         {item.cardTemplate?.imageUrl ? (
           <div className="relative h-full w-full group/image overflow-hidden">
@@ -215,6 +222,6 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

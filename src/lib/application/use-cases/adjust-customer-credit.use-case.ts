@@ -33,10 +33,16 @@ export class AdjustCustomerCreditUseCase implements IUseCase<AdjustCustomerCredi
       throw new Error("Cliente não encontrado.");
     }
 
+    // Usa o saldo do ledger como fonte de verdade para evitar desincronia
+    // com o campo `creditBalance` denormalizado no modelo Customer.
+    const ledgerBalance = await this.ledgerRepo.computeBalance(customerId);
+    const effectiveBalance = ledgerBalance ?? customer.creditBalance;
+
     // Check if debit is possible
-    if (amount < 0 && customer.creditBalance + amount < 0) {
+    if (amount < 0 && effectiveBalance + amount < 0) {
       throw new Error("Saldo insuficiente de créditos.");
     }
+
 
     await prisma.$transaction(async (tx) => {
       // 1. Update customer balance

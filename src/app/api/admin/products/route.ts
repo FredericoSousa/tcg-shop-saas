@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { ZodError } from "zod";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
 import { ListProductsUseCase } from "@/lib/application/use-cases/list-products.use-case";
@@ -75,6 +76,9 @@ export async function GET(request: NextRequest) {
       const result = await listProductsUseCase.execute({ page, limit, search, categoryId });
       return ApiResponse.success(result);
     } catch (error) {
+      if (error instanceof ZodError) {
+        return ApiResponse.badRequest("Erro de validação", "VALIDATION_ERROR", error.flatten().fieldErrors);
+      }
       logger.error("Error fetching products", error as Error, { tenantId: tenant.id });
       return ApiResponse.serverError();
     }
@@ -88,6 +92,9 @@ export async function POST(request: NextRequest) {
       const product = await saveProductUseCase.execute({ ...body });
       return ApiResponse.success(product);
     } catch (error) {
+      if (error instanceof ZodError) {
+        return ApiResponse.badRequest("Erro de validação", "VALIDATION_ERROR", error.flatten().fieldErrors);
+      }
       logger.error("Error creating product", error as Error, { tenantId: tenant.id });
       return ApiResponse.serverError();
     }

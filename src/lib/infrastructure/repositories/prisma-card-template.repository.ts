@@ -75,13 +75,13 @@ export class PrismaCardTemplateRepository extends BasePrismaRepository implement
   async createMany(templates: DomainCardTemplate[]): Promise<void> {
     await this.prisma.cardTemplate.createMany({
       data: templates.map((t) => ({
-        id: t.id,
-        name: t.name,
-        set: t.set,
+        id: t.id || undefined,
+        name: t.name || 'Unknown',
+        set: t.set || 'Unknown',
         imageUrl: t.imageUrl ?? null,
         backImageUrl: t.backImageUrl ?? null,
-        game: t.game as PrismaGame,
-        metadata: t.metadata as Prisma.InputJsonValue,
+        game: t.game ? (t.game as PrismaGame) : 'MAGIC',
+        metadata: t.metadata ? (t.metadata as Prisma.InputJsonValue) : Prisma.JsonNull,
       })),
       skipDuplicates: true,
     });

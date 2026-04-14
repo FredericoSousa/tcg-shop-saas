@@ -11,6 +11,8 @@ export interface SessionData {
   username: string;
   tenantId: string;
   role: "ADMIN" | "USER";
+  /** Issued-at timestamp (seconds). Permite invalidar sessões emitidas antes de um evento (e.g. troca de senha). */
+  iat?: number;
 }
 
 /**
@@ -34,9 +36,9 @@ export async function verifyPassword(
  * Create a session token
  */
 export async function createSessionToken(data: SessionData): Promise<string> {
-  const token = await new SignJWT(data as unknown as Record<string, unknown>)
+  const token = await new SignJWT({ ...data, iat: Math.floor(Date.now() / 1000) } as unknown as Record<string, unknown>)
     .setProtectedHeader({ alg: "HS256" })
-    .setExpirationTime("7d")
+    .setExpirationTime(config.jwtExpirationTime)
     .sign(JWT_SECRET);
   return token;
 }
@@ -81,11 +83,11 @@ export async function setSessionCookie(token: string): Promise<void> {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 days
+      maxAge: config.sessionCookieMaxAge,
       path: "/",
     });
   } catch (error) {
-    // Ignore errors during build/SSD
+    // Ignore errors during build/SSG
   }
 }
 

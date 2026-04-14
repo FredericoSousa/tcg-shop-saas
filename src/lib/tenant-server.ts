@@ -3,6 +3,7 @@ import { container } from "./infrastructure/container";
 import { GetTenantUseCase } from "./application/use-cases/get-tenant.use-case";
 import { getSession, type SessionData } from "./auth";
 import { headers } from "next/headers";
+import { unstable_cache } from "next/cache";
 import { redirect } from "next/navigation";
 import { runWithTenant } from "./tenant-context";
 import type { Tenant } from "./domain/entities/tenant";
@@ -10,6 +11,20 @@ import { DomainError, EntityNotFoundError, ValidationError, BusinessRuleViolatio
 import { ApiResponse } from "./infrastructure/http/api-response";
 import { logger } from "./logger";
 import { ZodError } from "zod";
+
+/**
+ * Cached wrapper for resolving tenant
+ */
+const getCachedTenant = (id: string) => {
+  return unstable_cache(
+    async () => {
+      const getTenantUseCase = container.resolve(GetTenantUseCase);
+      return getTenantUseCase.execute({ id });
+    },
+    [`tenant-${id}`],
+    { revalidate: 3600, tags: ["tenant", `tenant-${id}`] }
+  )();
+};
 
 /**
  * Gets the current tenant from the x-tenant-id header.
@@ -24,8 +39,7 @@ export async function getTenant() {
       return null;
     }
 
-    const getTenantUseCase = container.resolve(GetTenantUseCase);
-    return getTenantUseCase.execute({ id: tenantId });
+    return getCachedTenant(tenantId);
   } catch (error) {
     // If headers() is called during static generation, it may throw or return empty
     // We return null to allow the build to proceed with a default state if applicable
@@ -52,8 +66,7 @@ export async function getAdminContext() {
     redirect("/login");
   }
 
-  const getTenantUseCase = container.resolve(GetTenantUseCase);
-  const tenant = await getTenantUseCase.execute({ id: tenantId });
+  const tenant = await getCachedTenant(tenantId);
 
   if (!tenant) {
     redirect("/login");
@@ -80,8 +93,7 @@ export async function validateAdminApi() {
     return null;
   }
 
-  const getTenantUseCase = container.resolve(GetTenantUseCase);
-  const tenant = await getTenantUseCase.execute({ id: tenantId });
+  const tenant = await getCachedTenant(tenantId);
 
   if (!tenant) {
     return null;

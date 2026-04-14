@@ -198,6 +198,9 @@ model Order {
 
   @@unique([tenantId, friendlyId])
   @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, source])
   @@map("orders")
 }
 
@@ -248,6 +251,7 @@ model Customer {
 
   @@unique([phoneNumber, tenantId])
   @@index([tenantId])
+  @@index([tenantId, name])
   @@index([deletedAt])
   @@map("customers")
 }

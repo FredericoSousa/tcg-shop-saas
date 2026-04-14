@@ -54,4 +54,15 @@ export class PrismaCustomerCreditLedgerRepository extends BasePrismaRepository i
     });
     return items.map(this.mapToDomain.bind(this));
   }
+
+  async computeBalance(customerId: string): Promise<number> {
+    const result = await this.prisma.customerCreditLedger.findMany({
+      where: { customerId },
+      select: { amount: true, type: true },
+    });
+    return result.reduce((sum, entry) => {
+      const val = Number(entry.amount);
+      return entry.type === "CREDIT" ? sum + val : sum - val;
+    }, 0);
+  }
 }
