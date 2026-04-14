@@ -81,16 +81,16 @@ export function CustomerSelector({
       
       {selectedCustomer ? (
         <div className={cn(
-          "flex items-center justify-between rounded-lg border bg-primary/5 border-primary/20",
-          size === "sm" ? "p-2 h-9" : "p-3 h-11"
+          "flex items-center justify-between rounded-xl border bg-primary/5 border-primary/20 p-4 shadow-inner",
+          size === "sm" ? "p-2 h-9" : "h-14"
         )}>
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="h-4 w-4 text-primary" />
+          <div className="flex items-center gap-4">
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/10">
+              <User className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-sm font-semibold">{selectedCustomer.name}</p>
-              <p className="text-xs text-muted-foreground">{formatPhone(selectedCustomer.phoneNumber)}</p>
+              <p className="text-sm font-black uppercase tracking-tight">{selectedCustomer.name}</p>
+              <p className="text-[10px] font-bold text-muted-foreground tracking-widest">{formatPhone(selectedCustomer.phoneNumber)}</p>
             </div>
           </div>
           <button 
@@ -98,9 +98,9 @@ export function CustomerSelector({
               onSelect(null);
               setQuery("");
             }}
-            className="p-1 hover:bg-muted rounded-full"
+            className="p-2 hover:bg-destructive/10 hover:text-destructive rounded-full transition-colors"
           >
-            <X className="h-4 w-4 text-muted-foreground" />
+            <X className="h-5 w-5" />
           </button>
         </div>
       ) : (
@@ -115,6 +115,7 @@ export function CustomerSelector({
             onFocus={() => setIsOpen(true)}
             placeholder="Buscar por nome ou telefone..."
             className={cn("pl-9", size === "sm" ? "h-9" : "h-11")}
+            autoComplete="off"
           />
           
           {isOpen && (

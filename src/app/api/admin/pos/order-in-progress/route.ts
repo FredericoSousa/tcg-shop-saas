@@ -27,8 +27,8 @@ export async function GET(request: NextRequest) {
     const formattedItems = order.items?.map(item => {
       const product = (item as { product?: { name: string, imageUrl: string | null } }).product;
       return {
-        id: item.productId || "",
-        name: product?.name || "Produto", 
+        id: item.id,
+        name: product?.name || "Produto",
         imageUrl: product?.imageUrl,
         price: Number(item.priceAtPurchase),
         quantity: item.quantity,

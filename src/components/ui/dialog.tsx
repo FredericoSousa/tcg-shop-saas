@@ -15,8 +15,11 @@ function DialogTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />
 }
 
-function DialogPortal({ ...props }: DialogPrimitive.Portal.Props) {
-  return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />
+function DialogPortal({
+  container,
+  ...props
+}: DialogPrimitive.Portal.Props & { container?: HTMLElement | null }) {
+  return <DialogPrimitive.Portal data-slot="dialog-portal" container={container} {...props} />
 }
 
 function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
@@ -43,12 +46,14 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
+  container,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
+  container?: HTMLElement | null
 }) {
   return (
-    <DialogPortal>
+    <DialogPortal container={container}>
       <DialogOverlay />
       <DialogPrimitive.Popup
         data-slot="dialog-content"

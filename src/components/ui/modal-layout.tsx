@@ -18,6 +18,7 @@ interface ModalLayoutProps {
   className?: string; // Content area className
   containerClassName?: string; // DialogContent className
   showCloseButton?: boolean;
+  container?: HTMLElement | null;
 }
 
 export function ModalLayout({
@@ -28,11 +29,13 @@ export function ModalLayout({
   className,
   containerClassName,
   showCloseButton = true,
+  container,
 }: ModalLayoutProps) {
   return (
     <DialogContent
       className={cn("flex flex-col max-h-[90vh] overflow-hidden", containerClassName)}
       showCloseButton={showCloseButton}
+      container={container}
     >
       <DialogHeader>
         <DialogTitle>{title}</DialogTitle>

@@ -6,6 +6,7 @@ import { Search, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { CartItem } from "./pos-client";
+import { motion, AnimatePresence } from "framer-motion";
 
 type ProductType = Omit<CartItem, "quantity"> & {
   category?: { name: string } | null;
@@ -72,48 +73,72 @@ export function ProductSearch({ onSelect }: ProductSearchProps) {
 
       <div className="flex-1 overflow-y-auto pr-2 space-y-2">
         {loading ? (
-          <div className="flex items-center justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary opacity-50" />
+            <p className="text-sm font-medium text-muted-foreground animate-pulse">Buscando no catálogo...</p>
           </div>
         ) : results.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 pb-4">
             {results.map((product) => (
-              <div
+              <motion.div
                 key={product.id}
-                className="flex items-center gap-3 p-3 rounded-lg border bg-background hover:border-primary/50 transition-colors group cursor-pointer"
+                layout
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.2 }}
+                className="group relative flex flex-col bg-background border rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-primary/40 transition-all cursor-pointer"
                 onClick={() => onSelect(product)}
               >
-                <div className="h-14 w-14 rounded-md bg-muted flex-shrink-0 overflow-hidden border">
+                <div className="aspect-square relative bg-muted overflow-hidden">
                   {product.imageUrl ? (
                     <Image
                       src={product.imageUrl}
                       alt={product.name}
-                      width={56}
-                      height={56}
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                   ) : (
-                    <div className="h-full w-full flex items-center justify-center">
-                      <span className="text-[10px] text-muted-foreground uppercase">Sem Foto</span>
+                    <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Sem Imagem</span>
                     </div>
                   )}
+                  {/* Overlay on hover */}
+                  <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <div className="bg-primary text-primary-foreground p-2 rounded-full shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                      <Plus className="h-5 w-5" />
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-medium truncate">{product.name}</h3>
-                  <p className="text-xs text-muted-foreground truncate">{product.category?.name || "Sem Categoria"}</p>
-                  <p className="text-sm font-bold text-primary mt-0.5">
-                    R$ {Number(product.price).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </p>
+                
+                <div className="p-3 flex flex-col flex-1">
+                  <div className="flex-1 min-w-0 mb-2">
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">
+                      {product.category?.name || "Geral"}
+                    </p>
+                    <h3 className="text-sm font-bold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
+                      {product.name}
+                    </h3>
+                  </div>
+                  
+                  <div className="flex items-center justify-between mt-auto pt-2 border-t border-muted">
+                    <span className="text-base font-black text-foreground">
+                      R$ {Number(product.price).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                    </span>
+                    <div className="h-6 w-6 rounded-md bg-muted group-hover:bg-primary/20 flex items-center justify-center transition-colors">
+                      <Plus className="h-3 w-3 text-muted-foreground group-hover:text-primary" />
+                    </div>
+                  </div>
                 </div>
-                <Button size="icon" variant="ghost" className="opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
+              </motion.div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-10 text-muted-foreground">
-            Nenhum produto encontrado.
+          <div className="flex flex-col items-center justify-center py-20 text-center space-y-3 opacity-50">
+            <div className="bg-muted p-4 rounded-full">
+              <Search className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium">Nenhum produto encontrado.</p>
           </div>
         )}
       </div>

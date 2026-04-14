@@ -26,6 +26,7 @@ interface PaymentDialogProps {
   totalAmount: number;
   onSuccess: () => void;
   friendlyId?: string | null;
+  container?: HTMLElement | null;
 }
 
 interface PaymentEntry {
@@ -51,6 +52,7 @@ export function PaymentDialog({
   totalAmount,
   onSuccess,
   friendlyId,
+  container,
 }: PaymentDialogProps) {
   const [payments, setPayments] = useState<PaymentEntry[]>([
     { method: "CASH", amount: totalAmount },
@@ -144,6 +146,7 @@ export function PaymentDialog({
         title={`Finalizar Pedido ${friendlyId ? `#${friendlyId}` : `#${orderId.slice(-8).toUpperCase()}`}`}
         description="Selecione as formas de pagamento e os respectivos valores para concluir o pedido."
         containerClassName="max-w-md"
+        container={container}
         footer={
           <div className="flex flex-col gap-4 w-full">
             <div className="px-1 space-y-2 border-t pt-4">

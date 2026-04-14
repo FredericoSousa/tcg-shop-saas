@@ -27,11 +27,15 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
         name: item.customer.name,
         phoneNumber: item.customer.phoneNumber,
       } : undefined,
-      items: item.items?.map((oi: PrismaOrderItem) => ({
+      items: item.items?.map((oi: any) => ({
         id: oi.id,
         orderId: oi.orderId,
         inventoryItemId: oi.inventoryItemId || undefined,
         productId: oi.productId || undefined,
+        product: {
+          name: oi.product?.name || "Produto",
+          imageUrl: oi.product?.imageUrl || null,
+        },
         quantity: oi.quantity,
         priceAtPurchase: Number(oi.priceAtPurchase),
       })),
@@ -48,13 +52,13 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
   async findById(id: string): Promise<DomainOrder | null> {
     const item = await this.prisma.order.findFirst({
       where: { id },
-      include: { 
+      include: {
         customer: true,
         payments: true,
         items: {
-          include: { 
+          include: {
             inventoryItem: { include: { cardTemplate: true } },
-            product: true 
+            product: true
           }
         }
       },
@@ -144,7 +148,7 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
         status: "PENDING",
         source: "POS",
       },
-      include: { items: true, customer: true },
+      include: { items: { include: { product: true } }, customer: true },
     });
     return item ? this.mapToDomain(item as PrismaOrderWithRelations) : null;
   }

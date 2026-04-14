@@ -11,11 +11,13 @@ export interface OrderItem {
   priceAtPurchase: number;
   // Relations for UI
   inventoryItem?: {
+    name: string;
     cardTemplate?: {
       imageUrl: string | null;
     };
   };
   product?: {
+    name: string;
     imageUrl: string | null;
   };
 }
