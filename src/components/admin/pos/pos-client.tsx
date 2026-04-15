@@ -8,7 +8,8 @@ import { CustomerSelector, CustomerType } from "./customer-selector";
 import { ProductSearchHandle } from "./product-search";
 import { feedback } from "@/lib/utils/feedback";
 import { PaymentDialog } from "../orders/payment-dialog";
-import { Loader2, UserPlus, ShoppingBag, CreditCard, Search as SearchIcon, Maximize2, Minimize2 } from "lucide-react";
+import { POSBuylistDialog } from "./pos-buylist-dialog";
+import { Loader2, UserPlus, ShoppingBag, CreditCard, Search as SearchIcon, Maximize2, Minimize2, HandCoins } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export type CartItem = {
@@ -384,6 +385,8 @@ export function POSClient() {
                 </div>
                 {dailySummary && (
                   <div className="hidden sm:flex items-center gap-4 bg-background/50 border rounded-xl px-4 py-2">
+                    <POSBuylistDialog />
+                    <div className="h-8 w-px bg-border mx-2" />
                     <div className="text-right border-r pr-4">
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Vendas Hoje</p>
                       <p className="text-sm font-black">{dailySummary.orderCount}</p>

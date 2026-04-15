@@ -70,6 +70,13 @@ export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | 
                       >
                         Singles
                       </Link>
+                      <Link
+                        href="/buylist"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="flex items-center gap-4 p-3 font-bold text-zinc-600 hover:text-zinc-950 hover:bg-zinc-50 rounded-xl transition-all"
+                      >
+                        Buylist
+                      </Link>
                     </div>
                   </div>
 
@@ -124,6 +131,12 @@ export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | 
             className="transition-all hover:text-zinc-950"
           >
             Singles
+          </Link>
+          <Link
+            href="/buylist"
+            className="transition-all hover:text-zinc-950"
+          >
+            Buylist
           </Link>
         </div>
 

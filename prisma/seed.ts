@@ -48,6 +48,58 @@ async function main() {
     },
   });
 
+  // Create some Card Templates
+  const card1 = await prisma.cardTemplate.upsert({
+    where: { id: "00000000-0000-0000-0000-000000000001" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-000000000001",
+      name: "Black Lotus",
+      set: "Alpha",
+      game: "MAGIC",
+      imageUrl: "https://cards.scryfall.io/large/front/b/d/bd8fa327-dd41-4737-8f19-2cf5eb1f7cdd.jpg",
+    }
+  });
+
+  const card2 = await prisma.cardTemplate.upsert({
+    where: { id: "00000000-0000-0000-0000-000000000002" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-000000000002",
+      name: "Charizard",
+      set: "Base Set",
+      game: "POKEMON",
+      imageUrl: "https://images.pokemontcg.io/base1/4_hires.png",
+    }
+  });
+
+  // Add items to Tenant 1's Buylist
+  await prisma.buylistItem.upsert({
+    where: { id: "00000000-0000-0000-0000-000000000101" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-000000000101",
+      tenantId: tenant1.id,
+      cardTemplateId: card1.id,
+      priceCash: 50000,
+      priceCredit: 65000,
+      active: true,
+    }
+  });
+
+  await prisma.buylistItem.upsert({
+    where: { id: "00000000-0000-0000-0000-000000000102" },
+    update: {},
+    create: {
+      id: "00000000-0000-0000-0000-000000000102",
+      tenantId: tenant1.id,
+      cardTemplateId: card2.id,
+      priceCash: 250,
+      priceCredit: 325,
+      active: true,
+    }
+  });
+
   console.log(
     `✅ Tenants criados para testes: ${tenant1.slug}, ${tenant2.slug}`,
   );

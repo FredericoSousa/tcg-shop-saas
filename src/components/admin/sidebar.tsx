@@ -11,6 +11,7 @@ import {
   UserCog,
   Monitor,
   ShoppingBag,
+  HandCoins,
   LogOut,
 } from "lucide-react";
 import { Tenant } from "@/lib/domain/entities/tenant";
@@ -24,6 +25,7 @@ const sidebarItems = [
   { name: "Vendas", href: "/admin/orders", icon: ShoppingCart },
   { name: "Produtos", href: "/admin/products", icon: ShoppingBag },
   { name: "Clientes", href: "/admin/customers", icon: Users },
+  { name: "Buylist", href: "/admin/buylist", icon: HandCoins },
   { name: "Usuários", href: "/admin/users", icon: UserCog },
   { name: "Configurações", href: "/admin/settings", icon: Settings },
 ];

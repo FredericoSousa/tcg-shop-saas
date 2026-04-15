@@ -46,6 +46,8 @@ model Tenant {
   products          Product[]
   productCategories ProductCategory[]
   creditLedger      CustomerCreditLedger[]
+  buylistItems      BuylistItem[]
+  buylistProposals  BuylistProposal[]
 
   @@map("tenants")
 }
@@ -83,6 +85,8 @@ model CardTemplate {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   inventory InventoryItem[]
+  buylistItems BuylistItem[]
+  buylistProposalItems BuylistProposalItem[]
 
   @@index([name])
   @@index([name, set])
@@ -247,9 +251,10 @@ model Customer {
   updatedAt     DateTime  @updatedAt @map("updated_at")
   deletedAt     DateTime? @map("deleted_at")
 
-  tenant Tenant                 @relation(fields: [tenantId], references: [id])
-  orders Order[]
-  ledger CustomerCreditLedger[]
+  tenant           Tenant                 @relation(fields: [tenantId], references: [id])
+  orders           Order[]
+  ledger           CustomerCreditLedger[]
+  buylistProposals BuylistProposal[]
 
   @@unique([phoneNumber, tenantId])
   @@index([tenantId])
@@ -267,6 +272,7 @@ enum CreditLedgerSource {
   MANUAL
   ORDER_PAYMENT
   ORDER_REFUND
+  BUYLIST_PROPOSAL
 }
 
 model CustomerCreditLedger {
@@ -287,4 +293,65 @@ model CustomerCreditLedger {
   @@index([customerId])
   @@index([tenantId])
   @@map("customer_credit_ledger")
+}
+
+enum BuylistStatus {
+  PENDING
+  RECEIVED
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+model BuylistItem {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String   @map("tenant_id") @db.Uuid
+  cardTemplateId  String   @map("card_template_id") @db.Uuid
+  priceCash       Decimal  @map("price_cash")
+  priceCredit     Decimal  @map("price_credit")
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cardTemplate CardTemplate @relation(fields: [cardTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("buylist_items")
+}
+
+model BuylistProposal {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String        @map("tenant_id") @db.Uuid
+  customerId  String        @map("customer_id") @db.Uuid
+  status      BuylistStatus @default(PENDING)
+  totalCash   Decimal       @map("total_cash")
+  totalCredit Decimal       @map("total_credit")
+  staffNotes  String?       @map("staff_notes")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  tenant   Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items    BuylistProposalItem[]
+
+  @@index([tenantId])
+  @@index([customerId])
+  @@map("buylist_proposals")
+}
+
+model BuylistProposalItem {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  buylistProposalId String    @map("buylist_proposal_id") @db.Uuid
+  cardTemplateId    String    @map("card_template_id") @db.Uuid
+  quantity          Int
+  condition         Condition
+  language          String
+  priceCash         Decimal   @map("price_cash")
+  priceCredit       Decimal   @map("price_credit")
+
+  proposal     BuylistProposal @relation(fields: [buylistProposalId], references: [id], onDelete: Cascade)
+  cardTemplate CardTemplate    @relation(fields: [cardTemplateId], references: [id], onDelete: Cascade)
+
+  @@map("buylist_proposal_items")
 }

@@ -48,6 +48,22 @@ export class PrismaCardTemplateRepository extends BasePrismaRepository implement
   }
 
   async save(template: DomainCardTemplate): Promise<DomainCardTemplate> {
+    const isNew = !template.id || template.id === "";
+    
+    if (isNew) {
+      const saved = await this.prisma.cardTemplate.create({
+        data: {
+          name: template.name,
+          set: template.set,
+          imageUrl: template.imageUrl ?? null,
+          backImageUrl: template.backImageUrl ?? null,
+          game: template.game as PrismaGame,
+          metadata: template.metadata as Prisma.InputJsonValue,
+        },
+      });
+      return this.mapToDomain(saved);
+    }
+
     const saved = await this.prisma.cardTemplate.upsert({
       where: { id: template.id },
       create: {
