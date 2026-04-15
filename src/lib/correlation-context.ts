@@ -35,7 +35,7 @@ if (typeof window === "undefined" && process.env.NEXT_RUNTIME !== "edge") {
   // Browser or Edge implementation (Stubs)
   implementation = {
     getCorrelationId: () => undefined,
-    runWithCorrelationId: <T>(callback: () => T, id?: string): T => {
+    runWithCorrelationId: <T>(callback: () => T, _id?: string): T => {
       // In the browser, we don't have AsyncLocalStorage, but we can still generate a UUID if needed
       // though it won't be persisted across calls like on the server.
       return callback();

@@ -12,24 +12,31 @@ export async function generateMetadata() {
   };
 }
 
-export default function StorefrontLayout({
+export default async function StorefrontLayout({
   children,
 }: {
   children: ReactNode;
 }) {
+  const tenant = await getTenant();
+  const isLandingPage = !tenant;
+
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Suspense fallback={<NavbarSkeleton />}>
-        <NavbarContent />
-      </Suspense>
+    <div className="flex flex-col min-h-screen bg-background text-foreground">
+      {!isLandingPage && (
+        <Suspense fallback={<NavbarSkeleton />}>
+          <NavbarContent />
+        </Suspense>
+      )}
       
       <main className="flex-1 flex flex-col">
         {children}
       </main>
 
-      <Suspense fallback={<div className="h-20" />}>
-        <FooterContent />
-      </Suspense>
+      {!isLandingPage && (
+        <Suspense fallback={<div className="h-20" />}>
+          <FooterContent />
+        </Suspense>
+      )}
     </div>
   );
 }

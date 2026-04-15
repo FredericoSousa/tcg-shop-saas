@@ -5,19 +5,14 @@ import { ShoppingBag, Sparkles, Shield, Truck, ChevronRight } from 'lucide-react
 import { MTGCard, MTGCardItem } from '@/components/shop/mtg-card'
 import Image from 'next/image'
 
+import { LandingPage } from '@/components/landing/landing-page';
+
 export default async function HomePage() {
   const tenant = await getTenant();
 
   // If no tenant subdomain, show a generic landing
   if (!tenant) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-950 text-white">
-        <div className="text-center max-w-lg px-6">
-          <h1 className="text-5xl font-black tracking-tight mb-4">TCG Shop SaaS</h1>
-          <p className="text-zinc-400 text-lg mb-8">Plataforma multi-loja para venda de cards. Acesse pelo subdomínio da sua loja.</p>
-        </div>
-      </div>
-    );
+    return <LandingPage />;
   }
 
   const tenantId = tenant.id;
