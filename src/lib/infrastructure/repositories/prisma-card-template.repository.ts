@@ -21,17 +21,8 @@ export class PrismaCardTemplateRepository extends BasePrismaRepository implement
   }
 
    
-  private mapScryfallToDomain(card: ScryfallCard): DomainCardTemplate {
-    return {
-      id: "",
-      name: card.name,
-      set: card.set,
-      imageUrl: (card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal) ?? null,
-      backImageUrl: card.card_faces?.[1]?.image_uris?.normal ?? null,
-      game: "MAGIC",
-      metadata: card as unknown as Record<string, unknown>,
-    };
-  }
+
+   
 
   async findById(id: string): Promise<DomainCardTemplate | null> {
     const item = await this.prisma.cardTemplate.findUnique({
