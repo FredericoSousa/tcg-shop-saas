@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import type { BulkItemResult } from "@/lib/types/inventory";
 import type { ImportProgress } from "@/lib/scrapers/liga-magic-scraper";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import {
   Select,
   SelectContent,
@@ -225,14 +225,11 @@ export function BulkImportForm() {
     });
 
     if (errors.length) {
-      toast.error(`${errors.length} linha(s) com erro de formato`, {
-        description: errors.slice(0, 3).join("\n"),
-        duration: 6000,
-      });
+      feedback.error(`${errors.length} linha(s) com erro de formato`, errors.slice(0, 3).join("\n"));
     }
 
     if (!parsed.length) {
-      toast.error("Nenhuma linha válida encontrada.");
+      feedback.error("Nenhuma linha válida encontrada.");
       return;
     }
 
@@ -258,9 +255,7 @@ export function BulkImportForm() {
       setItems(results);
       setStep("preview");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Erro ao processar lista",
-      );
+      feedback.apiError(error, "Erro ao processar lista");
     } finally {
       setIsProcessing(false);
     }
@@ -269,7 +264,7 @@ export function BulkImportForm() {
   // === Liga Magic import handler with SSE streaming ===
   const handleProcessLigaMagic = async () => {
     if (!ligamagicId.trim()) {
-      toast.error("Informe o ID da coleção da Liga Magic.");
+      feedback.error("Informe o ID da coleção da Liga Magic.");
       return;
     }
 
@@ -304,7 +299,7 @@ export function BulkImportForm() {
                 const cards: (BulkItemResult & { originalLine: string })[] = apiResponse.data || [];
 
                 if (!cards || cards.length === 0) {
-                  toast.error("Nenhum card encontrado na coleção.");
+                  feedback.error("Nenhum card encontrado na coleção.");
                   setIsStreamingProgress(false);
                   return;
                 }
@@ -327,11 +322,7 @@ export function BulkImportForm() {
                 setItems(results);
                 setStep("preview");
               } catch (error) {
-                const msg =
-                  error instanceof Error
-                    ? error.message
-                    : "Erro ao importar coleção";
-                toast.error(msg);
+                feedback.apiError(error, "Erro ao importar coleção");
               } finally {
                 setIsStreamingProgress(false);
               }
@@ -339,7 +330,7 @@ export function BulkImportForm() {
           } else if (progress.status === "error") {
             hasError = true;
             eventSource.close();
-            toast.error("Erro ao importar coleção. Tente novamente.");
+            feedback.error("Erro ao importar coleção. Tente novamente.");
             setIsStreamingProgress(false);
           }
         } catch (e) {
@@ -349,13 +340,11 @@ export function BulkImportForm() {
 
       eventSource.onerror = () => {
         eventSource.close();
-        toast.error("Conexão perdida durante a importação.");
+        feedback.error("Conexão perdida durante a importação.");
         setIsStreamingProgress(false);
       };
     } catch (error) {
-      const msg =
-        error instanceof Error ? error.message : "Erro ao importar coleção";
-      toast.error(msg);
+      feedback.apiError(error, "Erro ao importar coleção");
       setIsStreamingProgress(false);
     } finally {
       setIsProcessing(false);
@@ -422,8 +411,8 @@ export function BulkImportForm() {
           }),
         );
       }
-    } catch {
-      toast.error("Erro ao buscar no Scryfall");
+    } catch (error) {
+      feedback.apiError(error, "Erro ao buscar no Scryfall");
     } finally {
       setReResolvingIndex(null);
     }
@@ -447,7 +436,7 @@ export function BulkImportForm() {
         }));
 
         if (!toAdd.length) {
-          toast.error("Nenhum card com sucesso para adicionar.");
+          feedback.error("Nenhum card com sucesso para adicionar.");
           return;
         }
 
@@ -471,20 +460,19 @@ export function BulkImportForm() {
         }
 
         if (totalSuccesses > 0) {
-          toast.success(
+          feedback.success(
             `✓ ${totalSuccesses} card(s) adicionado(s) ao estoque!`,
           );
         }
         if (totalErrors > 0) {
-          toast.error(`✗ ${totalErrors} card(s) falharam ao salvar.`);
+          feedback.error(`✗ ${totalErrors} card(s) falharam ao salvar.`);
         }
 
         setTextInput("");
         setLigamagicId("");
         handleReset();
       } catch (error) {
-        const msg = error instanceof Error ? error.message : "Erro ao salvar";
-        toast.error(msg);
+        feedback.apiError(error, "Erro ao salvar");
       }
     });
   };

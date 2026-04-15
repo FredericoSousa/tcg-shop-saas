@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { useTableState } from "@/lib/hooks/use-table-state";
 import { FilterSection } from "@/components/admin/filter-section";
 import { TableSearch } from "@/components/admin/table-search";
@@ -88,7 +88,7 @@ export function UsersClient({
       }
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao carregar usuários");
+      feedback.apiError(error, "Erro ao carregar usuários");
     } finally {
       setLoading(false);
     }
@@ -101,7 +101,7 @@ export function UsersClient({
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUsername || !newPassword) {
-      toast.error("Preencha todos os campos");
+      feedback.error("Preencha todos os campos");
       return;
     }
 
@@ -113,15 +113,14 @@ export function UsersClient({
         role: newRole,
       });
 
-      toast.success("Usuário criado com sucesso");
+      feedback.success("Usuário criado com sucesso");
       setIsCreateDialogOpen(false);
       setNewUsername("");
       setNewPassword("");
       setNewRole("USER");
       fetchUsers();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro desconhecido";
-      toast.error(message);
+      feedback.apiError(error);
     } finally {
       setIsSubmitting(false);
     }
@@ -133,12 +132,11 @@ export function UsersClient({
     try {
       await UserService.delete(userToDelete.id);
 
-      toast.success("Usuário excluído com sucesso");
+      feedback.success("Usuário excluído com sucesso");
       setUserToDelete(null);
       fetchUsers();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro desconhecido";
-      toast.error(message);
+      feedback.apiError(error);
     } finally {
       setIsDeleting(false);
     }

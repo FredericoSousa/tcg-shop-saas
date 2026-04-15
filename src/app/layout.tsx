@@ -27,6 +27,7 @@ export const metadata: Metadata = {
 };
 
 import { QueryProvider } from "@/components/query-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { Suspense } from "react";
 
 export default function RootLayout({
@@ -44,8 +45,10 @@ export default function RootLayout({
           <Suspense fallback={null}>
             {children}
           </Suspense>
+          <Toaster />
         </QueryProvider>
       </body>
     </html>
   );
 }
+

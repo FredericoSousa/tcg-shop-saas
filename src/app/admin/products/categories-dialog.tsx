@@ -6,7 +6,7 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Grid, Plus, Trash2, Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { CategoryService } from "@/lib/api/services/category.service";
 import { ConfirmModal } from "@/components/admin/confirm-modal";
 import { ModalLayout } from "@/components/ui/modal-layout";
@@ -30,12 +30,12 @@ export function CategoriesDialog({ categories }: CategoriesDialogProps) {
     setLoading(true);
     try {
       await CategoryService.create(newCategory, showOnEcommerce);
-      toast.success("Categoria criada com sucesso");
+      feedback.success("Categoria criada com sucesso");
       setNewCategory("");
       setShowOnEcommerce(true);
       router.refresh();
-    } catch {
-      toast.error("Erro ao criar categoria");
+    } catch (error) {
+      feedback.apiError(error, "Erro ao criar categoria");
     } finally {
       setLoading(false);
     }
@@ -47,15 +47,16 @@ export function CategoriesDialog({ categories }: CategoriesDialogProps) {
     setLoading(true);
     try {
       await CategoryService.delete(categoryToDelete.id);
-      toast.success("Categoria excluída");
+      feedback.success("Categoria excluída");
       setCategoryToDelete(null);
       router.refresh();
-    } catch {
-      toast.error("Erro ao excluir categoria");
+    } catch (error) {
+      feedback.apiError(error, "Erro ao excluir categoria");
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <>

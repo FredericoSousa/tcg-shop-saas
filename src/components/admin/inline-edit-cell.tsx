@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { cn, formatCurrency } from "@/lib/utils";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { Loader2 } from "lucide-react";
 
 interface InlineEditCellProps {
@@ -61,11 +61,11 @@ export function InlineEditCell({
       const result = await response.json();
       if (!result.success) throw new Error(result.message || "Failed to update");
 
-      toast.success("Atualizado com sucesso");
+      feedback.success("Atualizado com sucesso");
       if (onUpdate) onUpdate(numericValue);
       setIsEditing(false);
-    } catch {
-      toast.error("Erro ao atualizar");
+    } catch (error) {
+      feedback.apiError(error, "Erro ao atualizar");
       setValue(initialValue.toString());
       setIsEditing(false);
     } finally {

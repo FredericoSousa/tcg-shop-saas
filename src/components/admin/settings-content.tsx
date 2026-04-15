@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { 
   Mail, 
   Phone, 
@@ -70,10 +70,9 @@ export function SettingsContent({ initialSettings }: SettingsContentProps) {
       const result = await response.json();
       if (!result.success) throw new Error(result.message || "Falha ao salvar");
       
-      toast.success("Configurações atualizadas com sucesso!");
+      feedback.success("Configurações atualizadas com sucesso!");
     } catch (error) {
-      toast.error("Erro ao salvar configurações");
-      console.error(error);
+      feedback.apiError(error, "Erro ao salvar configurações");
     } finally {
       setSaving(false);
     }

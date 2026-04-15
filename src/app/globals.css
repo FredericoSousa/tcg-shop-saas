@@ -120,4 +120,46 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     opacity: 0.3;
   }
+
+  /* Sonner Toast Styles */
+  .cn-toast {
+    @apply !bg-popover !text-popover-foreground !border !border-border !rounded-2xl !shadow-xl !font-sans !font-semibold !px-4 !py-3.5 !min-h-[64px] !gap-3 !transition-all !duration-500 !ease-out;
+  }
+
+  .cn-toast [data-icon] {
+    @apply !mt-0 !flex !items-center !justify-center !size-8 !rounded-xl !shrink-0;
+  }
+
+  .cn-toast[data-type="success"] [data-icon] {
+    @apply !bg-emerald-50 !text-emerald-600 !border !border-emerald-100;
+  }
+
+  .cn-toast[data-type="error"] [data-icon] {
+    @apply !bg-red-50 !text-red-600 !border !border-red-100;
+  }
+
+  .cn-toast[data-type="warning"] [data-icon] {
+    @apply !bg-amber-50 !text-amber-600 !border !border-amber-100;
+  }
+
+  .cn-toast[data-type="info"] [data-icon] {
+    @apply !bg-blue-50 !text-blue-600 !border !border-blue-100;
+  }
+
+  .cn-toast[data-type="loading"] [data-icon] {
+    @apply !bg-zinc-50 !text-zinc-600 !border !border-zinc-100;
+  }
+
+  .cn-toast [data-content] {
+    @apply !flex !flex-col !gap-0.5 !justify-center;
+  }
+
+  .cn-toast [data-title] {
+    @apply !text-[13px] !font-black !uppercase !tracking-tight !leading-tight;
+  }
+
+  .cn-toast [data-description] {
+    @apply !text-[12px] !font-medium !text-muted-foreground !leading-relaxed;
+  }
 }
+

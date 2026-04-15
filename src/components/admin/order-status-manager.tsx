@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { OrderStatus } from "@prisma/client";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 
 const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
   { value: "PENDING", label: "Pendente" },
@@ -54,23 +54,29 @@ export function OrderStatusManager({
     setStatus(newStatusValue);
 
     startTransition(async () => {
-      const response = await fetch("/api/orders/status", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, status: newStatusValue }),
-      });
-      const result = await response.json();
-      if (result.success) {
-        toast.success(
-          `Status alterado para ${STATUS_OPTIONS.find((opt) => opt.value === newStatusValue)?.label}.`,
-        );
-        onStatusChange?.(newStatusValue);
-      } else {
-        toast.error(result.message || "Erro ao atualizar status do pedido.");
+      try {
+        const response = await fetch("/api/orders/status", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId, status: newStatusValue }),
+        });
+        const result = await response.json();
+        if (result.success) {
+          feedback.success(
+            `Status alterado para ${STATUS_OPTIONS.find((opt) => opt.value === newStatusValue)?.label}.`,
+          );
+          onStatusChange?.(newStatusValue);
+        } else {
+          feedback.error(result.message || "Erro ao atualizar status do pedido.");
+          setStatus(currentStatus);
+        }
+      } catch (error) {
+        feedback.apiError(error, "Erro ao atualizar status do pedido.");
         setStatus(currentStatus);
       }
     });
   };
+
 
   if (variant === "select") {
     const currentLabel = STATUS_OPTIONS.find(

@@ -1,9 +1,9 @@
 import { injectable } from "tsyringe";
 import { Prisma } from "@prisma/client";
 import { BasePrismaRepository } from "./base-prisma.repository";
-import { 
-  RevenueByCategory, 
-  RevenueBySet, 
+import {
+  RevenueByCategory,
+  RevenueBySet,
   TopSellingProduct,
   SalesBySource,
   InventoryConditionDistribution,
@@ -256,7 +256,7 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
     sixMonthsAgo.setDate(1);
     sixMonthsAgo.setHours(0, 0, 0, 0);
 
-    const rawResults = await this.prisma.$queryRaw<any[]>`
+    const rawResults = await this.prisma.$queryRaw<{ month_label: string; revenue: number; month_date: Date }[]>`
       SELECT 
         TO_CHAR(DATE_TRUNC('month', created_at), 'Mon') as month_label,
         SUM(total_amount)::float as revenue,
@@ -282,7 +282,7 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
   }
 
   async getInventoryValuationBySet(tenantId: string): Promise<InventoryValuation[]> {
-    const rawResults = await this.prisma.$queryRaw<any[]>`
+    const rawResults = await this.prisma.$queryRaw<{ set: string; value: number; count: number }[]>`
       SELECT 
         ct.set as "set",
         SUM(ii.price * ii.quantity)::float as value,
@@ -309,7 +309,7 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
-    const rawResults = await this.prisma.$queryRaw<any[]>`
+    const rawResults = await this.prisma.$queryRaw<{ day_of_week: string; amount: number }[]>`
       SELECT 
         TO_CHAR(created_at, 'D') as day_of_week,
         SUM(total_amount)::float as amount

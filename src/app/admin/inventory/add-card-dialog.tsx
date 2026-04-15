@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { ScryfallCard } from "@/lib/types/scryfall";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Feedback } from "@/components/ui/feedback";
@@ -73,8 +73,8 @@ export function AddCardDialog() {
       } else {
         setResults([]);
       }
-    } catch {
-      toast.error("Erro ao buscar o card.");
+    } catch (error) {
+      feedback.apiError(error, "Erro ao buscar o card.");
     } finally {
       setIsSearching(false);
     }
@@ -99,7 +99,7 @@ export function AddCardDialog() {
           throw new Error(result.message || "Erro ao salvar o card");
         }
 
-        toast.success("Card adicionado ao inventário!");
+        feedback.success("Card adicionado ao inventário!");
         setOpen(false);
         setQuery("");
         setResults([]);
@@ -107,9 +107,7 @@ export function AddCardDialog() {
         setSelectedExtras([]);
         setHasSearched(false);
       } catch (error) {
-        const msg =
-          error instanceof Error ? error.message : "Erro ao salvar o card";
-        toast.error(msg);
+        feedback.apiError(error, "Erro ao salvar o card");
       }
     });
   };

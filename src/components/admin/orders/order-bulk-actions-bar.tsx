@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { OrderStatus } from "@prisma/client";
 
 interface OrderBulkActionsBarProps {
@@ -53,11 +53,11 @@ export function OrderBulkActionsBar({
         CANCELLED: "Cancelados",
       };
 
-      toast.success(`${selectedCount} pedidos marcados como ${statusLabels[status]}.`);
+      feedback.success(`${selectedCount} pedidos marcados como ${statusLabels[status]}.`);
       setIsConfirmOpen(false);
       onActionComplete();
-    } catch {
-      toast.error("Erro ao atualizar pedidos selecionados.");
+    } catch (error) {
+      feedback.apiError(error, "Erro ao atualizar pedidos selecionados.");
     } finally {
       setIsUpdating(false);
     }

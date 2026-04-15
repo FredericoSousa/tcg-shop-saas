@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { PaymentMethodType } from "@/lib/domain/entities/order";
 import { Trash2, Plus, Wallet, Loader2, CreditCard, Banknote, Smartphone } from "lucide-react";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { ModalLayout } from "@/components/ui/modal-layout";
 import { MaskedInput } from "@/components/ui/masked-input";
 import { cn } from "@/lib/utils";
@@ -105,14 +105,14 @@ export function PaymentDialog({
 
   const handleSubmit = async () => {
     if (Math.abs(remaining) > 0.01 && remaining > 0) {
-      toast.error(`Valor total pago é inferior ao total do pedido. Falta R$ ${remaining.toFixed(2)}`);
+      feedback.error(`Valor total pago é inferior ao total do pedido. Falta R$ ${remaining.toFixed(2)}`);
       return;
     }
 
     // Check if store credit is enough
     const storeCreditPayment = payments.find(p => p.method === "STORE_CREDIT");
     if (storeCreditPayment && customerBalance !== null && storeCreditPayment.amount > customerBalance) {
-      toast.error("Saldo de créditos insuficiente.");
+      feedback.error("Saldo de créditos insuficiente.");
       return;
     }
 
@@ -129,12 +129,11 @@ export function PaymentDialog({
         throw new Error(error.error || "Erro ao finalizar pedido");
       }
 
-      toast.success("Pedido finalizado com sucesso!");
+      feedback.success("Pedido finalizado com sucesso!");
       onSuccess();
       onClose();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro ao finalizar pedido";
-      toast.error(message);
+      feedback.apiError(error, "Erro ao finalizar pedido");
     } finally {
       setIsSubmitting(false);
     }

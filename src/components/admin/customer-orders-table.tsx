@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 
 interface Order {
   id: string;
@@ -48,7 +48,7 @@ export function CustomerOrdersTable({ customerId }: CustomerOrdersTableProps) {
       }
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao carregar histórico de pedidos");
+      feedback.apiError(error, "Erro ao carregar histórico de pedidos");
     } finally {
       setLoading(false);
     }

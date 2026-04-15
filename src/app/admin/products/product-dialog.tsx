@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { Loader2 } from "lucide-react";
 import { ProductService } from "@/lib/api/services/product.service";
 import { MaskedInput } from "@/components/ui/masked-input";
@@ -104,19 +104,20 @@ export function ProductDialog({
         await ProductService.create(body);
       }
 
-      toast.success(
+      feedback.success(
         product ? "Produto atualizado com sucesso" : "Produto criado com sucesso"
       );
       if (setIsOpen) {
         setIsOpen(false);
       }
       router.refresh();
-    } catch {
-      toast.error("Erro ao salvar produto");
+    } catch (error) {
+      feedback.apiError(error, "Erro ao salvar produto");
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>

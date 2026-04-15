@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { ProductService } from "@/lib/api/services/product.service";
 import { Button } from "@/components/ui/button";
 
@@ -39,15 +39,16 @@ export function ProductActions({
     try {
       await ProductService.delete(product.id);
 
-      toast.success("Produto excluído com sucesso");
+      feedback.success("Produto excluído com sucesso");
       setShowDeleteModal(false);
       router.refresh();
-    } catch {
-      toast.error("Erro ao excluir produto");
+    } catch (error) {
+      feedback.apiError(error, "Erro ao excluir produto");
     } finally {
       setLoading(false);
     }
   };
+
 
   return (
     <>

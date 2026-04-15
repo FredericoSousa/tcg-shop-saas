@@ -7,7 +7,7 @@ import { Trash2, Edit3, Loader2, X, Check } from "lucide-react";
 import {
   Dialog,
 } from "@/components/ui/dialog";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { InventoryService } from "@/lib/api/services/inventory.service";
 
 
@@ -40,11 +40,11 @@ export function BulkActionsBar({
       const result = await InventoryService.deleteItems(selectedIds);
       if (!result.success) throw new Error(result.message || "Failed to delete");
 
-      toast.success(`${selectedCount} itens removidos com sucesso.`);
+      feedback.success(`${selectedCount} itens removidos com sucesso.`);
       setIsDeleteDialogOpen(false);
       onActionComplete();
-    } catch {
-      toast.error("Erro ao excluir itens selecionados.");
+    } catch (error) {
+      feedback.apiError(error, "Erro ao excluir itens selecionados.");
     } finally {
       setIsDeleting(false);
     }
@@ -52,7 +52,7 @@ export function BulkActionsBar({
 
   const handleBulkUpdate = async () => {
     if (!bulkPrice && !bulkQuantity) {
-      toast.error("Informe pelo menos um campo para atualizar.");
+      feedback.error("Informe pelo menos um campo para atualizar.");
       return;
     }
 
@@ -65,11 +65,11 @@ export function BulkActionsBar({
       );
       if (!result.success) throw new Error(result.message || "Failed to update");
 
-      toast.success(`${selectedCount} itens atualizados com sucesso.`);
+      feedback.success(`${selectedCount} itens atualizados com sucesso.`);
       setIsUpdateDialogOpen(false);
       onActionComplete();
-    } catch {
-      toast.error("Erro ao atualizar itens selecionados.");
+    } catch (error) {
+      feedback.apiError(error, "Erro ao atualizar itens selecionados.");
     } finally {
       setIsUpdating(false);
     }

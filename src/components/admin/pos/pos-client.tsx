@@ -5,7 +5,7 @@ import { ProductSearch } from "./product-search";
 import { CartPanel } from "./cart-panel";
 import { CustomerSelector, CustomerType } from "./customer-selector";
 import { ProductSearchHandle } from "./product-search";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { PaymentDialog } from "../orders/payment-dialog";
 import { Loader2, UserPlus, ShoppingBag, CreditCard, Search as SearchIcon, Maximize2, Minimize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,7 +40,7 @@ export function POSClient() {
 
     if (!document.fullscreenElement) {
       containerRef.current.requestFullscreen().catch((err) => {
-        toast.error(`Erro ao ativar tela cheia: ${err.message}`);
+        feedback.error(`Erro ao ativar tela cheia: ${err.message}`);
       });
     } else {
       document.exitFullscreen();
@@ -71,9 +71,9 @@ export function POSClient() {
         setActiveOrderId(null);
         setActiveOrderFriendlyId(null);
       }
-    } catch {
+    } catch (error) {
       console.error("Error fetching order");
-      toast.error("Erro ao carregar pedido em andamento");
+      feedback.apiError(error, "Erro ao carregar pedido em andamento");
     } finally {
       setIsLoadingOrder(false);
     }
@@ -112,7 +112,7 @@ export function POSClient() {
         },
       ];
     });
-    toast.success(`${product.name} adicionado ao carrinho`);
+    feedback.success(`${product.name} adicionado ao carrinho`);
   }, []);
 
   const removeFromCart = useCallback((id: string) => {
@@ -138,7 +138,7 @@ export function POSClient() {
     }
 
     if (!selectedCustomer) {
-      toast.error("Por favor, selecione um cliente");
+      feedback.error("Por favor, selecione um cliente");
       return false;
     }
 
@@ -164,17 +164,17 @@ export function POSClient() {
       const result = await response.json();
 
       if (result.success) {
-        toast.success(`Itens adicionados à comanda!`);
+        feedback.success(`Itens adicionados à comanda!`);
         setCart([]); // LIMPA O CARRINHO LOCAL
         fetchInProgressOrder(selectedCustomer.id); // Recarrega os itens do DB
         return true;
       } else {
-        toast.error(result.message || "Erro ao processar venda");
+        feedback.error(result.message || "Erro ao processar venda");
         return false;
       }
-    } catch {
+    } catch (error) {
       console.error("Checkout error");
-      toast.error("Erro na comunicação com o servidor");
+      feedback.apiError(error, "Erro na comunicação com o servidor");
       return false;
     } finally {
       setIsSubmitting(false);
@@ -233,7 +233,7 @@ export function POSClient() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedCustomer, subtotal, isSubmitting, cart.length, handleOpenFinalize, handleCheckout]);
+  }, [selectedCustomer, subtotal, isSubmitting, cart.length, handleOpenFinalize, handleCheckout, existingItems.length, isPaymentDialogOpen]);
 
   const handleFinalizeSuccess = useCallback(() => {
     setCart([]);

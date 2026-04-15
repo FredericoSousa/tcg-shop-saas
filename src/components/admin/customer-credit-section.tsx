@@ -11,7 +11,7 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { AdjustCreditDialog } from "./adjust-credit-dialog";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { formatCurrency } from "@/lib/utils";
 
 interface CreditEntry {
@@ -42,8 +42,7 @@ export function CustomerCreditSection({ customerId, initialBalance }: CustomerCr
       const result = await response.json();
       setHistory(result.success ? result.data : []);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro desconhecido";
-      toast.error(message);
+      feedback.apiError(error);
     } finally {
       setLoading(false);
     }

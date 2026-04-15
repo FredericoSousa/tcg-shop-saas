@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { PlusCircle, MinusCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -34,7 +34,7 @@ export function AdjustCreditDialog({ customerId, onSuccess }: AdjustCreditDialog
     const numAmount = parseFloat(cleanAmount);
 
     if (isNaN(numAmount) || numAmount <= 0) {
-      toast.error("Por favor, insira um valor válido.");
+      feedback.error("Por favor, insira um valor válido.");
       return;
     }
 
@@ -54,14 +54,13 @@ export function AdjustCreditDialog({ customerId, onSuccess }: AdjustCreditDialog
       }
 
       const result = await response.json();
-      toast.success("Créditos ajustados com sucesso!");
+      feedback.success("Créditos ajustados com sucesso!");
       onSuccess(result.newBalance);
       setOpen(false);
       setAmount("");
       setDescription("");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro desconhecido";
-      toast.error(message);
+      feedback.apiError(error);
     } finally {
       setLoading(false);
     }

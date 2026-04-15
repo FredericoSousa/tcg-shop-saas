@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { ModalLayout } from "@/components/ui/modal-layout";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
+import { feedback } from "@/lib/utils/feedback";
 import { useTableState } from "@/lib/hooks/use-table-state";
 import { FilterSection } from "@/components/admin/filter-section";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
@@ -107,7 +107,7 @@ export function CustomersClient({
       }
     } catch (error) {
       console.error(error);
-      toast.error("Erro ao carregar clientes");
+      feedback.apiError(error, "Erro ao carregar clientes");
     } finally {
       setLoading(false);
     }
@@ -142,7 +142,7 @@ export function CustomersClient({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.phoneNumber) {
-      toast.error("Nome e Telefone são obrigatórios");
+      feedback.error("Nome e Telefone são obrigatórios");
       return;
     }
 
@@ -154,12 +154,11 @@ export function CustomersClient({
         await CustomerService.create(formData);
       }
 
-      toast.success(editingCustomer ? "Cliente atualizado" : "Cliente criado");
+      feedback.success(editingCustomer ? "Cliente atualizado" : "Cliente criado");
       setIsDialogOpen(false);
       fetchCustomers();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro desconhecido";
-      toast.error(message);
+      feedback.apiError(error);
     } finally {
       setIsSubmitting(false);
     }
@@ -172,12 +171,11 @@ export function CustomersClient({
     try {
       await CustomerService.delete(customerToDelete.id);
 
-      toast.success("Cliente excluído com sucesso");
+      feedback.success("Cliente excluído com sucesso");
       setCustomerToDelete(null);
       fetchCustomers();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro ao excluir cliente";
-      toast.error(message);
+      feedback.apiError(error, "Erro ao excluir cliente");
     } finally {
       setIsDeleting(false);
     }
@@ -188,11 +186,10 @@ export function CustomersClient({
     try {
       await CustomerService.restore(id);
 
-      toast.success("Cliente restaurado com sucesso");
+      feedback.success("Cliente restaurado com sucesso");
       fetchCustomers();
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Erro ao restaurar cliente";
-      toast.error(message);
+      feedback.apiError(error, "Erro ao restaurar cliente");
     }
   };
 
