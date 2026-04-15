@@ -1,10 +1,9 @@
 import { injectable, inject } from "tsyringe";
 import { TOKENS } from "../../infrastructure/container";
 import type { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
-import type { ICustomerCreditLedgerRepository } from "@/lib/domain/repositories/customer-credit-ledger.repository";
-import { prisma } from "@/lib/prisma";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
+import { domainEvents, DOMAIN_EVENTS } from "@/lib/domain/events/domain-events";
 
 export interface AdjustCustomerCreditRequest {
   customerId: string;
@@ -20,9 +19,8 @@ export interface AdjustCustomerCreditResponse {
 @injectable()
 export class AdjustCustomerCreditUseCase implements IUseCase<AdjustCustomerCreditRequest, AdjustCustomerCreditResponse> {
   constructor(
-    @inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository,
-    @inject(TOKENS.CustomerCreditLedgerRepository) private ledgerRepo: ICustomerCreditLedgerRepository
-  ) {}
+    @inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository
+  ) { }
 
   async execute(request: AdjustCustomerCreditRequest): Promise<AdjustCustomerCreditResponse> {
     const { customerId, amount, description } = request;
@@ -33,38 +31,26 @@ export class AdjustCustomerCreditUseCase implements IUseCase<AdjustCustomerCredi
       throw new Error("Cliente não encontrado.");
     }
 
-    // Usa o saldo do ledger como fonte de verdade para evitar desincronia
-    // com o campo `creditBalance` denormalizado no modelo Customer.
-    const ledgerBalance = await this.ledgerRepo.computeBalance(customerId);
-    const effectiveBalance = ledgerBalance ?? customer.creditBalance;
-
-    // Check if debit is possible
-    if (amount < 0 && effectiveBalance + amount < 0) {
+    // O Use Case agora foca apenas na consistência do saldo
+    if (amount < 0 && customer.creditBalance + amount < 0) {
       throw new Error("Saldo insuficiente de créditos.");
     }
 
+    await this.customerRepo.updateCreditBalance(customerId, amount);
 
-    await prisma.$transaction(async (tx) => {
-      // 1. Update customer balance
-      await this.customerRepo.updateCreditBalance(customerId, amount, tx);
+    // Publish event - O Ledger será registrado por um handler
+    domainEvents.publish(DOMAIN_EVENTS.CUSTOMER_CREDIT_ADJUSTED, {
+      customerId,
+      tenantId,
+      amount,
+      newBalance: customer.creditBalance + amount,
+      description,
+      source: "MANUAL"
+    }).catch(err => console.error("Error publishing CUSTOMER_CREDIT_ADJUSTED:", err));
 
-      // 2. Add ledger entry
-      await this.ledgerRepo.save({
-        tenantId,
-        customerId,
-        orderId: null,
-        amount: Math.abs(amount),
-        type: amount > 0 ? "CREDIT" : "DEBIT",
-        source: "MANUAL",
-        description,
-      }, tx);
-    });
-
-    const updatedCustomer = await this.customerRepo.findById(customerId);
-
-    return { 
-      success: true, 
-      newBalance: updatedCustomer?.creditBalance || 0 
+    return {
+      success: true,
+      newBalance: customer.creditBalance + amount
     };
   }
 }

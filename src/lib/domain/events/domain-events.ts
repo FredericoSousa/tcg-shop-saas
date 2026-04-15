@@ -61,4 +61,12 @@ export const DOMAIN_EVENTS = {
   ORDER_PLACED: 'order.placed',
   INVENTORY_UPDATED: 'inventory.updated',
   CUSTOMER_CREDIT_ADJUSTED: 'customer.credit_adjusted',
+  BUYLIST_PROPOSAL_SUBMITTED: 'buylist.proposal_submitted',
+  BUYLIST_PROPOSAL_APPROVED: 'buylist.proposal_approved',
+  BUYLIST_PROPOSAL_REJECTED: 'buylist.proposal_rejected',
+  ORDER_PAID: 'order.paid',
+  PRODUCT_SAVED: 'product.saved',
+  PRODUCT_DELETED: 'product.deleted',
+  CUSTOMER_DELETED: 'customer.deleted',
+  INVENTORY_DELETED: 'inventory.deleted',
 } as const;

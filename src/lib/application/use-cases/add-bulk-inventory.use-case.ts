@@ -1,11 +1,10 @@
 import { injectable, inject } from "tsyringe";
 import { TOKENS } from "../../infrastructure/tokens";
-import type { 
-  IInventoryRepository, 
+import type {
+  IInventoryRepository,
 } from "@/lib/domain/repositories/inventory.repository";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
-import { Game } from "@prisma/client";
 import { CardTemplateService } from "../../domain/services/card-template.service";
 import { domainEvents, DOMAIN_EVENTS } from "../../domain/events/domain-events";
 
@@ -33,7 +32,7 @@ export class AddBulkInventoryUseCase implements IUseCase<AddBulkInventoryRequest
   constructor(
     @inject(TOKENS.InventoryRepository) private inventoryRepo: IInventoryRepository,
     @inject(TOKENS.CardTemplateService) private templateService: CardTemplateService
-  ) {}
+  ) { }
 
   async execute(request: AddBulkInventoryRequest): Promise<AddBulkInventoryResponse> {
     const tenantId = getTenantId();
@@ -51,7 +50,7 @@ export class AddBulkInventoryUseCase implements IUseCase<AddBulkInventoryRequest
     const existingInventoryItems = await this.inventoryRepo.findManyByTemplates(uniqueScryfallIds, tenantId);
 
     // Create a lookup key for inventory items
-    const getInventoryKey = (item: { cardTemplateId: string, condition: string, language: string, extras: string[] }) => 
+    const getInventoryKey = (item: { cardTemplateId: string, condition: string, language: string, extras: string[] }) =>
       `${item.cardTemplateId}|${item.condition}|${item.language}|${[...(item.extras || [])].sort().join(",")}`;
 
     const inventoryLookup = new Map<string, typeof existingInventoryItems[0]>();

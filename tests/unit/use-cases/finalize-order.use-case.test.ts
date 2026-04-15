@@ -12,7 +12,6 @@ describe("FinalizeOrderUseCase", () => {
   let useCase: FinalizeOrderUseCase;
   let orderRepo: any;
   let customerRepo: any;
-  let ledgerRepo: any;
 
   beforeEach(() => {
     orderRepo = {
@@ -24,10 +23,7 @@ describe("FinalizeOrderUseCase", () => {
       findById: vi.fn(),
       updateCreditBalance: vi.fn(),
     };
-    ledgerRepo = {
-      save: vi.fn(),
-    };
-    useCase = new FinalizeOrderUseCase(orderRepo, customerRepo, ledgerRepo);
+    useCase = new FinalizeOrderUseCase(orderRepo, customerRepo);
   });
 
   it("should finalize an order with multiple payments", async () => {
@@ -72,7 +68,6 @@ describe("FinalizeOrderUseCase", () => {
 
     expect(result.success).toBe(true);
     expect(customerRepo.updateCreditBalance).toHaveBeenCalledWith(customerId, -50, expect.anything());
-    expect(ledgerRepo.save).toHaveBeenCalled();
   });
 
   it("should throw error if store credit balance is insufficient", async () => {

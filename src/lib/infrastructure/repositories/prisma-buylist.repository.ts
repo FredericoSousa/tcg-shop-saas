@@ -16,42 +16,47 @@ import {
 export class PrismaBuylistRepository extends BasePrismaRepository implements IBuylistRepository {
   
   // Mapping Helpers
-  private mapItemToDomain(item: any): DomainBuylistItem {
+  private mapItemToDomain(item: unknown): DomainBuylistItem {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const i = item as any;
     return {
-      id: item.id,
-      tenantId: item.tenantId,
-      cardTemplateId: item.cardTemplateId,
-      priceCash: Number(item.priceCash),
-      priceCredit: Number(item.priceCredit),
-      active: item.active,
-      cardTemplate: item.cardTemplate ? {
-        id: item.cardTemplate.id,
-        name: item.cardTemplate.name,
-        set: item.cardTemplate.set,
-        imageUrl: item.cardTemplate.imageUrl,
-        backImageUrl: item.cardTemplate.backImageUrl,
-        game: item.cardTemplate.game,
-        metadata: item.cardTemplate.metadata,
+      id: i.id,
+      tenantId: i.tenantId,
+      cardTemplateId: i.cardTemplateId,
+      priceCash: Number(i.priceCash),
+      priceCredit: Number(i.priceCredit),
+      active: i.active,
+      cardTemplate: i.cardTemplate ? {
+        id: i.cardTemplate.id,
+        name: i.cardTemplate.name,
+        set: i.cardTemplate.set,
+        imageUrl: i.cardTemplate.imageUrl,
+        backImageUrl: i.cardTemplate.backImageUrl,
+        game: i.cardTemplate.game,
+        metadata: i.cardTemplate.metadata,
       } : undefined
     };
   }
 
-  private mapProposalToDomain(p: any): DomainBuylistProposal {
+  private mapProposalToDomain(p: unknown): DomainBuylistProposal {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const d = p as any;
     return {
-      id: p.id,
-      tenantId: p.tenantId,
-      customerId: p.customerId,
-      status: p.status as DomainBuylistStatus,
-      totalCash: Number(p.totalCash),
-      totalCredit: Number(p.totalCredit),
-      staffNotes: p.staffNotes,
-      createdAt: p.createdAt,
-      updatedAt: p.updatedAt,
-      customer: p.customer ? {
-        name: p.customer.name,
-        phoneNumber: p.customer.phoneNumber,
+      id: d.id,
+      tenantId: d.tenantId,
+      customerId: d.customerId,
+      status: d.status as DomainBuylistStatus,
+      totalCash: Number(d.totalCash),
+      totalCredit: Number(d.totalCredit),
+      staffNotes: d.staffNotes,
+      createdAt: d.createdAt,
+      updatedAt: d.updatedAt,
+      customer: d.customer ? {
+        name: d.customer.name,
+        phoneNumber: d.customer.phoneNumber,
       } : undefined,
-      items: p.items?.map((item: any) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      items: d.items?.map((item: any) => ({
         id: item.id,
         buylistProposalId: item.buylistProposalId,
         cardTemplateId: item.cardTemplateId,
@@ -82,42 +87,39 @@ export class PrismaBuylistRepository extends BasePrismaRepository implements IBu
     return items.map(this.mapItemToDomain);
   }
 
-  async findStorefrontItems(tenantId: string, page: number, pageSize: number, filters?: any): Promise<DomainBuylistItem[]> {
+  async findStorefrontItems(tenantId: string, page: number, pageSize: number, filters?: Record<string, unknown>): Promise<DomainBuylistItem[]> {
     const where: Prisma.BuylistItemWhereInput = {
       tenantId,
       active: true,
     };
 
     if (filters) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const f = filters as any;
       const templateFilters: Prisma.CardTemplateWhereInput = {};
 
-      if (filters.search) {
-        templateFilters.name = { contains: filters.search, mode: 'insensitive' };
+      if (f.search) {
+        templateFilters.name = { contains: f.search, mode: 'insensitive' };
       }
 
-      if (filters.color) {
-        const colors = filters.color.split(',');
+      if (f.color) {
+        const colors = f.color.split(',');
         templateFilters.metadata = {
           path: ['colors'],
           array_contains: colors,
         };
       }
 
-      if (filters.type) {
-        const types = filters.type.split(',');
+      if (f.type) {
+        const types = f.type.split(',');
         templateFilters.metadata = {
           path: ['type_line'],
           string_contains: types[0], // Simplified for now, similar to singles logic
         };
       }
 
-      if (filters.set) {
-        templateFilters.set = filters.set;
-      }
-
-      if (filters.language) {
-        // BuylistItem doesn't have language, but BuylistProposalItem does.
-        // Usually buylist items are per template, and language is chosen by user.
+      if (f.set) {
+        templateFilters.set = f.set;
       }
 
       where.cardTemplate = templateFilters;
@@ -134,7 +136,8 @@ export class PrismaBuylistRepository extends BasePrismaRepository implements IBu
     return items.map(this.mapItemToDomain);
   }
 
-  async countItems(tenantId: string, filters?: any): Promise<number> {
+  async countItems(tenantId: string, filters?: Record<string, unknown>): Promise<number> {
+    const f = (filters || {}) as { search?: string; color?: string; set?: string };
     const where: Prisma.BuylistItemWhereInput = {
       tenantId,
       active: true,
@@ -143,20 +146,20 @@ export class PrismaBuylistRepository extends BasePrismaRepository implements IBu
     if (filters) {
       const templateFilters: Prisma.CardTemplateWhereInput = {};
 
-      if (filters.search) {
-        templateFilters.name = { contains: filters.search, mode: 'insensitive' };
+      if (f.search) {
+        templateFilters.name = { contains: f.search, mode: 'insensitive' };
       }
 
-      if (filters.color) {
-        const colors = filters.color.split(',');
+      if (f.color) {
+        const colors = f.color.split(',');
         templateFilters.metadata = {
           path: ['colors'],
           array_contains: colors,
         };
       }
 
-      if (filters.set) {
-        templateFilters.set = filters.set;
+      if (f.set) {
+        templateFilters.set = f.set;
       }
 
       where.cardTemplate = templateFilters;

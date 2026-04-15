@@ -7,6 +7,17 @@ import { DeleteInventoryUseCase } from '@/lib/application/use-cases/delete-inven
 import { GetInventoryItemUseCase } from '@/lib/application/use-cases/get-inventory-item.use-case';
 import { ListInventoryUseCase } from '@/lib/application/use-cases/list-inventory.use-case';
 import type { IInventoryRepository, ICardTemplateRepository } from '@/lib/domain/repositories/inventory.repository';
+import { domainEvents, DOMAIN_EVENTS } from '@/lib/domain/events/domain-events';
+
+vi.mock('@/lib/domain/events/domain-events', () => ({
+  domainEvents: {
+    publish: vi.fn().mockResolvedValue(undefined),
+    subscribe: vi.fn(),
+  },
+  DOMAIN_EVENTS: {
+    INVENTORY_UPDATED: 'inventory.updated',
+  }
+}));
 
 // Mock scryfall
 vi.mock('@/lib/scryfall', () => ({
@@ -44,6 +55,9 @@ describe('Inventory Management Use Cases', () => {
       });
 
       expect(inventoryRepo.save).toHaveBeenCalled();
+      expect(domainEvents.publish).toHaveBeenCalledWith(DOMAIN_EVENTS.INVENTORY_UPDATED, expect.objectContaining({
+        scryfallId: 'tmpl-1'
+      }));
     });
 
     it('should increment quantity if inventory item exists', async () => {

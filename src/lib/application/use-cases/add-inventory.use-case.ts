@@ -8,6 +8,7 @@ import { scryfall } from "@/lib/scryfall";
 import type { ScryfallCard } from "@/lib/types/scryfall";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
+import { domainEvents, DOMAIN_EVENTS } from "@/lib/domain/events/domain-events";
 
 export interface AddInventoryRequest {
   scryfallId: string;
@@ -99,6 +100,16 @@ export class AddInventoryUseCase implements IUseCase<AddInventoryRequest, AddInv
         extras,
       });
     }
+
+    // Publish event
+    domainEvents.publish(DOMAIN_EVENTS.INVENTORY_UPDATED, {
+      scryfallId,
+      quantity,
+      price,
+      condition,
+      language,
+      tenantId: getTenantId()!
+    }).catch(err => console.error("Error publishing INVENTORY_UPDATED:", err));
 
     return { success: true };
   }

@@ -4,6 +4,7 @@ import type { IBuylistRepository } from "@/lib/domain/repositories/buylist.repos
 import type { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
 import { BuylistProposal } from "@/lib/domain/entities/buylist";
 import { IUseCase } from "./use-case.interface";
+import { domainEvents, DOMAIN_EVENTS } from "@/lib/domain/events/domain-events";
 
 interface SubmitBuylistProposalRequest {
   tenantId: string;
@@ -52,14 +53,27 @@ export class SubmitBuylistProposalUseCase implements IUseCase<SubmitBuylistPropo
       totalCredit,
       staffNotes: null,
       items: request.items.map(item => ({
+        id: "",
+        buylistProposalId: "",
         ...item,
         priceCash: item.priceCash || 0,
         priceCredit: item.priceCredit || 0
-      })) as any,
+      })),
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    return this.buylistRepository.saveProposal(proposal);
+    const result = await this.buylistRepository.saveProposal(proposal);
+
+    // Publish event
+    domainEvents.publish(DOMAIN_EVENTS.BUYLIST_PROPOSAL_SUBMITTED, {
+      proposalId: result.id,
+      tenantId: result.tenantId,
+      customerId: result.customerId,
+      totalCash: result.totalCash,
+      totalCredit: result.totalCredit
+    }).catch(err => console.error("Error publishing BUYLIST_PROPOSAL_SUBMITTED:", err));
+
+    return result;
   }
 }

@@ -35,13 +35,13 @@ interface TopSellingProductRow {
 
 @injectable()
 export class PrismaReportsRepository extends BasePrismaRepository implements IReportsRepository {
-  private cache = new Map<string, { data: any; expiry: number }>();
+  private cache = new Map<string, { data: unknown; expiry: number }>();
   private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
   private getCached<T>(key: string): T | null {
     const cached = this.cache.get(key);
     if (cached && cached.expiry > Date.now()) {
-      return cached.data;
+      return cached.data as T;
     }
     return null;
   }

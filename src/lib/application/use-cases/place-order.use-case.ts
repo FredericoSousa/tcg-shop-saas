@@ -39,18 +39,13 @@ export class PlaceOrderUseCase implements IUseCase<PlaceOrderRequest, PlaceOrder
     const { items, customerData } = request;
 
     const orderId = await prisma.$transaction(async () => {
-      // 1. Decrement stock for each item
-      for (const item of items) {
-        await this.inventoryRepo.decrementStock(item.inventoryId, item.quantity);
-      }
-
-      // 2. Upsert Customer
+      // 1. Resolve Customer
       const customer = await this.customerRepo.upsert(customerData.phoneNumber, {
         name: customerData.name,
         email: customerData.email,
       });
 
-      // 3. Create Order
+      // 2. Create Order
       const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
       const orderEntity: Order = {

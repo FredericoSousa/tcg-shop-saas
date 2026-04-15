@@ -12,6 +12,17 @@ vi.mock('../../tenant-context', () => ({
   getTenantId: vi.fn(() => 'test-tenant-id'),
 }));
 
+vi.mock('@/lib/domain/events/domain-events', () => ({
+  domainEvents: {
+    publish: vi.fn().mockResolvedValue(undefined),
+    subscribe: vi.fn(),
+  },
+  DOMAIN_EVENTS: {
+    PRODUCT_SAVED: 'product.saved',
+    PRODUCT_DELETED: 'product.deleted',
+  }
+}));
+
 describe('Product & Category Use Cases', () => {
   let productRepo: MockProxy<IProductRepository>;
 
@@ -23,13 +34,19 @@ describe('Product & Category Use Cases', () => {
   describe('SaveProductUseCase', () => {
     it('should create a new product', async () => {
       const useCase = new SaveProductUseCase(productRepo);
+      productRepo.save.mockResolvedValue({ id: 'p1', tenantId: 't1', name: 'P1', price: 10, stock: 5 } as any);
+      
       await useCase.execute({ name: 'P1', price: 10, stock: 5, categoryId: 'cat1', allowNegativeStock: false });
+      
       expect(productRepo.save).toHaveBeenCalled();
     });
 
     it('should update an existing product', async () => {
       const useCase = new SaveProductUseCase(productRepo);
+      productRepo.update.mockResolvedValue({ id: 'p1', tenantId: 't1', name: 'New P1', price: 20, stock: 10 } as any);
+      
       await useCase.execute({ id: 'p1', name: 'New P1', price: 20, stock: 10, categoryId: 'cat1', allowNegativeStock: false });
+      
       expect(productRepo.update).toHaveBeenCalledWith('p1', expect.anything());
     });
 

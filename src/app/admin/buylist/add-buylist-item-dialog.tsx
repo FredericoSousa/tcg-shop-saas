@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Check, Plus, Search, XCircle } from "lucide-react";
+import { Loader2, Check, Plus, Search } from "lucide-react";
 import { feedback } from "@/lib/utils/feedback";
 import { ScryfallCard } from "@/lib/types/scryfall";
 import { Skeleton } from "@/components/ui/skeleton";

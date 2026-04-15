@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { HandCoins, Search, Loader2, CheckCircle, Eye } from "lucide-react";
+import { HandCoins, Search, Loader2, Eye } from "lucide-react";
 import { BuylistProposal } from "@/lib/domain/entities/buylist";
 import { formatCurrency } from "@/lib/utils";
 import { StatusBadge } from "@/components/admin/status-badge";
@@ -28,9 +28,9 @@ export function POSBuylistDialog() {
       const resp = await fetch("/api/admin/buylist/proposals");
       const data = await resp.json();
       if (data.success) {
-        setProposals(data.data.filter((p: any) => p.status === "PENDING" || p.status === "RECEIVED"));
+        setProposals(data.data.filter((p: BuylistProposal) => p.status === "PENDING" || p.status === "RECEIVED"));
       }
-    } catch (error) {
+    } catch {
       feedback.error("Erro ao carregar propostas");
     } finally {
       setLoading(false);

@@ -17,8 +17,8 @@ import { cn } from "@/lib/utils";
 import { Plus, Minus, ShoppingCart, Check, RotateCcw } from "lucide-react";
 import { feedback } from "@/lib/utils/feedback";
 import { LANGUAGE_LIST, getLanguageData } from "@/lib/constants/languages";
-import { CONDITION_OPTIONS, CONDITION_LABELS } from "@/lib/constants/conditions";
-import { motion, AnimatePresence } from "framer-motion";
+import { CONDITION_OPTIONS } from "@/lib/constants/conditions";
+import { motion } from "framer-motion";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 

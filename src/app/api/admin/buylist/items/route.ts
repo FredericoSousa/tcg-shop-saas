@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
       imageUrl: cardData.image_uris?.normal || cardData.card_faces?.[0]?.image_uris?.normal || "",
       backImageUrl: cardData.card_faces?.[1]?.image_uris?.normal || null,
       game: "MAGIC",
-      metadata: cardData as any,
+      metadata: cardData as Record<string, unknown>,
     });
 
     const result = await saveUseCase.execute({
@@ -43,14 +43,15 @@ export async function POST(req: NextRequest) {
     });
 
     return NextResponse.json({ success: true, data: result });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }
 
 export async function DELETE(req: NextRequest) {
   try {
-    const { tenant } = await getAdminContext();
+    await getAdminContext();
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 
@@ -62,7 +63,8 @@ export async function DELETE(req: NextRequest) {
     await repo.deleteItem(id);
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }

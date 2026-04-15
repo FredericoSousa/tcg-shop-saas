@@ -2,15 +2,15 @@ import { injectable, inject } from "tsyringe";
 import { TOKENS } from "../../infrastructure/container";
 import type { IOrderRepository } from "@/lib/domain/repositories/order.repository";
 import type { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
-import type { ICustomerCreditLedgerRepository } from "@/lib/domain/repositories/customer-credit-ledger.repository";
 import { PaymentMethodType } from "@/lib/domain/entities/order";
 import { prisma } from "@/lib/prisma";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
-import { 
-  EntityNotFoundError, 
-  BusinessRuleViolationError, 
-  InsufficientFundsError 
+import { domainEvents, DOMAIN_EVENTS } from "@/lib/domain/events/domain-events";
+import {
+  EntityNotFoundError,
+  BusinessRuleViolationError,
+  InsufficientFundsError
 } from "@/lib/domain/errors/domain.error";
 
 export interface FinalizeOrderRequest {
@@ -29,13 +29,11 @@ export interface FinalizeOrderResponse {
 export class FinalizeOrderUseCase implements IUseCase<FinalizeOrderRequest, FinalizeOrderResponse> {
   constructor(
     @inject(TOKENS.OrderRepository) private orderRepo: IOrderRepository,
-    @inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository,
-    @inject(TOKENS.CustomerCreditLedgerRepository) private ledgerRepo: ICustomerCreditLedgerRepository
+    @inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository
   ) { }
 
   async execute(request: FinalizeOrderRequest): Promise<FinalizeOrderResponse> {
     const { orderId, payments } = request;
-    const tenantId = getTenantId()!;
 
     const order = await this.orderRepo.findById(orderId);
     if (!order) {
@@ -65,15 +63,7 @@ export class FinalizeOrderUseCase implements IUseCase<FinalizeOrderRequest, Fina
         }
 
         await this.customerRepo.updateCreditBalance(order.customerId, -customerCreditPayment.amount, tx);
-        await this.ledgerRepo.save({
-          tenantId,
-          customerId: order.customerId,
-          orderId,
-          amount: customerCreditPayment.amount,
-          type: "DEBIT",
-          source: "ORDER_PAYMENT",
-          description: `Pagamento de pedido`,
-        }, tx);
+        // Ledger será registrado via handler escutando ORDER_PAID
       }
 
       // 2. Save payments
@@ -82,6 +72,15 @@ export class FinalizeOrderUseCase implements IUseCase<FinalizeOrderRequest, Fina
       // 3. Update order status
       await this.orderRepo.updateStatus(orderId, "PAID", tx);
     });
+
+    // Publish event
+    domainEvents.publish(DOMAIN_EVENTS.ORDER_PAID, {
+      orderId,
+      tenantId: getTenantId()!,
+      payments,
+      customerId: order.customerId,
+      totalAmount: order.totalAmount
+    }).catch(err => console.error("Error publishing ORDER_PAID event:", err));
 
     return { success: true };
   }

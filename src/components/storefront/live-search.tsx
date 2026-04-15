@@ -80,7 +80,7 @@ export function LiveSearch({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [query, defaultValue]);
+  }, [query, defaultValue, searchPath]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();

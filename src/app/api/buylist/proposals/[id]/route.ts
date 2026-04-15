@@ -23,8 +23,8 @@ export async function GET(
     );
 
     return ApiResponse.success(result);
-  } catch (error: any) {
-    logger.error("Error fetching buylist proposal", error, { tenantId: tenant.id, proposalId: id });
+  } catch (error) {
+    logger.error("Error fetching buylist proposal", error as Error, { tenantId: tenant.id, proposalId: id });
     return ApiResponse.fromError(error);
   }
 }

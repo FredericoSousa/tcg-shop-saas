@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { MaskedInput } from "@/components/ui/masked-input";
 import { cn } from "@/lib/utils";
 import { feedback } from "@/lib/utils/feedback";
-import { Loader2, Search, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -19,7 +19,7 @@ export const customerSchema = z.object({
 export type CustomerFormValues = z.infer<typeof customerSchema>;
 
 interface CustomerFormProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<CustomerFormValues>;
   disabled?: boolean;
 }
 

@@ -3,8 +3,7 @@ import { ListBuylistItemsUseCase } from "@/lib/application/use-cases/list-buylis
 import { ListBuylistProposalsUseCase } from "@/lib/application/use-cases/list-buylist-proposals.use-case";
 import { getAdminContext } from "@/lib/tenant-server";
 import { PageHeader } from "@/components/admin/page-header";
-import { HandCoins, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { HandCoins } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BuylistItemsTable } from "./buylist-items-table";
 import { BuylistProposalsTable } from "./buylist-proposals-table";

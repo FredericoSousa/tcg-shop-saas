@@ -14,6 +14,17 @@ import { GetCustomerOrdersUseCase } from '@/lib/application/use-cases/get-custom
 import type { ICustomerRepository } from '@/lib/domain/repositories/customer.repository';
 import type { IReportsRepository } from '@/lib/domain/repositories/report.repository';
 import type { ICustomerCreditLedgerRepository } from '@/lib/domain/repositories/customer-credit-ledger.repository';
+import { domainEvents, DOMAIN_EVENTS } from '@/lib/domain/events/domain-events';
+
+vi.mock('@/lib/domain/events/domain-events', () => ({
+  domainEvents: {
+    publish: vi.fn().mockResolvedValue(undefined),
+    subscribe: vi.fn(),
+  },
+  DOMAIN_EVENTS: {
+    CUSTOMER_CREDIT_ADJUSTED: 'customer.credit_adjusted',
+  }
+}));
 import type { IOrderRepository } from '@/lib/domain/repositories/order.repository';
 
 vi.mock('@/lib/prisma', () => ({
@@ -123,20 +134,22 @@ describe('Customer Use Cases', () => {
 
   describe('AdjustCustomerCreditUseCase', () => {
     it('should adjust credit balance correctly', async () => {
-      const useCase = new AdjustCustomerCreditUseCase(customerRepo, ledgerRepo);
+      const useCase = new AdjustCustomerCreditUseCase(customerRepo);
       customerRepo.findById.mockResolvedValue({ id: 'c1', creditBalance: 10 } as any);
-      ledgerRepo.computeBalance.mockResolvedValue(10);
 
       await useCase.execute({ customerId: 'c1', amount: 5, description: 'Bonus' });
 
-      expect(customerRepo.updateCreditBalance).toHaveBeenCalledWith('c1', 5, 'mock-tx');
-      expect(ledgerRepo.save).toHaveBeenCalled();
+      expect(customerRepo.updateCreditBalance).toHaveBeenCalledWith('c1', 5);
+      expect(domainEvents.publish).toHaveBeenCalledWith(DOMAIN_EVENTS.CUSTOMER_CREDIT_ADJUSTED, expect.objectContaining({
+        customerId: 'c1',
+        amount: 5,
+        source: 'MANUAL'
+      }));
     });
 
     it('should throw error on insufficient balance for debit', async () => {
-      const useCase = new AdjustCustomerCreditUseCase(customerRepo, ledgerRepo);
+      const useCase = new AdjustCustomerCreditUseCase(customerRepo);
       customerRepo.findById.mockResolvedValue({ id: 'c1', creditBalance: 10 } as any);
-      ledgerRepo.computeBalance.mockResolvedValue(10);
 
       await expect(useCase.execute({ customerId: 'c1', amount: -15, description: 'Debit' }))
         .rejects.toThrow('Saldo insuficiente de créditos.');

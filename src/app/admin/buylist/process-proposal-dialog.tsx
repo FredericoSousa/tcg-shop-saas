@@ -42,7 +42,7 @@ export function ProcessProposalDialog({ proposal, children }: ProcessProposalDia
       feedback.success(`Proposta ${action === 'APPROVE' ? 'aprovada' : 'cancelada'} com sucesso!`)
       setOpen(false)
       router.refresh()
-    } catch (error) {
+    } catch {
       feedback.error("Erro ao processar proposta")
     } finally {
       setLoading(false)

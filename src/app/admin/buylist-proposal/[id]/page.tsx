@@ -40,7 +40,7 @@ export default function AdminBuylistProposalDetailsPage() {
         } else {
           feedback.error('Proposta não encontrada.')
         }
-      } catch (error) {
+      } catch {
         feedback.error('Erro ao carregar os detalhes da proposta.')
       } finally {
         setIsLoading(false)
@@ -67,7 +67,7 @@ export default function AdminBuylistProposalDetailsPage() {
       const res = await updatedResponse.json()
       if (res.success) setProposal(res.data)
       
-    } catch (error) {
+    } catch {
       feedback.error("Erro ao processar proposta")
     } finally {
       setIsProcessing(false)

@@ -1,25 +1,24 @@
 "use client";
 
 import { useBuylistStore } from "@/lib/store/buylist-store";
-import { 
-  Sheet, 
-  SheetContent, 
-  SheetHeader, 
-  SheetTitle, 
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
   SheetTrigger,
   SheetFooter
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { MaskedInput } from "@/components/ui/masked-input";
 import { ShoppingCart, ShoppingBag, Trash2, Plus, Minus, Loader2, SendHorizontal } from "lucide-react";
-import { formatCurrency, cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils";
 import { feedback } from "@/lib/utils/feedback";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CustomerForm, customerSchema, CustomerFormValues } from "@/components/storefront/customer-form";
+import Image from "next/image";
 
 export function SellCartDrawer() {
   const { items, removeItem, updateQuantity, getTotalCash, getTotalCredit, clearCart } = useBuylistStore();
@@ -46,7 +45,7 @@ export function SellCartDrawer() {
 
   const onSubmit = async (data: CustomerFormValues) => {
     if (items.length === 0) return;
-    
+
     setLoading(true);
     try {
       const response = await fetch('/api/buylist/proposals', {
@@ -74,12 +73,12 @@ export function SellCartDrawer() {
       clearCart();
       setOpen(false);
       form.reset();
-      
+
       if (proposalId) {
         router.push(`/buylist-proposal/${proposalId}`);
       }
-    } catch (error: any) {
-      feedback.error(error.message || "Erro ao processar sua proposta");
+    } catch {
+      feedback.error("Erro ao processar sua proposta");
     } finally {
       setLoading(false);
     }
@@ -89,7 +88,7 @@ export function SellCartDrawer() {
     <>
       <div className="fixed bottom-6 right-6 z-40">
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetTrigger 
+          <SheetTrigger
             render={
               <Button size="lg" className="rounded-full h-14 w-14 shadow-2xl shadow-primary/40 relative">
                 <ShoppingBag className="h-6 w-6" />
@@ -124,7 +123,7 @@ export function SellCartDrawer() {
                     <div key={`${item.buylistItemId}-${item.condition}-${item.language}`} className="flex gap-4 group p-3 rounded-2xl border bg-card hover:border-primary/50 transition-colors relative">
                       <div className="h-20 w-14 shrink-0 rounded-md overflow-hidden bg-muted">
                         {item.imageUrl && (
-                          <img src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
+                          <Image src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
                         )}
                       </div>
                       <div className="flex-1 flex flex-col justify-between py-0.5">
@@ -135,25 +134,25 @@ export function SellCartDrawer() {
                           </p>
                         </div>
                         <div className="flex items-center justify-between">
-                           <div className="flex items-center gap-2 border rounded-lg px-2 py-0.5 bg-background">
-                              <button 
-                                onClick={() => updateQuantity(item.buylistItemId, item.condition, item.language, item.quantity - 1)}
-                                className="p-1 hover:text-primary transition-colors"
-                              >
-                                <Minus className="h-3 w-3" />
-                              </button>
-                              <span className="text-xs font-black w-4 text-center">{item.quantity}</span>
-                              <button 
-                                onClick={() => updateQuantity(item.buylistItemId, item.condition, item.language, item.quantity + 1)}
-                                className="p-1 hover:text-primary transition-colors"
-                              >
-                                <Plus className="h-3 w-3" />
-                              </button>
-                           </div>
-                           <p className="text-xs font-black text-primary">{formatCurrency(item.priceCredit * item.quantity)}</p>
+                          <div className="flex items-center gap-2 border rounded-lg px-2 py-0.5 bg-background">
+                            <button
+                              onClick={() => updateQuantity(item.buylistItemId, item.condition, item.language, item.quantity - 1)}
+                              className="p-1 hover:text-primary transition-colors"
+                            >
+                              <Minus className="h-3 w-3" />
+                            </button>
+                            <span className="text-xs font-black w-4 text-center">{item.quantity}</span>
+                            <button
+                              onClick={() => updateQuantity(item.buylistItemId, item.condition, item.language, item.quantity + 1)}
+                              className="p-1 hover:text-primary transition-colors"
+                            >
+                              <Plus className="h-3 w-3" />
+                            </button>
+                          </div>
+                          <p className="text-xs font-black text-primary">{formatCurrency(item.priceCredit * item.quantity)}</p>
                         </div>
                       </div>
-                      <button 
+                      <button
                         onClick={() => removeItem(item.buylistItemId, item.condition, item.language)}
                         className="absolute -top-2 -right-2 h-6 w-6 bg-destructive text-white rounded-full flex items-center justify-center shadow-md scale-0 group-hover:scale-100 transition-transform"
                       >
@@ -181,9 +180,9 @@ export function SellCartDrawer() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-3 bg-white p-4 rounded-2xl border shadow-sm">
                   <CustomerForm form={form} disabled={loading} />
 
-                  <Button 
+                  <Button
                     type="submit"
-                    className="w-full h-12 rounded-2xl text-base font-black gap-3 shadow-lg shadow-primary/20 mt-2" 
+                    className="w-full h-12 rounded-2xl text-base font-black gap-3 shadow-lg shadow-primary/20 mt-2"
                     disabled={loading}
                   >
                     {loading ? (

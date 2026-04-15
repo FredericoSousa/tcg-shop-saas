@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
 import { getTenant } from "@/lib/tenant-server";
-import { getSession } from "@/lib/auth";
 import { container } from "@/lib/infrastructure/container";
 import { runWithTenant } from "@/lib/tenant-context";
 import { SubmitBuylistProposalUseCase } from "@/lib/application/use-cases/submit-buylist-proposal.use-case";

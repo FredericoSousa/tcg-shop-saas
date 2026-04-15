@@ -44,7 +44,6 @@ describe('PlaceOrderUseCase', () => {
 
     // Assert
     expect(result.orderId).toBe('o-1');
-    expect(inventoryRepo.decrementStock).toHaveBeenCalledWith('ii-1', 1);
     expect(customerRepo.upsert).toHaveBeenCalledWith('123456789', { name: 'John Doe', email: undefined });
     expect(orderRepo.save).toHaveBeenCalled();
   });

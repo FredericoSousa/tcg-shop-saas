@@ -19,11 +19,9 @@ import {
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { SetBadge } from "@/components/ui/set-badge";
-import { LanguageBadge } from "@/components/ui/language-badge";
 import { cn } from "@/lib/utils";
 import {
   PackageOpen,
-  Check,
   ChevronLeft,
   ChevronRight,
   Filter,
@@ -152,8 +150,8 @@ export function BuylistClient({
                     key={c}
                     title={c}
                     className={`h-8 w-8 rounded-full transition-all flex items-center justify-center overflow-hidden bg-white/20 border border-muted-foreground/20 ${selectedColors.includes(c)
-                        ? "ring-2 ring-primary ring-offset-2 scale-110"
-                        : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
+                      ? "ring-2 ring-primary ring-offset-2 scale-110"
+                      : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
                       }`}
                     onClick={() => toggleColor(c)}
                   >
@@ -273,7 +271,7 @@ export function BuylistClient({
             <Sheet>
               <SheetTrigger render={
                 <Button variant="outline" size="sm" className="md:hidden flex items-center justify-center gap-2 font-bold shadow-sm h-9 px-4 transition-colors text-sm">
-                   <Filter className="w-4 h-4" /> Filtros
+                  <Filter className="w-4 h-4" /> Filtros
                 </Button>
               } />
               <SheetContent
@@ -292,30 +290,30 @@ export function BuylistClient({
                   className="w-full"
                 >
                   {/* ... same as desktop filters ... */}
-                   <AccordionItem value="color" className="border-b-0 pb-2">
+                  <AccordionItem value="color" className="border-b-0 pb-2">
                     <AccordionTrigger className="text-lg font-bold hover:no-underline py-2 text-foreground">
                       Cores
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="flex flex-wrap gap-2 pt-2">
                         {colors.map((c) => (
-                           <button
-                           key={c}
-                           title={c}
-                           className={`h-8 w-8 rounded-full transition-all flex items-center justify-center overflow-hidden bg-white/20 border border-muted-foreground/20 ${selectedColors.includes(c)
-                               ? "ring-2 ring-primary ring-offset-2 scale-110"
-                               : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
-                             }`}
-                           onClick={() => toggleColor(c)}
-                         >
-                           <Image
-                             src={`https://svgs.scryfall.io/card-symbols/${c}.svg`}
-                             alt={c}
-                             width={32}
-                             height={32}
-                             className="w-full h-full object-contain mix-blend-multiply"
-                           />
-                         </button>
+                          <button
+                            key={c}
+                            title={c}
+                            className={`h-8 w-8 rounded-full transition-all flex items-center justify-center overflow-hidden bg-white/20 border border-muted-foreground/20 ${selectedColors.includes(c)
+                              ? "ring-2 ring-primary ring-offset-2 scale-110"
+                              : "opacity-40 grayscale hover:opacity-100 hover:grayscale-0 hover:scale-105"
+                              }`}
+                            onClick={() => toggleColor(c)}
+                          >
+                            <Image
+                              src={`https://svgs.scryfall.io/card-symbols/${c}.svg`}
+                              alt={c}
+                              width={32}
+                              height={32}
+                              className="w-full h-full object-contain mix-blend-multiply"
+                            />
+                          </button>
                         ))}
                       </div>
                     </AccordionContent>
@@ -407,17 +405,17 @@ export function BuylistClient({
                     {pageCount > 5 && (
                       <div className="flex items-center gap-2">
                         {((currentPage < pageCount - 2 && pageCount > 5) || (currentPage < 3 && pageCount > 5)) && (
-                           <span className="text-zinc-400 font-bold px-1">...</span>
+                          <span className="text-zinc-400 font-bold px-1">...</span>
                         )}
                         {currentPage < pageCount - 2 && (
-                           <Button
-                           variant="outline"
-                           size="icon"
-                           className="h-10 w-10 rounded-xl font-bold transition-all duration-200 hover:scale-110 active:scale-95 bg-white shadow-sm"
-                           onClick={() => handlePageChange(pageCount)}
-                         >
-                           {pageCount}
-                         </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-10 w-10 rounded-xl font-bold transition-all duration-200 hover:scale-110 active:scale-95 bg-white shadow-sm"
+                            onClick={() => handlePageChange(pageCount)}
+                          >
+                            {pageCount}
+                          </Button>
                         )}
                       </div>
                     )}

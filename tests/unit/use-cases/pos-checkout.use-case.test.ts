@@ -45,7 +45,6 @@ describe('POSCheckoutUseCase', () => {
 
     // Assert
     expect(result.orderId).toBe('o-pos-1');
-    expect(productRepo.decrementStock).toHaveBeenCalledWith('p-1', 2, 'mock-tx');
     expect(orderRepo.save).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'mock-tx');
   });
 

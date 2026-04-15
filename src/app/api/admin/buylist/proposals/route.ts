@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
 import { ListBuylistProposalsUseCase } from "@/lib/application/use-cases/list-buylist-proposals.use-case";
@@ -7,7 +6,7 @@ import { logger } from "@/lib/logger";
 
 const listProposalsUseCase = container.resolve(ListBuylistProposalsUseCase);
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   return withAdminApi(async ({ tenant }) => {
     try {
       const proposals = await listProposalsUseCase.execute(tenant.id);

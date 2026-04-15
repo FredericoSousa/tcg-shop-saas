@@ -1,5 +1,4 @@
-import { NextRequest } from "next/server";
-import { getTenant } from "@/lib/tenant-server";
+import { getTenant } from "@/lib/tenant-server"
 import { container } from "@/lib/infrastructure/container";
 import { ListBuylistItemsUseCase } from "@/lib/application/use-cases/list-buylist-items.use-case";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
@@ -7,7 +6,7 @@ import { logger } from "@/lib/logger";
 
 const listItemsUseCase = container.resolve(ListBuylistItemsUseCase);
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const tenant = await getTenant();
   
   if (!tenant) {

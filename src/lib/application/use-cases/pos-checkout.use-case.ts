@@ -43,12 +43,7 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
     // Use unknown for tx and cast within repositories to avoid complex type mismatches with Prisma extensions in serverless
     const result = await (prisma as unknown as { $transaction: (fn: (tx: unknown) => Promise<{ orderId: string; friendlyId: string }>) => Promise<{ orderId: string; friendlyId: string }> }).$transaction(async (tx: unknown) => {
 
-      // 1. Decrement stock for products
-      for (const item of items) {
-        await this.productRepo.decrementStock(item.productId, item.quantity, tx);
-      }
-
-      // 2. Resolve Customer
+      // 1. Resolve Customer
       let customerId: string;
       if (customerData.id) {
         customerId = customerData.id;

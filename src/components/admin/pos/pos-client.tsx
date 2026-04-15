@@ -9,7 +9,7 @@ import { ProductSearchHandle } from "./product-search";
 import { feedback } from "@/lib/utils/feedback";
 import { PaymentDialog } from "../orders/payment-dialog";
 import { POSBuylistDialog } from "./pos-buylist-dialog";
-import { Loader2, UserPlus, ShoppingBag, CreditCard, Search as SearchIcon, Maximize2, Minimize2, HandCoins } from "lucide-react";
+import { Loader2, UserPlus, ShoppingBag, CreditCard, Search as SearchIcon, Maximize2, Minimize2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export type CartItem = {

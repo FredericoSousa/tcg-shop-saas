@@ -4,7 +4,6 @@ import { Prisma } from "@prisma/client";
 import type { ICardTemplateRepository } from "@/lib/domain/repositories/inventory.repository";
 import { CardTemplate as DomainCardTemplate } from "@/lib/domain/entities/inventory";
 import { CardTemplate as PrismaCardTemplate, Game as PrismaGame } from "@prisma/client";
-import type { ScryfallCard } from "@/lib/types/scryfall";
 
 @injectable()
 export class PrismaCardTemplateRepository extends BasePrismaRepository implements ICardTemplateRepository {
@@ -19,10 +18,6 @@ export class PrismaCardTemplateRepository extends BasePrismaRepository implement
       metadata: item.metadata as Record<string, unknown> | null,
     };
   }
-
-   
-
-   
 
   async findById(id: string): Promise<DomainCardTemplate | null> {
     const item = await this.prisma.cardTemplate.findUnique({
@@ -40,7 +35,7 @@ export class PrismaCardTemplateRepository extends BasePrismaRepository implement
 
   async save(template: DomainCardTemplate): Promise<DomainCardTemplate> {
     const isNew = !template.id || template.id === "";
-    
+
     if (isNew) {
       const saved = await this.prisma.cardTemplate.create({
         data: {

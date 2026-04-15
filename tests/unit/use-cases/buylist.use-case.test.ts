@@ -7,6 +7,19 @@ import type { IBuylistRepository } from '@/lib/domain/repositories/buylist.repos
 import type { IInventoryRepository } from '@/lib/domain/repositories/inventory.repository';
 import type { ICustomerRepository } from '@/lib/domain/repositories/customer.repository';
 import type { ICustomerCreditLedgerRepository } from '@/lib/domain/repositories/customer-credit-ledger.repository';
+import { domainEvents, DOMAIN_EVENTS } from '@/lib/domain/events/domain-events';
+
+vi.mock('@/lib/domain/events/domain-events', () => ({
+  domainEvents: {
+    publish: vi.fn().mockResolvedValue(undefined),
+    subscribe: vi.fn(),
+  },
+  DOMAIN_EVENTS: {
+    BUYLIST_PROPOSAL_SUBMITTED: 'buylist.proposal_submitted',
+    BUYLIST_PROPOSAL_APPROVED: 'buylist.proposal_approved',
+    BUYLIST_PROPOSAL_REJECTED: 'buylist.proposal_rejected',
+  }
+}));
 
 describe('Buylist Use Cases', () => {
   let buylistRepo: MockProxy<IBuylistRepository>;
@@ -72,6 +85,14 @@ describe('Buylist Use Cases', () => {
         ]
       };
 
+      buylistRepo.saveProposal.mockResolvedValue({ 
+        id: "p1", 
+        tenantId: "t1", 
+        customerId: "c1", 
+        totalCash: 25, 
+        totalCredit: 30 
+      } as any);
+
       await useCase.execute(input);
 
       expect(customerRepo.upsert).toHaveBeenCalledWith(customerData.phoneNumber, {
@@ -83,6 +104,10 @@ describe('Buylist Use Cases', () => {
         totalCash: 25, // (2 * 10) + (1 * 5)
         totalCredit: 30, // (2 * 12) + (1 * 6)
         status: "PENDING",
+        customerId: "c1"
+      }));
+
+      expect(domainEvents.publish).toHaveBeenCalledWith(DOMAIN_EVENTS.BUYLIST_PROPOSAL_SUBMITTED, expect.objectContaining({
         customerId: "c1"
       }));
     });
@@ -117,12 +142,11 @@ describe('Buylist Use Cases', () => {
       // Assert status updated
       expect(buylistRepo.updateProposalStatus).toHaveBeenCalledWith("p1", "PAID", undefined);
       
-      // Assert inventory updated
-      expect(inventoryRepo.findAllActive).toHaveBeenCalledWith("t1");
-      
-      // Assert credit added (since paymentMethod is STORE_CREDIT)
-      expect(customerRepo.update).toHaveBeenCalledWith("c1", expect.objectContaining({ creditBalance: 130 }));
-      expect(creditRepo.save).toHaveBeenCalled();
+      // Assert event published - repository updates are now side effects of this event
+      expect(domainEvents.publish).toHaveBeenCalledWith(DOMAIN_EVENTS.BUYLIST_PROPOSAL_APPROVED, expect.objectContaining({
+        proposalId: "p1",
+        paymentMethod: "STORE_CREDIT"
+      }));
     });
 
     it('should cancel proposal without updates', async () => {

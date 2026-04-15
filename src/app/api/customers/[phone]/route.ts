@@ -28,6 +28,7 @@ const lookupCustomerUseCase = container.resolve(LookupCustomerUseCase);
  *               $ref: '#/components/schemas/ApiResponse'
  */
 export async function GET(
+  _request: NextRequest,
   { params }: { params: Promise<{ phone: string }> }
 ) {
   const { phone } = await params;

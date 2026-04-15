@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { mockDeep, mockReset } from "vitest-mock-extended";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { PrismaCardTemplateRepository } from "@/lib/infrastructure/repositories/prisma-card-template.repository";
 
 // Mock the prisma dependency

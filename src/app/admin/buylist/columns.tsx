@@ -1,17 +1,17 @@
 import { ColumnDef } from '@tanstack/react-table'
+import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 import { formatCurrency } from '@/lib/utils'
 import { SetBadge } from '@/components/ui/set-badge'
 import { BuylistStatus } from '@/lib/domain/entities/buylist'
 import { StatusBadge } from '@/components/admin/status-badge'
-import { ProcessProposalDialog } from './process-proposal-dialog'
 import { MoreHorizontal, Trash2, Eye } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu'
 import { BuylistService } from '@/lib/api/services/buylist.service'
 import { useRouter } from 'next/navigation'
@@ -58,7 +58,9 @@ export const buylistItemColumns: ColumnDef<BuylistItemRow>[] = [
       return (
         <div className="flex items-center gap-3">
           {template.imageUrl ? (
-            <img src={template.imageUrl} alt={template.name} className="w-10 h-14 object-cover rounded" />
+            <div className="relative w-10 h-14 shrink-0 rounded overflow-hidden">
+              <Image src={template.imageUrl} alt={template.name} className="object-cover" fill />
+            </div>
           ) : (
             <div className="w-10 h-14 bg-muted rounded" />
           )}
@@ -100,7 +102,7 @@ export const buylistItemColumns: ColumnDef<BuylistItemRow>[] = [
     header: 'Ações',
     cell: ({ row }) => {
       const item = row.original;
-      
+
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const router = useRouter();
 
@@ -124,7 +126,7 @@ export const buylistItemColumns: ColumnDef<BuylistItemRow>[] = [
             </Button>
           } />
           <DropdownMenuContent align="end">
-            <DropdownMenuItem 
+            <DropdownMenuItem
               onClick={handleDelete}
               className="text-destructive focus:text-destructive"
             >
@@ -169,7 +171,7 @@ export const buylistProposalColumns: ColumnDef<BuylistProposalRow>[] = [
     header: 'Ações',
     cell: ({ row }) => {
       const proposal = row.original
-      
+
       return (
         <div className="flex items-center gap-2">
           <Link href={`/admin/buylist-proposal/${proposal.id}`} passHref legacyBehavior>
