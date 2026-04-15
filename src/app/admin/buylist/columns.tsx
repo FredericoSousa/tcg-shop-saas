@@ -16,6 +16,7 @@ import {
 import { BuylistService } from '@/lib/api/services/buylist.service'
 import { useRouter } from 'next/navigation'
 import { feedback } from '@/lib/utils/feedback'
+import Link from 'next/link'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   day: '2-digit',
@@ -171,12 +172,12 @@ export const buylistProposalColumns: ColumnDef<BuylistProposalRow>[] = [
       
       return (
         <div className="flex items-center gap-2">
-          <ProcessProposalDialog proposal={proposal as any}>
+          <Link href={`/admin/buylist-proposal/${proposal.id}`} passHref legacyBehavior>
             <Button variant="ghost" size="sm" className="h-8 gap-2">
               <Eye className="h-4 w-4" />
               Ver Detalhes
             </Button>
-          </ProcessProposalDialog>
+          </Link>
         </div>
       )
     }

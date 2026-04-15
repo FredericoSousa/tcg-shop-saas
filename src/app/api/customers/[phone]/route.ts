@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { getTenant } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
+import { runWithTenant } from "@/lib/tenant-context";
 import { LookupCustomerUseCase } from "@/lib/application/use-cases/lookup-customer.use-case";
 import { logger } from "@/lib/logger";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
@@ -41,7 +42,9 @@ export async function GET(
   const { phone } = await params;
 
   try {
-    const customer = await lookupCustomerUseCase.execute(phone);
+    const customer = await runWithTenant(tenant.id, () => 
+      lookupCustomerUseCase.execute(phone)
+    );
 
     return ApiResponse.success({
       exists: !!customer,

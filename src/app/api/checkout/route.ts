@@ -1,10 +1,12 @@
 import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getTenant } from "@/lib/tenant-server";
+import { runWithTenant } from "@/lib/tenant-context";
 import { PrismaOrderRepository } from "@/lib/infrastructure/repositories/prisma-order.repository";
 import { PrismaInventoryRepository } from "@/lib/infrastructure/repositories/prisma-inventory.repository";
 import { PrismaCustomerRepository } from "@/lib/infrastructure/repositories/prisma-customer.repository";
 import { PlaceOrderUseCase } from "@/lib/application/use-cases/place-order.use-case";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 import { logger } from "@/lib/logger";
 
 const orderRepo = new PrismaOrderRepository();
@@ -28,10 +30,7 @@ export async function POST(request: NextRequest) {
   const tenant = await getTenant();
 
   if (!tenant) {
-    return Response.json(
-      { success: false, error: "Tenant ID não identificado" },
-      { status: 401 },
-    );
+    return ApiResponse.unauthorized("Tenant ID não identificado");
   }
 
   try {
@@ -41,16 +40,15 @@ export async function POST(request: NextRequest) {
     };
 
     if (!items || items.length === 0) {
-      return Response.json(
-        { success: false, error: "O carrinho está vazio" },
-        { status: 400 },
-      );
+      return ApiResponse.badRequest("O carrinho está vazio");
     }
 
-    const { orderId } = await placeOrderUseCase.execute({
-      items,
-      customerData,
-    });
+    const { orderId } = await runWithTenant(tenant.id, () => 
+      placeOrderUseCase.execute({
+        items,
+        customerData,
+      })
+    );
 
     // Revalidar rotas críticas de estoque e pedidos
     revalidatePath("/");
@@ -58,17 +56,11 @@ export async function POST(request: NextRequest) {
     revalidatePath("/admin/orders");
     revalidatePath("/admin/inventory");
 
-    return Response.json({ success: true, orderId });
+    return ApiResponse.success({ orderId });
   } catch (error: unknown) {
     const err = error as Error;
     logger.error("Checkout Error", err, { tenantId: tenant.id });
     
-    return Response.json(
-      {
-        success: false,
-        error: err.message || "Erro catastrófico no processamento do checkout.",
-      },
-      { status: 500 },
-    );
+    return ApiResponse.serverError(err.message || "Erro catastrófico no processamento do checkout.");
   }
 }

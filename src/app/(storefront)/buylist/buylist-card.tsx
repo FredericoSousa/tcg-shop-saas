@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { BuylistItem } from "@/lib/domain/entities/buylist";
 import { useBuylistStore } from "@/lib/store/buylist-store";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency } from "@/lib/utils/format";
 import { SetBadge } from "@/components/ui/set-badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,26 +13,27 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { Plus, Minus, ShoppingCart } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Plus, Minus, ShoppingCart, Check, RotateCcw } from "lucide-react";
 import { feedback } from "@/lib/utils/feedback";
 import { LANGUAGE_LIST, getLanguageData } from "@/lib/constants/languages";
+import { CONDITION_OPTIONS, CONDITION_LABELS } from "@/lib/constants/conditions";
+import { motion, AnimatePresence } from "framer-motion";
+import Image from "next/image";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface BuylistCardProps {
   item: BuylistItem;
 }
 
-const CONDITION_LABELS = {
-  NM: "Near Mint",
-  SP: "Slightly Played",
-  MP: "Moderately Played",
-  HP: "Heavily Played",
-  D: "Damaged",
-};
 
 export function BuylistCard({ item }: BuylistCardProps) {
   const [condition, setCondition] = useState("NM");
   const [language, setLanguage] = useState("EN");
   const [quantity, setQuantity] = useState(1);
+  const [isAdded, setIsAdded] = useState(false);
+  const [isImageLoaded, setIsImageLoaded] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
   const addItem = useBuylistStore((state) => state.addItem);
 
   const handleAdd = () => {
@@ -48,107 +49,172 @@ export function BuylistCard({ item }: BuylistCardProps) {
       priceCash: item.priceCash,
       priceCredit: item.priceCredit,
     });
+
+    setIsAdded(true);
     feedback.success(`${item.cardTemplate?.name} adicionado à lista de venda!`);
+    setTimeout(() => setIsAdded(false), 2000);
   };
 
   return (
-    <div className="group bg-white rounded-2xl border shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full">
-      <div className="relative aspect-[7/10] overflow-hidden bg-muted">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 20 }}
+      className="group relative flex flex-col bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden hover:border-primary/30 transition-shadow duration-300 hover:shadow-lg h-full"
+    >
+      <div className="aspect-[7/10] w-full bg-zinc-50 relative overflow-hidden flex items-center justify-center">
         {item.cardTemplate?.imageUrl ? (
-          <img
-            src={item.cardTemplate.imageUrl}
-            alt={item.cardTemplate.name}
-            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-          />
+          <div className="relative h-full w-full overflow-hidden">
+            {!isImageLoaded && (
+              <Skeleton className="absolute inset-0 z-0 bg-zinc-100 animate-pulse" />
+            )}
+            <Image
+              src={isFlipped && item.cardTemplate.backImageUrl ? item.cardTemplate.backImageUrl : item.cardTemplate.imageUrl}
+              alt={item.cardTemplate.name}
+              fill
+              sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 20vw"
+              className={`object-cover w-full h-full transition-transform duration-500 group-hover:scale-105 ${isImageLoaded ? "opacity-100" : "opacity-0"}`}
+              onLoad={() => setIsImageLoaded(true)}
+            />
+            <div className="absolute top-2 left-2 z-10 flex flex-col gap-2">
+              <SetBadge setCode={item.cardTemplate?.set || ""} className="bg-white/90 backdrop-blur-md px-1.5 py-0.5 rounded-lg shadow-sm border-none" />
+
+              {item.cardTemplate.backImageUrl && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setIsFlipped((prev) => !prev);
+                  }}
+                  className="bg-white/90 hover:bg-white text-zinc-900 p-1.5 rounded-lg transition-all duration-200 shadow-sm border border-zinc-100 opacity-0 group-hover:opacity-100"
+                  title={isFlipped ? "Ver frente" : "Ver verso"}
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <span className="text-xs text-muted-foreground">Sem imagem</span>
+          <div className="flex flex-col items-center justify-center h-full text-zinc-200 text-[10px] font-bold uppercase tracking-wider space-y-2">
+            <div className="w-12 h-16 border border-dashed border-zinc-200 rounded-lg flex items-center justify-center bg-white">
+              ?
+            </div>
+            <span>Sem Imagem</span>
           </div>
         )}
-        <div className="absolute top-2 left-2">
-          <SetBadge setCode={item.cardTemplate?.set || ""} className="bg-white/90 backdrop-blur-md px-1.5 py-0.5 rounded-lg shadow-sm" />
-        </div>
       </div>
 
-      <div className="p-4 flex flex-col flex-1 gap-3">
-        <h3 className="font-bold text-sm line-clamp-2 leading-tight min-h-[2.5rem]">
-          {item.cardTemplate?.name}
+      <div className="p-4 flex flex-col flex-1 gap-3 relative z-10">
+        <h3 className="font-bold text-zinc-900 text-sm line-clamp-2 leading-tight min-h-[2.5rem] group-hover:text-primary transition-colors">
+          {item.cardTemplate?.name?.includes(" // ") ? (
+            <>
+              {item.cardTemplate.name.split(" // ")[0]}
+              <br />
+              <span className="text-[10px] text-zinc-500 font-medium">
+                {item.cardTemplate.name.split(" // ").slice(1).join(" // ")}
+              </span>
+            </>
+          ) : (
+            item.cardTemplate?.name
+          )}
         </h3>
 
-        <div className="space-y-2">
-          <div className="grid grid-cols-1 gap-1.5">
-            <Select value={condition} onValueChange={(val) => setCondition(val || "NM")}>
-              <SelectTrigger className="h-8 text-[11px] font-bold rounded-lg px-2">
-                <SelectValue placeholder="Condição" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(CONDITION_LABELS).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>{label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">Condição</span>
+              <Select value={condition} onValueChange={(val) => setCondition(val || "NM")}>
+                <SelectTrigger className="h-8 text-[11px] font-bold rounded-xl px-2 bg-zinc-50 border-zinc-100">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {CONDITION_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value} className="text-xs font-medium">{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-            <Select value={language} onValueChange={(val) => setLanguage(val || "EN")}>
-              <SelectTrigger className="h-8 text-[11px] font-bold rounded-lg px-2">
-                <SelectValue placeholder="Idioma">
-                  <div className="flex items-center gap-1.5">
-                    <span>{getLanguageData(language).flag}</span>
-                    <span>{getLanguageData(language).code}</span>
-                  </div>
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {LANGUAGE_LIST.map((lang) => (
-                  <SelectItem key={lang.code} value={lang.code}>
-                    <div className="flex items-center gap-2">
-                      <span>{lang.flag}</span>
-                      <span>{lang.label}</span>
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">Idioma</span>
+              <Select value={language} onValueChange={(val) => setLanguage(val || "EN")}>
+                <SelectTrigger className="h-8 text-[11px] font-bold rounded-xl px-2 bg-zinc-50 border-zinc-100">
+                  <SelectValue>
+                    <div className="flex items-center gap-1.5">
+                      <span>{getLanguageData(language).flag}</span>
+                      <span>{getLanguageData(language).code}</span>
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {LANGUAGE_LIST.map((lang) => (
+                    <SelectItem key={lang.code} value={lang.code}>
+                      <div className="flex items-center gap-2">
+                        <span>{lang.flag}</span>
+                        <span className="text-xs font-medium">{lang.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between gap-1 p-1 bg-muted/30 rounded-lg">
+          <div className="flex items-center justify-between gap-1 p-1 bg-zinc-50 rounded-xl border border-zinc-100">
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 rounded-md hover:bg-white"
+              className="h-7 w-7 rounded-lg hover:bg-white hover:text-primary transition-colors"
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
             >
-              <Minus className="h-3 w-3" />
+              <Minus className="h-3.5 w-3.5" />
             </Button>
-            <span className="text-xs font-black tabular-nums">{quantity}</span>
+            <span className="text-xs font-black tabular-nums text-zinc-900">{quantity}</span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-6 w-6 rounded-md hover:bg-white"
+              className="h-7 w-7 rounded-lg hover:bg-white hover:text-primary transition-colors"
               onClick={() => setQuantity(quantity + 1)}
             >
-              <Plus className="h-3 w-3" />
+              <Plus className="h-3.5 w-3.5" />
             </Button>
           </div>
         </div>
 
-        <div className="mt-auto space-y-1.5 border-t pt-3">
-          <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-            <span>Em créditos:</span>
-            <span className="text-primary">{formatCurrency(item.priceCredit)}</span>
+        <div className="mt-auto pt-3 border-t border-zinc-50 space-y-2">
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] text-zinc-400 uppercase font-black tracking-wider">Em Crédito</span>
+              <span className="text-sm font-black text-primary tracking-tight">{formatCurrency(item.priceCredit)}</span>
+            </div>
+            <div className="flex justify-between items-center opacity-70">
+              <span className="text-[10px] text-zinc-400 uppercase font-black tracking-wider">Em Dinheiro</span>
+              <span className="text-xs font-bold text-zinc-600">{formatCurrency(item.priceCash)}</span>
+            </div>
           </div>
-          <div className="flex justify-between items-center text-[10px] text-muted-foreground uppercase font-bold tracking-wider">
-            <span>Em dinheiro:</span>
-            <span>{formatCurrency(item.priceCash)}</span>
-          </div>
+
           <Button
-            className="w-full h-9 mt-2 rounded-xl text-xs font-bold gap-2 shadow-sm"
+            className={cn(
+              "w-full h-10 rounded-xl font-bold text-xs transition-all duration-300 gap-2 shadow-sm",
+              isAdded ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-zinc-950 hover:bg-primary text-white"
+            )}
             onClick={handleAdd}
           >
-            <ShoppingCart className="h-3.5 w-3.5" />
-            Vender
+            {isAdded ? (
+              <>
+                <Check className="h-4 w-4" />
+                Adicionado
+              </>
+            ) : (
+              <>
+                <ShoppingCart className="h-4 w-4" />
+                Vender
+              </>
+            )}
           </Button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

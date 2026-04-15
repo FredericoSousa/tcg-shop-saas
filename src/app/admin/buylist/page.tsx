@@ -15,8 +15,23 @@ const listProposalsUseCase = container.resolve(ListBuylistProposalsUseCase);
 
 export default async function AdminBuylistPage() {
   const { tenant } = await getAdminContext();
-  const items = await listItemsUseCase.execute(tenant.id);
+  const rawItems = await listItemsUseCase.execute(tenant.id);
   const proposals = await listProposalsUseCase.execute(tenant.id);
+
+  // Filter and map to match BuylistItemRow type
+  const items = rawItems
+    .filter(i => i.cardTemplate)
+    .map(i => ({
+      id: i.id,
+      priceCash: i.priceCash,
+      priceCredit: i.priceCredit,
+      active: i.active,
+      cardTemplate: {
+        name: i.cardTemplate!.name,
+        set: i.cardTemplate!.set,
+        imageUrl: i.cardTemplate!.imageUrl
+      }
+    }));
 
   return (
     <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">

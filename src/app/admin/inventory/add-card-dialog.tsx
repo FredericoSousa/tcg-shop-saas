@@ -17,6 +17,7 @@ import { ScryfallCard } from "@/lib/types/scryfall";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Feedback } from "@/components/ui/feedback";
 import { LANGUAGE_LIST, getLanguageData } from "@/lib/constants/languages";
+import { CONDITION_OPTIONS, CONDITION_LABELS } from "@/lib/constants/conditions";
 import { cn } from "@/lib/utils";
 import { ScryfallService } from "@/lib/api/services/scryfall.service";
 import { InventoryService } from "@/lib/api/services/inventory.service";
@@ -40,13 +41,6 @@ const VALID_EXTRAS = [
   { value: "MISCUT", label: "Miscut" },
 ];
 
-const CONDITION_LABELS = {
-  NM: "Near Mint (NM)",
-  SP: "Slightly Played (SP)",
-  MP: "Moderately Played (MP)",
-  HP: "Heavily Played (HP)",
-  D: "Damaged (D)",
-};
 
 type Card = ScryfallCard;
 
@@ -367,11 +361,11 @@ export function AddCardDialog() {
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent className="rounded-xl">
-                        <SelectItem value="NM">Near Mint (NM) · <span className="text-[10px] text-emerald-500 font-bold uppercase">Impecável</span></SelectItem>
-                        <SelectItem value="SP">Slightly Played (SP) · <span className="text-[10px] text-blue-500 font-bold uppercase">Sinais leves</span></SelectItem>
-                        <SelectItem value="MP">Moderately Played (MP) · <span className="text-[10px] text-amber-500 font-bold uppercase">Sinais visíveis</span></SelectItem>
-                        <SelectItem value="HP">Heavily Played (HP) · <span className="text-[10px] text-orange-500 font-bold uppercase">Muito usado</span></SelectItem>
-                        <SelectItem value="D">Damaged (D) · <span className="text-[10px] text-destructive font-bold uppercase">Danificado</span></SelectItem>
+                        {CONDITION_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label} · <span className={cn("text-[10px] font-bold uppercase", opt.color)}>{opt.detail}</span>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

@@ -18,64 +18,23 @@ import { ShoppingCart, Plus, Minus, Image as ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { formatCurrency } from '@/lib/utils'
-import { MaskedInput } from '@/components/ui/masked-input'
-
-const checkoutSchema = z.object({
-  phoneNumber: z.string().min(8, 'Telefone inválido'),
-  name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres'),
-})
-
-type CheckoutFormValues = z.infer<typeof checkoutSchema>
+import { CustomerForm, customerSchema, CustomerFormValues } from '@/components/storefront/customer-form'
 
 export function CartDrawer() {
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCart()
   const [isOpen, setIsOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
-  const [customerExists, setCustomerExists] = useState<boolean | null>(null)
   const router = useRouter()
-  // Try to get tenantId from URL if using dynamic route, or rely on headers/cookie.
-  // Since we might be just at /shop, we don't necessarily need tenantId for pushing,
-  // but let's navigate relative or absolute to a known route:
-  // /shop/success or just /success? Wait, the project structure for shop is just `/shop/page.tsx`.
-  // I'll redirect to `/shop/success?orderId=...` to be simpler to implement the success page.
 
-  const form = useForm<CheckoutFormValues>({
-    resolver: zodResolver(checkoutSchema),
+  const form = useForm<CustomerFormValues>({
+    resolver: zodResolver(customerSchema),
     defaultValues: {
       phoneNumber: '',
       name: '',
     }
   })
 
-  // Watch phone number to fetch name
-  const phoneNumber = form.watch('phoneNumber')
-  const [isCheckingPhone, setIsCheckingPhone] = useState(false)
-
-  const handlePhoneBlur = async () => {
-    if (phoneNumber.length < 8) {
-      setCustomerExists(null)
-      return
-    }
-    
-    setIsCheckingPhone(true)
-      try {
-        const response = await fetch(`/api/customers/${phoneNumber}`)
-        const data = await response.json()
-        setCustomerExists(data.exists)
-        if (data.exists) {
-          form.setValue('name', 'Cliente Cadastrado') // Satisfy Zod, backend handles correctly
-          toast.success(`Bem-vindo de volta!`)
-        } else {
-          form.setValue('name', '')
-        }
-      } catch (error) {
-        console.error('Error fetching customer', error)
-      } finally {
-        setIsCheckingPhone(false)
-      }
-    }
-
-  const onSubmit = async (data: CheckoutFormValues) => {
+  const onSubmit = async (data: CustomerFormValues) => {
     if (items.length === 0) {
       toast.error('Seu carrinho está vazio.')
       return
@@ -93,23 +52,23 @@ export function CartDrawer() {
             quantity: item.quantity,
             price: item.price
           })),
-          customerData: { 
-            name: customerExists ? undefined : data.name, 
-            phoneNumber: data.phoneNumber
+          customerData: {
+            name: data.name === 'CLIENTE_EXISTENTE' ? undefined : data.name,
+            phoneNumber: data.phoneNumber.replace(/\D/g, ''),
           }
         }),
       })
 
       const res = await response.json()
 
-      if (res.success && res.orderId) {
+      if (res.success && res.data?.orderId) {
         toast.success('Compra finalizada com sucesso! Seu pedido foi registrado.')
         clearCart()
         setIsOpen(false)
         form.reset()
-        router.push(`/singles/success?orderId=${res.orderId}`)
+        router.push(`/singles/success?orderId=${res.data.orderId}`)
       } else {
-        toast.error(res.error || 'Erro ao processar checkout.')
+        toast.error(res.message || res.error || 'Erro ao processar checkout.')
       }
     } catch {
       toast.error('Erro ao processar checkout.')
@@ -162,11 +121,11 @@ export function CartDrawer() {
                   <div key={item.inventoryId} className="flex gap-4 border-b pb-4 last:border-0 items-center hover:bg-muted/10 p-2 rounded-lg transition-colors">
                     <div className="h-20 w-14 bg-muted/30 rounded overflow-hidden shrink-0 border border-muted flex items-center justify-center relative">
                       {item.imageUrl ? (
-                        <Image 
-                          src={item.imageUrl} 
-                          alt={item.name} 
-                          fill 
-                          className="object-cover" 
+                        <Image
+                          src={item.imageUrl}
+                          alt={item.name}
+                          fill
+                          className="object-cover"
                         />
                       ) : (
                         <ImageIcon className="h-4 w-4 text-muted-foreground opacity-50" />
@@ -228,45 +187,7 @@ export function CartDrawer() {
             </div>
 
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 bg-background p-4 rounded-xl border border-muted/50">
-              <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-                <span className="h-px bg-muted flex-1"></span>
-                Dados do Cliente
-                <span className="h-px bg-muted flex-1"></span>
-              </h4>
-
-              <div className="space-y-1">
-                <MaskedInput
-                  id="phoneNumber"
-                  mask="phone"
-                  placeholder="Telefone/WhatsApp *"
-                  {...form.register("phoneNumber")}
-                  onValueChange={(val) => {
-                    form.setValue('phoneNumber', String(val))
-                    if (customerExists !== null) setCustomerExists(null)
-                  }}
-                  onBlur={handlePhoneBlur}
-                  disabled={items.length === 0 || isProcessing}
-                  className={`h-10 text-sm transition-all focus-visible:ring-primary ${form.formState.errors.phoneNumber ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                />
-                {form.formState.errors.phoneNumber && (
-                  <span className="text-[10px] text-destructive font-medium pl-1">{form.formState.errors.phoneNumber.message}</span>
-                )}
-              </div>
-
-              {!customerExists && (
-                <div className="space-y-1 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <Input
-                    id="name"
-                    placeholder="Nome completo *"
-                    {...form.register("name")}
-                    disabled={items.length === 0 || isProcessing || isCheckingPhone}
-                    className={`h-10 text-sm transition-all focus-visible:ring-primary ${form.formState.errors.name ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                  />
-                  {form.formState.errors.name && (
-                    <span className="text-[10px] text-destructive font-medium pl-1">{form.formState.errors.name.message}</span>
-                  )}
-                </div>
-              )}
+              <CustomerForm form={form} disabled={isProcessing} />
 
               <Button
                 type="submit"

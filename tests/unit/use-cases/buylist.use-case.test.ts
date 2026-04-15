@@ -45,10 +45,27 @@ describe('Buylist Use Cases', () => {
 
   describe('SubmitBuylistProposalUseCase', () => {
     it('should calculate totals and save proposal', async () => {
-      const useCase = new SubmitBuylistProposalUseCase(buylistRepo);
+      const useCase = new SubmitBuylistProposalUseCase(buylistRepo, customerRepo);
+      
+      const customerData = {
+        phoneNumber: "123456789",
+        name: "Test Customer",
+        email: "test@example.com"
+      };
+
+      customerRepo.upsert.mockResolvedValue({ 
+        id: "c1", 
+        ...customerData,
+        creditBalance: 0,
+        tenantId: "t1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null
+      });
+
       const input = {
         tenantId: "t1",
-        customerId: "c1",
+        customerData,
         items: [
           { cardTemplateId: "tmpl-1", quantity: 2, condition: "NM", language: "PT", priceCash: 10, priceCredit: 12 },
           { cardTemplateId: "tmpl-2", quantity: 1, condition: "SP", language: "EN", priceCash: 5, priceCredit: 6 },
@@ -57,10 +74,16 @@ describe('Buylist Use Cases', () => {
 
       await useCase.execute(input);
 
+      expect(customerRepo.upsert).toHaveBeenCalledWith(customerData.phoneNumber, {
+        name: customerData.name,
+        email: customerData.email
+      });
+
       expect(buylistRepo.saveProposal).toHaveBeenCalledWith(expect.objectContaining({
         totalCash: 25, // (2 * 10) + (1 * 5)
         totalCredit: 30, // (2 * 12) + (1 * 6)
-        status: "PENDING"
+        status: "PENDING",
+        customerId: "c1"
       }));
     });
   });

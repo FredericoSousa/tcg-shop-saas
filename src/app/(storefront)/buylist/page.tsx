@@ -1,12 +1,24 @@
+import "reflect-metadata";
 import { getTenant } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
-import { ListBuylistItemsUseCase } from "@/lib/application/use-cases/list-buylist-items.use-case";
+import { GetStorefrontBuylistUseCase } from "@/lib/application/use-cases/get-storefront-buylist.use-case";
+import { GetBuylistFiltersUseCase } from "@/lib/application/use-cases/get-buylist-filters.use-case";
 import { BuylistClient } from "./buylist-client";
 import { Sparkles } from "lucide-react";
+import { unstable_cache } from "next/cache";
 
-const listItemsUseCase = container.resolve(ListBuylistItemsUseCase);
+export default async function BuylistPage(props: {
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const searchParams = await props.searchParams;
+  const page = Number(searchParams?.page) || 1;
+  const filters = {
+    color: typeof searchParams?.color === "string" ? searchParams.color : undefined,
+    type: typeof searchParams?.type === "string" ? searchParams.type : undefined,
+    set: typeof searchParams?.set === "string" ? searchParams.set : undefined,
+    search: typeof searchParams?.q === "string" ? searchParams.q : undefined,
+  };
 
-export default async function BuylistPage() {
   const tenant = await getTenant();
 
   if (!tenant) {
@@ -22,8 +34,22 @@ export default async function BuylistPage() {
     );
   }
 
-  const items = await listItemsUseCase.execute(tenant.id);
-  const activeItems = items.filter(i => i.active);
+  const getBuylist = container.resolve(GetStorefrontBuylistUseCase);
+  const getFilters = container.resolve(GetBuylistFiltersUseCase);
+
+  const buylistResponse = await unstable_cache(
+    () => getBuylist.execute({ tenantId: tenant.id, page, filters }),
+    [`buylist-${tenant.id}-${page}-${JSON.stringify(filters)}`],
+    { revalidate: 3600, tags: [`tenant-${tenant.id}-buylist`] }
+  )();
+
+  const buylistFilters = await unstable_cache(
+    () => getFilters.execute({ tenantId: tenant.id }),
+    [`buylist-filters-${tenant.id}`],
+    { revalidate: 3600, tags: [`tenant-${tenant.id}-buylist`] }
+  )();
+
+  const { items, total, pageCount } = buylistResponse;
 
   return (
     <main className="flex-1">
@@ -33,7 +59,13 @@ export default async function BuylistPage() {
           <p className="text-muted-foreground mt-2 text-lg">Vendemos as suas cartas. Veja o que estamos comprando hoje.</p>
         </header>
 
-        <BuylistClient initialItems={activeItems} />
+        <BuylistClient 
+          initialItems={items} 
+          availableFilters={buylistFilters}
+          pageCount={pageCount}
+          totalItems={total}
+          currentPage={page}
+        />
       </div>
     </main>
   );

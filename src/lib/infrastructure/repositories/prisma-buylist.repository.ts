@@ -76,10 +76,93 @@ export class PrismaBuylistRepository extends BasePrismaRepository implements IBu
   // Buylist Items
   async findItemsByTenant(tenantId: string): Promise<DomainBuylistItem[]> {
     const items = await this.prisma.buylistItem.findMany({
-      where: { tenantId },
+      where: { tenantId, active: true },
       include: { cardTemplate: true },
     });
     return items.map(this.mapItemToDomain);
+  }
+
+  async findStorefrontItems(tenantId: string, page: number, pageSize: number, filters?: any): Promise<DomainBuylistItem[]> {
+    const where: Prisma.BuylistItemWhereInput = {
+      tenantId,
+      active: true,
+    };
+
+    if (filters) {
+      const templateFilters: Prisma.CardTemplateWhereInput = {};
+
+      if (filters.search) {
+        templateFilters.name = { contains: filters.search, mode: 'insensitive' };
+      }
+
+      if (filters.color) {
+        const colors = filters.color.split(',');
+        templateFilters.metadata = {
+          path: ['colors'],
+          array_contains: colors,
+        };
+      }
+
+      if (filters.type) {
+        const types = filters.type.split(',');
+        templateFilters.metadata = {
+          path: ['type_line'],
+          string_contains: types[0], // Simplified for now, similar to singles logic
+        };
+      }
+
+      if (filters.set) {
+        templateFilters.set = filters.set;
+      }
+
+      if (filters.language) {
+        // BuylistItem doesn't have language, but BuylistProposalItem does.
+        // Usually buylist items are per template, and language is chosen by user.
+      }
+
+      where.cardTemplate = templateFilters;
+    }
+
+    const items = await this.prisma.buylistItem.findMany({
+      where,
+      include: { cardTemplate: true },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      orderBy: { cardTemplate: { name: 'asc' } },
+    });
+
+    return items.map(this.mapItemToDomain);
+  }
+
+  async countItems(tenantId: string, filters?: any): Promise<number> {
+    const where: Prisma.BuylistItemWhereInput = {
+      tenantId,
+      active: true,
+    };
+
+    if (filters) {
+      const templateFilters: Prisma.CardTemplateWhereInput = {};
+
+      if (filters.search) {
+        templateFilters.name = { contains: filters.search, mode: 'insensitive' };
+      }
+
+      if (filters.color) {
+        const colors = filters.color.split(',');
+        templateFilters.metadata = {
+          path: ['colors'],
+          array_contains: colors,
+        };
+      }
+
+      if (filters.set) {
+        templateFilters.set = filters.set;
+      }
+
+      where.cardTemplate = templateFilters;
+    }
+
+    return this.prisma.buylistItem.count({ where });
   }
 
   async findItemByTemplate(tenantId: string, cardTemplateId: string): Promise<DomainBuylistItem | null> {

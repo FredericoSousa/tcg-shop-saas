@@ -3,6 +3,8 @@ import { BuylistItem, BuylistProposal, BuylistStatus } from "../entities/buylist
 export interface IBuylistRepository {
   // Buylist Items (Configuração do que a loja quer comprar)
   findItemsByTenant(tenantId: string): Promise<BuylistItem[]>;
+  findStorefrontItems(tenantId: string, page: number, pageSize: number, filters?: any): Promise<BuylistItem[]>;
+  countItems(tenantId: string, filters?: any): Promise<number>;
   findItemByTemplate(tenantId: string, cardTemplateId: string): Promise<BuylistItem | null>;
   saveItem(item: BuylistItem): Promise<BuylistItem>;
   deleteItem(id: string): Promise<void>;

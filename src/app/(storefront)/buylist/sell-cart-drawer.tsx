@@ -10,17 +10,30 @@ import {
   SheetFooter
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { MaskedInput } from "@/components/ui/masked-input";
 import { ShoppingCart, ShoppingBag, Trash2, Plus, Minus, Loader2, SendHorizontal } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import { feedback } from "@/lib/utils/feedback";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { CustomerForm, customerSchema, CustomerFormValues } from "@/components/storefront/customer-form";
 
 export function SellCartDrawer() {
   const { items, removeItem, updateQuantity, getTotalCash, getTotalCredit, clearCart } = useBuylistStore();
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const router = useRouter();
+
+  const form = useForm<CustomerFormValues>({
+    resolver: zodResolver(customerSchema),
+    defaultValues: {
+      phoneNumber: '',
+      name: '',
+    }
+  });
 
   const totalCash = getTotalCash();
   const totalCredit = getTotalCredit();
@@ -31,7 +44,7 @@ export function SellCartDrawer() {
 
   if (!mounted) return null;
 
-  const handleSubmit = async () => {
+  const onSubmit = async (data: CustomerFormValues) => {
     if (items.length === 0) return;
     
     setLoading(true);
@@ -41,28 +54,32 @@ export function SellCartDrawer() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: items.map(i => ({
-            buylistItemId: i.buylistItemId,
+            cardTemplateId: i.cardTemplateId,
             quantity: i.quantity,
             condition: i.condition,
-            language: i.language
-          }))
+            language: i.language,
+            priceCash: i.priceCash,
+            priceCredit: i.priceCredit
+          })),
+          customerData: {
+            name: data.name === 'CLIENTE_EXISTENTE' ? undefined : data.name,
+            phoneNumber: data.phoneNumber.replace(/\D/g, ''),
+          }
         })
       });
-
-      if (response.status === 401) {
-        feedback.error("Você precisa estar logado para enviar uma proposta");
-        router.push('/login?callbackUrl=/buylist');
-        return;
-      }
-
-      if (!response.ok) throw new Error("Erro ao enviar proposta");
+      const res = await response.json();
+      const proposalId = res.data?.id;
 
       feedback.success("Proposta de venda enviada com sucesso!");
       clearCart();
       setOpen(false);
-      // Could redirect to a success page or user profile
-    } catch (error) {
-      feedback.error("Erro ao processar sua proposta");
+      form.reset();
+      
+      if (proposalId) {
+        router.push(`/buylist-proposal/${proposalId}`);
+      }
+    } catch (error: any) {
+      feedback.error(error.message || "Erro ao processar sua proposta");
     } finally {
       setLoading(false);
     }
@@ -150,7 +167,7 @@ export function SellCartDrawer() {
 
             {items.length > 0 && (
               <SheetFooter className="p-6 bg-muted/20 border-t flex-col gap-4">
-                <div className="w-full space-y-2">
+                <div className="w-full space-y-2 mb-2">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-bold text-muted-foreground">Dinheiro</span>
                     <span className="font-bold">{formatCurrency(totalCash)}</span>
@@ -161,20 +178,24 @@ export function SellCartDrawer() {
                   </div>
                 </div>
 
-                <Button 
-                  className="w-full h-12 rounded-2xl text-base font-black gap-3 shadow-lg shadow-primary/20" 
-                  onClick={handleSubmit}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <>
-                      <SendHorizontal className="h-5 w-5" />
-                      Enviar Proposta
-                    </>
-                  )}
-                </Button>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-3 bg-white p-4 rounded-2xl border shadow-sm">
+                  <CustomerForm form={form} disabled={loading} />
+
+                  <Button 
+                    type="submit"
+                    className="w-full h-12 rounded-2xl text-base font-black gap-3 shadow-lg shadow-primary/20 mt-2" 
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <>
+                        <SendHorizontal className="h-5 w-5" />
+                        Enviar Proposta
+                      </>
+                    )}
+                  </Button>
+                </form>
               </SheetFooter>
             )}
           </SheetContent>

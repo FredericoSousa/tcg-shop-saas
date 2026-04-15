@@ -16,6 +16,8 @@ interface LiveSearchProps {
   className?: string;
   inputClassName?: string;
   placeholder?: string;
+  searchPath?: string;
+  resultPathType?: "singles" | "buylist";
 }
 
 interface SearchResult {
@@ -32,7 +34,9 @@ export function LiveSearch({
   onResultClick,
   className, 
   inputClassName, 
-  placeholder = "Buscar cartas..." 
+  placeholder = "Buscar cartas...",
+  searchPath = "/api/search",
+  resultPathType = "singles"
 }: LiveSearchProps) {
   const [query, setQuery] = useState(defaultValue);
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -60,7 +64,7 @@ export function LiveSearch({
       if (query.trim().length >= 2 && query.trim() !== defaultValue.trim()) {
         setIsLoading(true);
         try {
-          const res = await fetch(`/api/search?q=${encodeURIComponent(query.trim())}`);
+          const res = await fetch(`${searchPath}?q=${encodeURIComponent(query.trim())}`);
           const data = await res.json();
           setResults(data.items || []);
           setIsOpen(true);
@@ -84,9 +88,9 @@ export function LiveSearch({
       onSearch(query.trim());
     } else {
       if (query.trim()) {
-        router.push(`/singles?q=${encodeURIComponent(query.trim())}`);
+        router.push(`/${resultPathType}?q=${encodeURIComponent(query.trim())}`);
       } else {
-        router.push(`/singles`);
+        router.push(`/${resultPathType}`);
       }
     }
     setIsOpen(false);
@@ -121,7 +125,7 @@ export function LiveSearch({
             {results.map((item) => (
               <Link
                 key={item.id}
-                href={`/singles/${item.id}`}
+                href={resultPathType === "buylist" ? `/buylist?q=${encodeURIComponent(item.name)}` : `/singles/${item.id}`}
                 onClick={handleResultClick}
                 className="flex items-center gap-3 p-2 rounded-xl hover:bg-zinc-50 transition-all group"
               >
