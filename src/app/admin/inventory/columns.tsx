@@ -118,13 +118,13 @@ export const columns: ColumnDef<InventoryRow>[] = [
     cell: ({ row }) => {
       const extras = row.original.extras || []
       if (extras.length === 0) return <span className="text-muted-foreground/30 text-xs">-</span>
-      
+
       return (
         <div className="flex flex-wrap gap-1">
           {extras.map((extra) => (
-            <Badge 
-              key={extra} 
-              variant="secondary" 
+            <Badge
+              key={extra}
+              variant="secondary"
               className="text-[10px] px-1.5 py-0 font-medium bg-primary/10 text-primary border-primary/20"
             >
               {extra}
@@ -157,9 +157,9 @@ export const columns: ColumnDef<InventoryRow>[] = [
             value={parseFloat(row.getValue('price'))}
             id={row.original.id}
             field="price"
-            prefix="R$ "
             step="0.10"
           />
+
         </div>
       )
     }
