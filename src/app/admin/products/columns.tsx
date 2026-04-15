@@ -2,6 +2,7 @@ import { ColumnDef } from "@tanstack/react-table";
 import { ProductActions } from "./product-actions";
 import Image from "next/image";
 import { formatCurrency } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export type ProductColumn = {
   id: string;
@@ -19,6 +20,27 @@ export type ProductColumn = {
 };
 
 export const createColumns = (categories: { id: string; name: string }[]): ColumnDef<ProductColumn, unknown>[] => [
+  {
+    id: "select",
+    header: ({ table }) => (
+      <Checkbox
+        checked={table.getIsAllPageRowsSelected()}
+        onCheckedChange={(checked: boolean) => table.toggleAllPageRowsSelected(!!checked)}
+        aria-label="Selecionar todos"
+      />
+    ),
+    cell: ({ row }) => (
+      <Checkbox
+        checked={row.getIsSelected()}
+        onCheckedChange={(checked: boolean) => row.toggleSelected(!!checked)}
+        aria-label="Selecionar linha"
+      />
+    ),
+
+    enableSorting: false,
+    enableHiding: false,
+  },
+
   {
     accessorKey: "name",
     header: "Nome",
@@ -62,12 +84,25 @@ export const createColumns = (categories: { id: string; name: string }[]): Colum
     header: "Qtd",
     cell: ({ row }) => {
       const stock = row.original.stock;
+      const isCritical = stock <= 3;
+      const isWarning = stock <= 10;
+      
       return (
-        <div className={`font-bold ${stock <= 5 ? "text-destructive" : "text-foreground"}`}>
-          {stock}
+        <div className="flex items-center gap-2">
+          <div className={`font-bold px-2 py-0.5 rounded-full text-xs ${
+            isCritical ? "bg-destructive/10 text-destructive border border-destructive/20" : 
+            isWarning ? "bg-amber-100 text-amber-700 border border-amber-200" :
+            "text-foreground"
+          }`}>
+            {stock}
+          </div>
+          {isCritical && (
+            <span className="flex h-1.5 w-1.5 rounded-full bg-destructive animate-pulse" title="Estoque Crítico" />
+          )}
         </div>
       );
     },
+
   },
   {
     id: "actions",

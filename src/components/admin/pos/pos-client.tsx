@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ProductSearch } from "./product-search";
 import { CartPanel } from "./cart-panel";
 import { CustomerSelector, CustomerType } from "./customer-selector";
@@ -19,105 +20,190 @@ export type CartItem = {
 };
 
 export function POSClient() {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerElement, setContainerElement] = useState<HTMLDivElement | null>(null);
+  const containerRef = useCallback((node: HTMLDivElement | null) => {
+    if (node !== null) {
+      setContainerElement(node);
+    }
+  }, []);
+
   const searchRef = useRef<ProductSearchHandle>(null);
+  const queryClient = useQueryClient();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [existingItems, setExistingItems] = useState<CartItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(null);
-  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
-  const [activeOrderFriendlyId, setActiveOrderFriendlyId] = useState<string | null>(null);
-  const [isLoadingOrder, setIsLoadingOrder] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
 
-  const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
-  const existingTotal = existingItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  // React Query for daily summary
+  const { data: dailySummary } = useQuery({
+    queryKey: ["pos-daily-summary"],
+    queryFn: async () => {
+      const response = await fetch("/api/admin/pos/daily-summary");
+      const result = await response.json();
+      return result.success ? result.data : { orderCount: 0, revenue: 0 };
+    },
+    refetchInterval: 120000, // every 2 mins
+  });
+
+  // React Query for in-progress order
+  const { data: orderInProgress, isLoading: isLoadingOrder } = useQuery({
+    queryKey: ["order-in-progress", selectedCustomer?.id],
+    queryFn: async () => {
+      if (!selectedCustomer?.id) return null;
+      const response = await fetch(`/api/admin/pos/order-in-progress?customerId=${selectedCustomer.id}`);
+      const result = await response.json();
+      return result.success ? result.data : null;
+    },
+    enabled: !!selectedCustomer?.id,
+  });
+
+  const existingItems = orderInProgress?.items || [];
+  const activeOrderId = orderInProgress?.id || null;
+  const activeOrderFriendlyId = orderInProgress?.friendlyId || null;
+
+  const cartTotal = cart.reduce((acc: number, item: CartItem) => acc + item.price * item.quantity, 0);
+  const existingTotal = existingItems.reduce((acc: number, item: CartItem) => acc + item.price * item.quantity, 0);
   const subtotal = cartTotal + existingTotal;
 
-  const toggleFullscreen = useCallback(() => {
-    if (!containerRef.current) return;
+  const checkoutMutation = useMutation({
+    mutationFn: async ({ items, customerId }: { items: CartItem[], customerId: string }) => {
+      const response = await fetch("/api/admin/pos/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((item) => ({
+            productId: item.id,
+            quantity: item.quantity,
+            price: item.price,
+          })),
+          customerData: { id: customerId },
+        }),
+      });
 
+      const result = await response.json();
+      if (!result.success) throw new Error(result.message || "Erro ao processar venda");
+      return result.data;
+    },
+    onMutate: async ({ items, customerId }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ["order-in-progress", customerId] });
+
+      // Snapshot the previous value
+      const previousOrder = queryClient.getQueryData<{ items: CartItem[] }>(["order-in-progress", customerId]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(["order-in-progress", customerId], (old: { items: CartItem[] } | undefined) => {
+        const existingItems = old?.items || [];
+        return {
+          ...old,
+          items: [...existingItems, ...items],
+        };
+      });
+
+      // Clear local cart optimistically
+      const snapshot = { previousOrder, localCart: [...cart] };
+      setCart([]);
+
+      return { snapshot };
+    },
+    onError: (err, variables, context) => {
+      // Rollback
+      const snapshot = context?.snapshot as { previousOrder: { items: CartItem[] } | undefined, localCart: CartItem[] } | undefined;
+      if (snapshot) {
+        queryClient.setQueryData(["order-in-progress", variables.customerId], snapshot.previousOrder);
+        setCart(snapshot.localCart);
+      }
+      feedback.error(err instanceof Error ? err.message : "Erro ao finalizar venda");
+    },
+    onSuccess: () => {
+      feedback.success(`Itens adicionados à comanda!`);
+    },
+    onSettled: (data, error, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["order-in-progress", variables.customerId] });
+    },
+  });
+
+
+  const toggleFullscreen = useCallback(() => {
+    if (!containerElement) return;
     if (!document.fullscreenElement) {
-      containerRef.current.requestFullscreen().catch((err) => {
+      containerElement.requestFullscreen().catch((err) => {
         feedback.error(`Erro ao ativar tela cheia: ${err.message}`);
       });
     } else {
       document.exitFullscreen();
     }
-  }, []);
+  }, [containerElement]);
 
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
-  // Fetch in-progress order when customer is selected
-  const fetchInProgressOrder = useCallback(async (customerId: string) => {
-    setIsLoadingOrder(true);
-    try {
-      const response = await fetch(`/api/admin/pos/order-in-progress?customerId=${customerId}`);
-      const result = await response.json();
-      if (result.success && result.data) {
-        setExistingItems(result.data.items);
-        setActiveOrderId(result.data.id);
-        setActiveOrderFriendlyId(result.data.friendlyId);
-      } else {
-        setExistingItems([]);
-        setActiveOrderId(null);
-        setActiveOrderFriendlyId(null);
-      }
-    } catch (error) {
-      console.error("Error fetching order");
-      feedback.apiError(error, "Erro ao carregar pedido em andamento");
-    } finally {
-      setIsLoadingOrder(false);
-    }
-  }, []);
-
   const handleSelectCustomer = useCallback((customer: CustomerType | null) => {
     setSelectedCustomer(customer);
-    setCart([]); // Importante: limpar carrinho local ao trocar de cliente
+    setCart([]);
     if (customer) {
-      fetchInProgressOrder(customer.id);
-    } else {
-      setExistingItems([]);
-      setActiveOrderId(null);
-      setActiveOrderFriendlyId(null);
+      queryClient.invalidateQueries({ queryKey: ["order-in-progress", customer.id] });
     }
-  }, [fetchInProgressOrder]);
+  }, [queryClient]);
 
   const addToCart = useCallback((product: Omit<CartItem, "quantity">) => {
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
         return prev.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
+          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-      return [
-        ...prev,
-        {
-          id: product.id,
-          name: product.name,
-          imageUrl: product.imageUrl,
-          price: product.price,
-          quantity: 1,
-        },
-      ];
+      return [...prev, { ...product, quantity: 1 }];
     });
-    feedback.success(`${product.name} adicionado ao carrinho`);
+
+    feedback.success(`${product.name} adicionado`, undefined, {
+      label: "Desfazer",
+      onClick: () => {
+        setCart(prev => {
+          const item = prev.find(i => i.id === product.id);
+          if (item && item.quantity > 1) {
+            return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
+          }
+          return prev.filter(i => i.id !== product.id);
+        });
+      }
+    });
   }, []);
 
   const removeFromCart = useCallback((id: string) => {
-    setCart((prev) => prev.filter((item) => item.id !== id));
-  }, []);
+    if (id === "ALL") {
+      const itemsToClear = [...cart];
+      setCart([]);
+      feedback.success("Carrinho limpo", undefined, {
+        label: "Desfazer",
+        onClick: () => setCart(itemsToClear)
+      });
+      return;
+    }
+
+    let removedItem: CartItem | undefined;
+
+    setCart((prev) => {
+      removedItem = prev.find(item => item.id === id);
+      return prev.filter((item) => item.id !== id);
+    });
+
+    if (removedItem) {
+      feedback.success(`${removedItem.name} removido`, undefined, {
+        label: "Desfazer",
+        onClick: () => {
+          if (removedItem) {
+            setCart(prev => [...prev, removedItem!]);
+          }
+        }
+      });
+    }
+  }, [cart]);
+
 
   const updateQuantity = useCallback((id: string, delta: number) => {
     setCart((prev) =>
@@ -132,64 +218,24 @@ export function POSClient() {
   }, []);
 
   const handleCheckout = useCallback(async () => {
-    if (cart.length === 0) {
-      if (selectedCustomer) fetchInProgressOrder(selectedCustomer.id);
-      return true;
-    }
-
+    if (cart.length === 0) return true;
     if (!selectedCustomer) {
       feedback.error("Por favor, selecione um cliente");
       return false;
     }
+    await checkoutMutation.mutateAsync({
+      items: cart,
+      customerId: selectedCustomer.id
+    });
+    return true;
 
-    setIsSubmitting(true);
-    try {
-      const response = await fetch("/api/admin/pos/checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          items: cart.map((item) => ({
-            productId: item.id,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-          customerData: {
-            id: selectedCustomer.id,
-          },
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        feedback.success(`Itens adicionados à comanda!`);
-        setCart([]); // LIMPA O CARRINHO LOCAL
-        fetchInProgressOrder(selectedCustomer.id); // Recarrega os itens do DB
-        return true;
-      } else {
-        feedback.error(result.message || "Erro ao processar venda");
-        return false;
-      }
-    } catch (error) {
-      console.error("Checkout error");
-      feedback.apiError(error, "Erro na comunicação com o servidor");
-      return false;
-    } finally {
-      setIsSubmitting(false);
-    }
-  }, [cart, selectedCustomer, fetchInProgressOrder]);
+  }, [cart, selectedCustomer, checkoutMutation]);
 
   const handleOpenFinalize = useCallback(async () => {
     if (!selectedCustomer || subtotal <= 0) return;
-
-    // Se houver itens novos, sincroniza primeiro
     if (cart.length > 0) {
       const success = await handleCheckout();
-      if (success) {
-        setIsPaymentDialogOpen(true);
-      }
+      if (success) setIsPaymentDialogOpen(true);
     } else {
       setIsPaymentDialogOpen(true);
     }
@@ -197,31 +243,22 @@ export function POSClient() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // F1 - Focus Search
       if (e.key === "F1") {
         e.preventDefault();
         searchRef.current?.focusSearch();
       }
-
-      // Ctrl+F - Focus Search (standard shortcut)
       if (e.key === "f" && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         searchRef.current?.focusSearch();
       }
-
-      // F9 - Finalize
-      if (e.key === "F9" && selectedCustomer && subtotal > 0 && !isSubmitting) {
+      if (e.key === "F9" && selectedCustomer && subtotal > 0 && !checkoutMutation.isPending) {
         e.preventDefault();
         handleOpenFinalize();
       }
-
-      // F2 - Save/Sync
-      if (e.key === "F2" && selectedCustomer && cart.length > 0 && !isSubmitting) {
+      if (e.key === "F2" && selectedCustomer && cart.length > 0 && !checkoutMutation.isPending) {
         e.preventDefault();
         handleCheckout();
       }
-
-      // Esc - Clear or Exit
       if (e.key === "Escape") {
         if (isPaymentDialogOpen) {
           setIsPaymentDialogOpen(false);
@@ -230,24 +267,22 @@ export function POSClient() {
         }
       }
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedCustomer, subtotal, isSubmitting, cart.length, handleOpenFinalize, handleCheckout, existingItems.length, isPaymentDialogOpen]);
+  }, [selectedCustomer, subtotal, checkoutMutation.isPending, cart.length, handleOpenFinalize, handleCheckout, existingItems.length, isPaymentDialogOpen]);
 
   const handleFinalizeSuccess = useCallback(() => {
     setCart([]);
-    setExistingItems([]);
     setSelectedCustomer(null);
-    setActiveOrderId(null);
-    setActiveOrderFriendlyId(null);
-  }, []);
+    queryClient.removeQueries({ queryKey: ["order-in-progress"] });
+  }, [queryClient]);
 
   return (
     <div
       ref={containerRef}
-      className={`flex flex-col lg:flex-row relative overflow-hidden bg-background border shadow-2xl transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-[100] rounded-none h-screen w-screen' : 'rounded-2xl min-h-[600px] h-[calc(100vh-13rem)]'}`}
+      className={`flex flex-col lg:flex-row relative overflow-hidden bg-background border shadow-2xl transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-[100] rounded-none h-screen w-screen' : 'rounded-2xl min-h-[500px] h-[calc(100vh-10rem)] md:h-[calc(100vh-13rem)]'}`}
     >
+
       {/* Fullscreen Toggle */}
       <button
         onClick={toggleFullscreen}
@@ -329,19 +364,34 @@ export function POSClient() {
             className="flex flex-col lg:flex-row w-full h-full"
           >
             {/* Left Column: Product Search */}
-            <div className="flex-1 border-r flex flex-col p-6 bg-muted/5">
+            <div className="flex-1 lg:border-r flex flex-col p-4 md:p-6 bg-muted/5 min-h-0">
+
               <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold tracking-tight">Catálogo</h2>
-                  <p className="text-sm text-muted-foreground font-medium">Busque e adicione produtos ao pedido</p>
+                <div className="flex items-center gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold tracking-tight">Catálogo</h2>
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Selecione os produtos para o carrinho</p>
+                  </div>
+                  {activeOrderFriendlyId && (
+                    <div className="px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 flex items-center gap-2">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                      </span>
+                      <span className="text-xs font-black text-primary uppercase tracking-tighter">Comanda #{activeOrderFriendlyId}</span>
+                    </div>
+                  )}
                 </div>
-                {activeOrderFriendlyId && (
-                  <div className="px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 flex items-center gap-2">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-                    </span>
-                    <span className="text-xs font-black text-primary uppercase tracking-tighter">Comanda #{activeOrderFriendlyId}</span>
+                {dailySummary && (
+                  <div className="hidden sm:flex items-center gap-4 bg-background/50 border rounded-xl px-4 py-2">
+                    <div className="text-right border-r pr-4">
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Vendas Hoje</p>
+                      <p className="text-sm font-black">{dailySummary.orderCount}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Receita Hoje</p>
+                      <p className="text-sm font-black text-primary">R$ {Number(dailySummary.revenue).toFixed(2)}</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -350,9 +400,11 @@ export function POSClient() {
               </div>
             </div>
 
+
             {/* Right Column: Cart & Checkout */}
-            <div className="w-full lg:w-[480px] flex flex-col min-h-0 bg-background border-l overflow-hidden">
-              <div className="p-6 flex flex-col h-full overflow-hidden">
+            <div className="w-full lg:w-[480px] flex flex-col min-h-0 bg-background lg:border-l overflow-hidden border-t lg:border-t-0">
+              <div className="p-4 md:p-6 flex flex-col h-full overflow-hidden">
+
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold tracking-tight">Resumo</h2>
                   <div className="bg-primary/5 px-3 py-1 rounded-lg border border-primary/10">
@@ -370,8 +422,9 @@ export function POSClient() {
                     subtotal={subtotal}
                     onCheckout={handleCheckout}
                     onFinalize={handleOpenFinalize}
-                    isSubmitting={isSubmitting}
+                    isSubmitting={checkoutMutation.isPending}
                     activeOrderId={activeOrderId}
+
                     activeOrderFriendlyId={activeOrderFriendlyId}
                   />
                 </div>
@@ -390,8 +443,11 @@ export function POSClient() {
           totalAmount={subtotal}
           onSuccess={handleFinalizeSuccess}
           friendlyId={activeOrderFriendlyId}
-          container={containerRef.current}
+          container={containerElement}
         />
+
+
+
       )}
     </div>
   );

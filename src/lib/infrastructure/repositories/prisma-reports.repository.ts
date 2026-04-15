@@ -182,12 +182,11 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
       }
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return results.map((r: any) => ({
+    return results.map((r) => ({
       source: r.source,
       count: r._count.id,
       revenue: Number(r._sum.totalAmount || 0)
-    })) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    }));
   }
 
   async getInventoryConditionDistribution(tenantId: string): Promise<InventoryConditionDistribution[]> {
@@ -202,12 +201,12 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
       }
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return results.map((r: any) => ({
+    return results.map((r) => ({
       condition: r.condition,
       count: r._count.id
-    })) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    }));
   }
+
 
   async getTopCustomersByLTV(tenantId: string, limit: number = 5): Promise<CustomerLTV[]> {
     const results = await this.prisma.order.groupBy({
@@ -230,15 +229,14 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
       take: limit
     });
 
+    const customerIds = results.map((r) => r.customerId);
     const customers = await this.prisma.customer.findMany({
       where: {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        id: { in: results.map((r: any) => r.customerId) }
+        id: { in: customerIds }
       }
     });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return results.map((r: any) => {
+    return results.map((r) => {
       const customer = customers.find(c => c.id === r.customerId);
       return {
         id: r.customerId,
@@ -247,8 +245,9 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
         totalSpent: Number(r._sum.totalAmount || 0),
         orderCount: r._count.id
       };
-    }) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
+    });
   }
+
 
   async getMonthlyRevenueTrend(tenantId: string): Promise<MonthlyRevenue[]> {
     const sixMonthsAgo = new Date();

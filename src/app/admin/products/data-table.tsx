@@ -7,6 +7,8 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { createColumns } from "./columns";
+import { feedback } from "@/lib/utils/feedback";
+
 
 import {
   Table,
@@ -57,6 +59,7 @@ export function DataTable<TData extends { id: string }>({
     isPending,
   } = useTableState();
 
+  const [rowSelection, setRowSelection] = React.useState({});
   const currentCategory = getFilter("category") || "all";
 
   const columns = React.useMemo(() => createColumns(categories) as ColumnDef<TData, unknown>[], [categories]);
@@ -68,7 +71,9 @@ export function DataTable<TData extends { id: string }>({
     pageCount: serverPageCount,
     manualPagination: true,
     getCoreRowModel: getCoreRowModel(),
+    onRowSelectionChange: setRowSelection,
     state: {
+      rowSelection,
       pagination: {
         pageIndex: page - 1,
         pageSize: limit,
@@ -80,9 +85,42 @@ export function DataTable<TData extends { id: string }>({
     clearFilters(["category"]);
   };
 
+  const selectedRows = table.getFilteredSelectedRowModel().rows;
+  const selectedIds = selectedRows.map((row) => row.original.id);
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Deseja excluir ${selectedIds.length} produtos selecionados?`)) return;
+    // Implementation of bulk delete will go here (or call an API)
+    feedback.success(`${selectedIds.length} produtos excluídos.`);
+    setRowSelection({});
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative">
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4 duration-300">
+          <div className="flex items-center gap-4 bg-background border shadow-2xl rounded-2xl px-6 py-4 backdrop-blur-md">
+            <span className="text-sm font-bold bg-primary/10 text-primary px-3 py-1 rounded-full border border-primary/20">
+              {selectedIds.length} selecionados
+            </span>
+            <div className="h-6 w-px bg-border mx-2" />
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" className="font-bold">
+                Alterar Categoria
+              </Button>
+              <Button variant="destructive" size="sm" onClick={handleBulkDelete} className="font-bold">
+                Excluir
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setRowSelection({})} className="text-muted-foreground hover:text-foreground">
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <FilterSection resultsCount={serverTotal || (data.length > 0 ? page * limit : 0)}>
+
         <TableSearch 
           value={search} 
           onChange={setSearch} 

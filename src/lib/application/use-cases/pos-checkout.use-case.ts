@@ -9,6 +9,7 @@ import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
 import { generateOrderFriendlyId } from "@/lib/utils/order-utils";
 import { ValidationError } from "@/lib/domain/errors/domain.error";
+import { domainEvents, DOMAIN_EVENTS } from "../../domain/events/domain-events";
 
 export interface POSCheckoutRequest {
   items: {
@@ -34,12 +35,14 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
     @inject(TOKENS.OrderRepository) private orderRepo: IOrderRepository,
     @inject(TOKENS.ProductRepository) private productRepo: IProductRepository,
     @inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository
-  ) {}
+  ) { }
 
   async execute(request: POSCheckoutRequest): Promise<POSCheckoutResponse> {
     const { items, customerData } = request;
 
-    const result = await prisma.$transaction(async (tx) => {
+    // Use unknown for tx and cast within repositories to avoid complex type mismatches with Prisma extensions in serverless
+    const result = await (prisma as unknown as { $transaction: (fn: (tx: unknown) => Promise<{ orderId: string; friendlyId: string }>) => Promise<{ orderId: string; friendlyId: string }> }).$transaction(async (tx: unknown) => {
+
       // 1. Decrement stock for products
       for (const item of items) {
         await this.productRepo.decrementStock(item.productId, item.quantity, tx);
@@ -60,15 +63,19 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
 
       // 3. Check for existing PENDING POS order
       const existingOrder = await this.orderRepo.findPendingPOSOrder(customerId, tx);
-      const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+      const totalAmount = items.reduce((acc: number, item: { price: number; quantity: number }) => acc + item.price * item.quantity, 0);
+
+      let orderId: string;
+      let friendlyId: string;
 
       if (existingOrder) {
-        await this.orderRepo.appendToOrder(existingOrder.id, items.map(item => ({
+        await this.orderRepo.appendToOrder(existingOrder.id, items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
           priceAtPurchase: item.price,
         })), totalAmount, tx);
-          return { orderId: existingOrder.id, friendlyId: existingOrder.friendlyId || "" };
+        orderId = existingOrder.id;
+        friendlyId = existingOrder.friendlyId || "";
       } else {
         const orderEntity: Order = {
           id: "",
@@ -82,16 +89,29 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
           updatedAt: new Date(),
         };
 
-        const newOrder = await this.orderRepo.save(orderEntity, items.map(item => ({
+        const newOrder = await this.orderRepo.save(orderEntity, items.map((item) => ({
           productId: item.productId,
           quantity: item.quantity,
           priceAtPurchase: item.price,
         })), tx);
 
-        return { orderId: newOrder.id, friendlyId: newOrder.friendlyId || "" };
+        orderId = newOrder.id;
+        friendlyId = newOrder.friendlyId || "";
       }
+
+      return { orderId, friendlyId };
     });
 
-    return result;
+
+    // Publish event outside transaction
+    domainEvents.publish(DOMAIN_EVENTS.ORDER_PLACED, {
+      orderId: result.orderId,
+      customerId: request.customerData.id || result.orderId,
+      items: request.items
+    }).catch(err => {
+      console.error("Error publishing ORDER_PLACED event:", err);
+    });
+
+    return result as POSCheckoutResponse;
   }
 }

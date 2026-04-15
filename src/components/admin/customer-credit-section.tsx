@@ -102,35 +102,56 @@ export function CustomerCreditSection({ customerId, initialBalance }: CustomerCr
             </TableHeader>
             <TableBody>
               {history.map((entry) => (
-                <TableRow key={entry.id} className="hover:bg-muted/50 transition-colors">
-                  <TableCell className="text-muted-foreground text-sm">
-                    {new Date(entry.createdAt).toLocaleString("pt-BR")}
+                <TableRow key={entry.id} className="hover:bg-muted/50 transition-colors group">
+                  <TableCell className="text-muted-foreground text-xs font-medium">
+                    {new Date(entry.createdAt).toLocaleDateString("pt-BR", {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
                   </TableCell>
                   <TableCell>
-                    <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
+                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
                       entry.type === 'CREDIT' 
-                        ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' 
+                        : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400'
                     }`}>
-                      {entry.type === 'CREDIT' ? 'Entrada' : 'Saída'}
-                    </span>
-                  </TableCell>
-                  <TableCell className="max-w-[200px] truncate" title={entry.description || ""}>
-                    <div className="flex flex-col">
-                      <span>{entry.description || "-"}</span>
-                      {entry.orderFriendlyId && (
-                        <span className="text-[10px] text-muted-foreground font-mono">Pedido #{entry.orderFriendlyId}</span>
+                      {entry.type === 'CREDIT' ? (
+                        <span className="flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          Entrada
+                        </span>
+                      ) : (
+                        <span className="flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          Saída
+                        </span>
                       )}
                     </div>
                   </TableCell>
-                  <TableCell className={`text-right font-bold ${
-                    entry.type === 'CREDIT' ? 'text-green-600' : 'text-red-600'
+                  <TableCell className="max-w-[200px]" title={entry.description || ""}>
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-semibold truncate text-foreground/80">{entry.description || "Ajuste manual"}</span>
+                      {entry.orderFriendlyId && (
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-muted-foreground font-bold bg-muted px-1.5 py-0.5 rounded uppercase tracking-tighter border">
+                            Pedido #{entry.orderFriendlyId}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className={`text-right font-black tabular-nums transition-transform group-hover:scale-105 ${
+                    entry.type === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'
                   }`}>
                     {entry.type === 'CREDIT' ? '+' : '-'} {formatCurrency(entry.amount)}
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
+
           </Table>
         )}
       </div>

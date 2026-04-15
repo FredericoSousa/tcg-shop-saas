@@ -1,8 +1,6 @@
 import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { withAdminApi } from "@/lib/tenant-server";
-import { container } from "@/lib/infrastructure/container";
-import { POSCheckoutUseCase } from "@/lib/application/use-cases/pos-checkout.use-case";
 import { logger } from "@/lib/logger";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
@@ -56,23 +54,27 @@ export type POSCustomerData = {
  *       400:
  *         description: Empty cart
  */
+import { Factory } from "@/lib/infrastructure/factory";
+import { posCheckoutSchema } from "@/lib/infrastructure/validation/pos.schema";
+
+
 export async function POST(request: NextRequest) {
   return withAdminApi(async ({ tenant }) => {
     try {
-      const { items, customerData } = (await request.json()) as {
-        items: POSCheckoutItem[];
-        customerData: POSCustomerData;
-      };
+      const body = await request.json();
+      const { items, customerData } = posCheckoutSchema.parse(body);
 
-      if (!items || items.length === 0) {
-        return ApiResponse.badRequest("O carrinho está vazio");
-      }
-
-      const posCheckoutUseCase = container.resolve(POSCheckoutUseCase);
+      const posCheckoutUseCase = Factory.getPOSCheckoutUseCase();
       const { orderId, friendlyId } = await posCheckoutUseCase.execute({
         items,
-        customerData,
+        customerData: {
+          id: customerData.id,
+          name: customerData.name,
+          phoneNumber: customerData.phoneNumber
+        },
       });
+
+
 
       // Revalidar rotas críticas
       revalidatePath("/admin/orders");

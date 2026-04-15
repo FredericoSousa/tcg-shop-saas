@@ -87,8 +87,11 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
               className={`object-cover w-full h-full transition-transform duration-500 group-hover/image:scale-105 ${isImageLoaded ? "opacity-100 z-10" : "opacity-0"
                 }`}
               loading="lazy"
+              placeholder="blur"
+              blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mN8WQ8AAssBPo78X9IAAAAASUVORK5CYII="
               onLoad={() => setIsImageLoaded(true)}
             />
+
 
             {/* Minimal Overlay on Hover */}
             <div className="absolute inset-0 bg-black/5 opacity-0 group-hover/image:opacity-100 transition-opacity duration-300 z-20" />

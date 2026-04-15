@@ -47,7 +47,19 @@ export function CartPanel({
             </div>
             <h3 className="font-black text-xs uppercase tracking-widest">Resumo do Pedido</h3>
           </div>
+          {items.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onRemove("ALL")}
+              className="h-8 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-destructive gap-1.5"
+            >
+              <Trash2 className="h-3 w-3" />
+              Limpar
+            </Button>
+          )}
         </div>
+
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
           <AnimatePresence mode="popLayout">

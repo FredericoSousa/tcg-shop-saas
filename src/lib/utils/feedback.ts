@@ -9,11 +9,13 @@ export const feedback = {
   /**
    * Shows a success toast.
    */
-  success: (message: string, description?: string) => {
+  success: (message: string, description?: string, action?: { label: string; onClick: () => void }) => {
     return toast.success(message, {
       description,
+      action,
     });
   },
+
 
   /**
    * Shows an error toast.

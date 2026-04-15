@@ -3,18 +3,16 @@ import { container } from "@/lib/infrastructure/container";
 import { TOKENS } from "@/lib/infrastructure/container";
 import type { IOrderRepository } from "@/lib/domain/repositories/order.repository";
 
+import { posInProgressOrderSchema } from "@/lib/infrastructure/validation/pos.schema";
+
 export async function GET(request: NextRequest) {
   await connection();
   try {
     const searchParams = request.nextUrl.searchParams;
-    const customerId = searchParams.get("customerId");
+    const { customerId } = posInProgressOrderSchema.parse({
+      customerId: searchParams.get("customerId")
+    });
 
-    if (!customerId) {
-      return NextResponse.json(
-        { success: false, message: "ID do cliente é obrigatório" },
-        { status: 400 }
-      );
-    }
 
     const orderRepo = container.resolve<IOrderRepository>(TOKENS.OrderRepository);
     const order = await orderRepo.findPendingPOSOrder(customerId);

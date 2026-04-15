@@ -198,8 +198,7 @@ model Order {
 
   @@unique([tenantId, friendlyId])
   @@index([tenantId])
-  @@index([tenantId, status])
-  @@index([tenantId, createdAt])
+  @@index([tenantId, status, createdAt])
   @@index([tenantId, source])
   @@map("orders")
 }
@@ -231,8 +230,11 @@ model OrderItem {
   product       Product?       @relation(fields: [productId], references: [id])
 
   @@index([orderId])
+  @@index([inventoryItemId])
+  @@index([productId])
   @@map("order_items")
 }
+
 
 model Customer {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid

@@ -55,12 +55,20 @@ export default async function CustomerDetailsPage({
               <span className="text-xl font-black text-primary leading-none">{totalOrders}</span>
             </div>
             <div className="h-8 w-px bg-zinc-200/50 mx-2" />
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest leading-none mb-1">Ticket Médio</span>
+              <span className="text-xl font-black text-primary leading-none">
+                {formatCurrency(totalOrders > 0 ? totalSpent / totalOrders : 0)}
+              </span>
+            </div>
+            <div className="h-8 w-px bg-zinc-200/50 mx-2" />
             <div className="flex flex-col items-end">
-              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest leading-none mb-1">Total Gasto</span>
+              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest leading-none mb-1">LTV Total</span>
               <span className="text-xl font-black text-primary leading-none">
                 {formatCurrency(totalSpent)}
               </span>
             </div>
+
           </div>
         }
       />
