@@ -102,6 +102,8 @@ export async function validateAdminApi() {
   return { session, tenant };
 }
 
+import { checkRateLimit } from "./rate-limiter";
+
 /**
  * Maps DomainError subclasses to appropriate HTTP responses.
  */
@@ -119,6 +121,31 @@ function handleDomainError(error: DomainError): Response {
 }
 
 /**
+ * Applies rate limiting and returns a response if limited, or null if allowed.
+ */
+async function applyRateLimit(key: string, limit = 60, window = 60) {
+  const result = checkRateLimit(key, { limit, windowSeconds: window });
+  
+  if (!result.allowed) {
+    return new Response(JSON.stringify({
+      success: false,
+      message: "Muitas requisições. Tente novamente mais tarde.",
+      error: { code: "TOO_MANY_REQUESTS" }
+    }), {
+      status: 429,
+      headers: {
+        "Content-Type": "application/json",
+        "X-RateLimit-Limit": limit.toString(),
+        "X-RateLimit-Remaining": result.remaining.toString(),
+        "X-RateLimit-Reset": result.resetAt.toString(),
+      }
+    });
+  }
+  
+  return null;
+}
+
+/**
  * Wrapper for API routes and Server Actions to ensure tenant context is set.
  * Provides centralized error handling: DomainErrors are mapped to appropriate
  * HTTP status codes, unknown errors return 500.
@@ -130,6 +157,12 @@ export async function withAdminApi<T>(
   if (!context) {
     return ApiResponse.unauthorized();
   }
+
+  // Rate Limiting
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+  const rateLimitResponse = await applyRateLimit(`admin:${ip}:${context.tenant.id}`, 100, 60);
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     return await runWithTenant(context.tenant.id, () => handler(context));
@@ -160,6 +193,12 @@ export async function withTenantApi<T>(
   if (!tenant) {
     return ApiResponse.unauthorized("Tenant ID não identificado");
   }
+
+  // Rate Limiting
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
+  const rateLimitResponse = await applyRateLimit(`tenant:${ip}:${tenant.id}`, 60, 60);
+  if (rateLimitResponse) return rateLimitResponse;
 
   try {
     return await runWithTenant(tenant.id, () => handler({ tenant }));
