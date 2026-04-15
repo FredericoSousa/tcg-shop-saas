@@ -1,5 +1,7 @@
 import { prisma } from "../../prisma";
 import { getTenantId } from "../../tenant-context";
+import { Prisma } from "@prisma/client";
+import { EntityNotFoundError, ConflictError } from "../../domain/errors/domain.error";
 
 export abstract class BasePrismaRepository {
   protected readonly prisma = prisma;
@@ -21,7 +23,21 @@ export abstract class BasePrismaRepository {
    */
   protected handleError(error: unknown, operation: string): never {
     console.error(`[Repository Error] ${operation}:`, error);
-    // Here we could map Prisma errors to Domain errors (e.g., NotFound, Conflict)
+    this.mapPrismaError(error);
+  }
+
+  /**
+   * Maps Prisma-specific errors to Domain-level errors.
+   */
+  protected mapPrismaError(error: unknown): never {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === "P2002") {
+        throw new ConflictError("Já existe um registro com estes dados.");
+      }
+      if (error.code === "P2025") {
+        throw new EntityNotFoundError("Registro", "unknown");
+      }
+    }
     throw error;
   }
 }

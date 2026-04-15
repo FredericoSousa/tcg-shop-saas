@@ -1,14 +1,13 @@
 import { injectable, inject } from "tsyringe";
-import { TOKENS } from "../../infrastructure/container";
+import { TOKENS } from "../../infrastructure/tokens";
 import type { 
   IInventoryRepository, 
-  ICardTemplateRepository 
 } from "@/lib/domain/repositories/inventory.repository";
-import { scryfall } from "@/lib/scryfall";
-import type { ScryfallCard } from "@/lib/types/scryfall";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
 import { Game } from "@prisma/client";
+import { CardTemplateService } from "../../domain/services/card-template.service";
+import { domainEvents, DOMAIN_EVENTS } from "../../domain/events/domain-events";
 
 export interface BulkInventoryItemRequest {
   scryfallId: string;
@@ -33,7 +32,7 @@ export type AddBulkInventoryResponse = BulkInventoryResult[];
 export class AddBulkInventoryUseCase implements IUseCase<AddBulkInventoryRequest, AddBulkInventoryResponse> {
   constructor(
     @inject(TOKENS.InventoryRepository) private inventoryRepo: IInventoryRepository,
-    @inject(TOKENS.CardTemplateRepository) private templateRepo: ICardTemplateRepository
+    @inject(TOKENS.CardTemplateService) private templateService: CardTemplateService
   ) {}
 
   async execute(request: AddBulkInventoryRequest): Promise<AddBulkInventoryResponse> {
@@ -43,43 +42,10 @@ export class AddBulkInventoryUseCase implements IUseCase<AddBulkInventoryRequest
     const results: AddBulkInventoryResponse = [];
     const uniqueScryfallIds = Array.from(new Set(request.map(i => i.scryfallId)));
 
-    // 1. Fetch existing templates
-    const existingTemplates = await this.templateRepo.findByIds(uniqueScryfallIds);
-    const existingTemplateIds = new Set(existingTemplates.map(t => t.id));
+    // 1. Resolve templates using the new service
+    const resolvedTemplates = await this.templateService.resolveTemplates(uniqueScryfallIds);
     const nameMap = new Map<string, string>();
-    existingTemplates.forEach(t => nameMap.set(t.id, t.name));
-
-    const missingIds = uniqueScryfallIds.filter(id => !existingTemplateIds.has(id));
-
-    // 2. Fetch missing templates from Scryfall in bulk
-    if (missingIds.length > 0) {
-      const scryfallIdentifiers = missingIds.map(id => ({ id }));
-      const scryfallCards = await scryfall.getCardsCollection(scryfallIdentifiers) as ScryfallCard[];
-      
-      const newTemplates = scryfallCards.map(card => {
-        const imageUris = card.image_uris;
-        return {
-          id: card.id,
-          name: card.name,
-          set: card.set.toUpperCase(),
-          imageUrl:
-            imageUris?.normal ||
-            imageUris?.large ||
-            imageUris?.png ||
-            card.card_faces?.[0]?.image_uris?.normal ||
-            null,
-          backImageUrl:
-            card.card_faces?.[1]?.image_uris?.normal || null,
-          game: Game.MAGIC,
-          metadata: card as unknown as Record<string, unknown>,
-        };
-      });
-
-      if (newTemplates.length > 0) {
-        await this.templateRepo.createMany(newTemplates);
-        newTemplates.forEach(t => nameMap.set(t.id, t.name));
-      }
-    }
+    resolvedTemplates.forEach(t => nameMap.set(t.id, t.name));
 
     // 3. Fetch all relevant inventory items for these templates and tenant
     const existingInventoryItems = await this.inventoryRepo.findManyByTemplates(uniqueScryfallIds, tenantId);
@@ -152,6 +118,13 @@ export class AddBulkInventoryUseCase implements IUseCase<AddBulkInventoryRequest
       itemsToCreate.length > 0 ? this.inventoryRepo.createMany(itemsToCreate) : Promise.resolve(),
       ...updatePromises
     ]);
+
+    // 6. Publish event
+    domainEvents.publish(DOMAIN_EVENTS.INVENTORY_UPDATED, {
+      tenantId,
+      cardIds: uniqueScryfallIds,
+      source: "bulk_import"
+    }).catch((err: unknown) => console.error("Error publishing inventory updated event", err));
 
     return results;
   }

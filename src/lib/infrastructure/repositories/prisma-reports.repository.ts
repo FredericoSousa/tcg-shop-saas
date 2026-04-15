@@ -35,6 +35,24 @@ interface TopSellingProductRow {
 
 @injectable()
 export class PrismaReportsRepository extends BasePrismaRepository implements IReportsRepository {
+  private cache = new Map<string, { data: any; expiry: number }>();
+  private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+  private getCached<T>(key: string): T | null {
+    const cached = this.cache.get(key);
+    if (cached && cached.expiry > Date.now()) {
+      return cached.data;
+    }
+    return null;
+  }
+
+  private setCache<T>(key: string, data: T): void {
+    this.cache.set(key, {
+      data,
+      expiry: Date.now() + this.CACHE_TTL_MS
+    });
+  }
+
   async getRevenueByCategory(tenantId: string, startDate?: Date, endDate?: Date): Promise<RevenueByCategory[]> {
     const startDateFilter = startDate ? Prisma.sql`AND o.created_at >= ${startDate}` : Prisma.empty;
     const endDateFilter = endDate ? Prisma.sql`AND o.created_at <= ${endDate}` : Prisma.empty;
@@ -281,6 +299,10 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
   }
 
   async getInventoryValuationBySet(tenantId: string): Promise<InventoryValuation[]> {
+    const cacheKey = `valuation_${tenantId}`;
+    const cached = this.getCached<InventoryValuation[]>(cacheKey);
+    if (cached) return cached;
+
     const rawResults = await this.prisma.$queryRaw<{ set: string; value: number; count: number }[]>`
       SELECT 
         ct.set as "set",
@@ -296,14 +318,21 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
       LIMIT 10
     `;
 
-    return rawResults.map(r => ({
+    const results = rawResults.map(r => ({
       set: r.set,
       value: Number(r.value),
       count: Number(r.count)
     }));
+
+    this.setCache(cacheKey, results);
+    return results;
   }
 
   async getWeeklyRevenue(tenantId: string): Promise<{ day: string; amount: number }[]> {
+    const cacheKey = `weekly_${tenantId}`;
+    const cached = this.getCached<{ day: string; amount: number }[]>(cacheKey);
+    if (cached) return cached;
+
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
     sevenDaysAgo.setHours(0, 0, 0, 0);
@@ -324,9 +353,12 @@ export class PrismaReportsRepository extends BasePrismaRepository implements IRe
       '1': 'Dom', '2': 'Seg', '3': 'Ter', '4': 'Qua', '5': 'Qui', '6': 'Sex', '7': 'Sáb'
     };
 
-    return rawResults.map(r => ({
+    const results = rawResults.map(r => ({
       day: dayNames[r.day_of_week] || r.day_of_week,
       amount: Number(r.amount)
     }));
+
+    this.setCache(cacheKey, results);
+    return results;
   }
 }

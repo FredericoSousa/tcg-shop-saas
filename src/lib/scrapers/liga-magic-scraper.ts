@@ -1,17 +1,20 @@
 import { logger } from "../logger";
 import { convertSetCode } from "../constants/card-mappings";
 import * as cheerio from "cheerio";
+import { z } from "zod";
 
-export type CollectionCard = {
-  quantity: number;
-  name: string;
-  set: string;
-  cardNumber: string;
-  price: number;
-  language?: string;
-  condition?: string;
-  extras: string[];
-};
+export const cardSchema = z.object({
+  quantity: z.number().min(1),
+  name: z.string().min(1),
+  set: z.string().min(1),
+  cardNumber: z.string(),
+  price: z.number().min(0),
+  language: z.string().optional(),
+  condition: z.string().optional(),
+  extras: z.array(z.string()),
+});
+
+export type CollectionCard = z.infer<typeof cardSchema>;
 
 export type ImportProgress = {
   currentPage: number;
@@ -65,7 +68,7 @@ function processRawCards(rawCards: RawCard[]): CollectionCard[] {
 
       const extras = raw.extrasText?.split(", ")?.map((e: string) => e.trim().replaceAll(" / ", "/").replaceAll(" ", "_").toUpperCase())?.filter(Boolean) ?? [];
 
-      return {
+      const card = {
         quantity,
         name: cardName,
         set: finalSetCode,
@@ -75,6 +78,18 @@ function processRawCards(rawCards: RawCard[]): CollectionCard[] {
         condition,
         extras,
       };
+
+      const validation = cardSchema.safeParse(card);
+      if (!validation.success) {
+        logger.warn("Invalid card data skipped", {
+          action: "validate_card",
+          errors: validation.error.format(),
+          card: card.name,
+        });
+        return null;
+      }
+
+      return validation.data;
     }).filter(Boolean) as CollectionCard[];
   } catch (error) {
     logger.warn("Error processing raw cards", {

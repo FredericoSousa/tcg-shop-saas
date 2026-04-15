@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
 import { generateOrderFriendlyId } from "@/lib/utils/order-utils";
+import { domainEvents, DOMAIN_EVENTS } from "../../domain/events/domain-events";
 
 export interface PlaceOrderRequest {
   items: {
@@ -71,6 +72,15 @@ export class PlaceOrderUseCase implements IUseCase<PlaceOrderRequest, PlaceOrder
       })));
 
       return newOrder.id;
+    });
+
+    // Publish event outside transaction
+    domainEvents.publish(DOMAIN_EVENTS.ORDER_PLACED, {
+      orderId,
+      customerId: (await this.customerRepo.findByPhoneNumber(request.customerData.phoneNumber))?.id,
+      items: request.items
+    }).catch(err => {
+      console.error("Error publishing ORDER_PLACED event:", err);
     });
 
     return { orderId };

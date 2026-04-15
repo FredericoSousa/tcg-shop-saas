@@ -149,3 +149,32 @@ export async function withAdminApi<T>(
   }
 }
 
+/**
+ * Wrapper for public/storefront API routes to ensure tenant context is set.
+ */
+export async function withTenantApi<T>(
+  handler: (context: { tenant: Tenant }) => Promise<T>
+): Promise<T | Response> {
+  const tenant = await getTenant();
+  
+  if (!tenant) {
+    return ApiResponse.unauthorized("Tenant ID não identificado");
+  }
+
+  try {
+    return await runWithTenant(tenant.id, () => handler({ tenant }));
+  } catch (error) {
+    if (error instanceof DomainError) {
+      logger.warn(`Domain error: ${error.message}`, { action: error.code, tenantId: tenant.id });
+      return handleDomainError(error);
+    }
+
+    if (error instanceof ZodError) {
+      const details = error.issues.map((e) => `${e.path.map(String).join(".")}: ${e.message}`);
+      return ApiResponse.badRequest("Dados inválidos", "VALIDATION_ERROR", details);
+    }
+
+    logger.error("Unhandled API error", error as Error, { tenantId: tenant.id });
+    return ApiResponse.serverError();
+  }
+}

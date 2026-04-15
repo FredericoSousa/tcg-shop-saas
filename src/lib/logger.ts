@@ -1,3 +1,5 @@
+import { getCorrelationId } from "./correlation-context";
+
 /**
  * Structured logging utility for better debugging and tracking.
  * Outputs human-readable strings in development and JSON in production
@@ -12,6 +14,7 @@ interface LogContext {
   tenantId?: string;
   duration?: number;
   itemsProcessed?: number;
+  correlationId?: string;
   [key: string]: unknown;
 }
 
@@ -42,9 +45,12 @@ class Logger {
   }
 
   private format(level: LogLevel, message: string, context?: LogContext): string {
+    const correlationId = getCorrelationId();
+    const finalContext = { ...context, ...(correlationId ? { correlationId } : {}) };
+
     return this.isDev
-      ? this.formatDev(level, message, context)
-      : this.formatProd(level, message, context);
+      ? this.formatDev(level, message, finalContext)
+      : this.formatProd(level, message, finalContext);
   }
 
   debug(message: string, context?: LogContext): void {
