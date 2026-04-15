@@ -1,9 +1,9 @@
 import { inject, injectable } from "tsyringe";
 import { TOKENS } from "@/lib/infrastructure/container";
 import type { IBuylistRepository } from "@/lib/domain/repositories/buylist.repository";
-import { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
-import { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
-import { ICustomerCreditLedgerRepository } from "@/lib/domain/repositories/customer-credit-ledger.repository";
+import type { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
+import type { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
+import type { ICustomerCreditLedgerRepository } from "@/lib/domain/repositories/customer-credit-ledger.repository";
 import { IUseCase } from "./use-case.interface";
 
 interface ProcessBuylistProposalRequest {
@@ -30,6 +30,10 @@ export class ProcessBuylistProposalUseCase implements IUseCase<ProcessBuylistPro
     const proposal = await this.buylistRepository.findProposalById(request.proposalId);
     if (!proposal) throw new Error("Proposta não encontrada.");
 
+    if (proposal.status !== 'PENDING') {
+      throw new Error("Apenas propostas pendentes podem ser processadas.");
+    }
+
     if (request.action === 'CANCEL') {
       await this.buylistRepository.updateProposalStatus(request.proposalId, 'CANCELLED', request.staffNotes);
       return;
@@ -46,14 +50,13 @@ export class ProcessBuylistProposalUseCase implements IUseCase<ProcessBuylistPro
 
       // 2. Add Ledger Entry
       await this.creditLedgerRepository.save({
-        id: "",
         tenantId: proposal.tenantId,
         customerId: proposal.customerId,
+        orderId: null,
         amount: proposal.totalCredit,
         type: 'CREDIT',
         source: 'BUYLIST_PROPOSAL',
         description: `Crédito referente à Proposta de Buylist #${proposal.id.slice(0, 8)}`,
-        createdAt: new Date(),
       });
       
       await this.buylistRepository.updateProposalStatus(request.proposalId, 'PAID', request.staffNotes);

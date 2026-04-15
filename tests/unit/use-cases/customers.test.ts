@@ -84,12 +84,32 @@ describe('Customer Use Cases', () => {
   });
 
   describe('GetCustomerInsightsUseCase', () => {
-    it('should return correct tier based on LTV', async () => {
+    it('should return Whale tier for LTV > 5000', async () => {
+      const useCase = new GetCustomerInsightsUseCase(reportsRepo);
+      reportsRepo.getCustomerLTV.mockResolvedValue(6000);
+      const result = await useCase.execute({ tenantId: 't1', customerId: 'c1' });
+      expect(result.tier).toBe('Whale');
+    });
+
+    it('should return VIP tier for LTV > 1000', async () => {
       const useCase = new GetCustomerInsightsUseCase(reportsRepo);
       reportsRepo.getCustomerLTV.mockResolvedValue(2000);
-
       const result = await useCase.execute({ tenantId: 't1', customerId: 'c1' });
       expect(result.tier).toBe('VIP');
+    });
+
+    it('should return Frequente tier for LTV > 500', async () => {
+      const useCase = new GetCustomerInsightsUseCase(reportsRepo);
+      reportsRepo.getCustomerLTV.mockResolvedValue(600);
+      const result = await useCase.execute({ tenantId: 't1', customerId: 'c1' });
+      expect(result.tier).toBe('Frequente');
+    });
+
+    it('should return Standard tier for low LTV', async () => {
+      const useCase = new GetCustomerInsightsUseCase(reportsRepo);
+      reportsRepo.getCustomerLTV.mockResolvedValue(100);
+      const result = await useCase.execute({ tenantId: 't1', customerId: 'c1' });
+      expect(result.tier).toBe('Standard');
     });
   });
 

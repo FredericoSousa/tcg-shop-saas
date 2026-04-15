@@ -117,5 +117,27 @@ describe('Buylist Use Cases', () => {
       expect(inventoryRepo.save).not.toHaveBeenCalled();
       expect(customerRepo.update).not.toHaveBeenCalled();
     });
+
+    it('should throw error if proposal not found', async () => {
+      const useCase = new ProcessBuylistProposalUseCase(buylistRepo, inventoryRepo, customerRepo, creditRepo);
+      buylistRepo.findProposalById.mockResolvedValue(null);
+
+      await expect(useCase.execute({
+        proposalId: "missing",
+        action: "APPROVE",
+        paymentMethod: "CASH"
+      })).rejects.toThrow('Proposta não encontrada.');
+    });
+
+    it('should throw error if proposal is not pending', async () => {
+      const useCase = new ProcessBuylistProposalUseCase(buylistRepo, inventoryRepo, customerRepo, creditRepo);
+      buylistRepo.findProposalById.mockResolvedValue({ id: "p1", status: "PAID" } as any);
+
+      await expect(useCase.execute({
+        proposalId: "p1",
+        action: "APPROVE",
+        paymentMethod: "CASH"
+      })).rejects.toThrow('Apenas propostas pendentes podem ser processadas.');
+    });
   });
 });

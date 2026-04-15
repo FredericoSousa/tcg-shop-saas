@@ -51,6 +51,18 @@ describe('Product & Category Use Cases', () => {
         .rejects.toThrow();
     });
 
+    it('should fail with invalid stock', async () => {
+      const useCase = new SaveProductUseCase(productRepo);
+      await expect(useCase.execute({ name: 'P1', price: 10, stock: -5, categoryId: 'cat1', allowNegativeStock: false }))
+        .rejects.toThrow();
+    });
+
+    it('should fail with missing category', async () => {
+      const useCase = new SaveProductUseCase(productRepo);
+      await expect(useCase.execute({ name: 'P1', price: 10, stock: 5, categoryId: '', allowNegativeStock: false }))
+        .rejects.toThrow();
+    });
+
     it('should handle repository errors', async () => {
       const useCase = new SaveProductUseCase(productRepo);
       productRepo.save.mockRejectedValue(new Error('DB Error'));

@@ -1,5 +1,5 @@
 export type CreditLedgerType = "CREDIT" | "DEBIT";
-export type CreditLedgerSource = "MANUAL" | "ORDER_PAYMENT" | "ORDER_REFUND";
+export type CreditLedgerSource = "MANUAL" | "ORDER_PAYMENT" | "ORDER_REFUND" | "BUYLIST_PROPOSAL";
 
 export interface CustomerCreditLedger {
   id: string;

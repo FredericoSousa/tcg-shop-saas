@@ -98,4 +98,13 @@ describe('AddBulkInventoryUseCase', () => {
     expect(results[0].status).toBe('error');
     expect(results[0].error).toBe('Card not found');
   });
+
+  it('should throw error when tenant context is missing', async () => {
+    const { getTenantId } = await import('@/lib/tenant-context');
+    (getTenantId as any).mockReturnValue(null);
+
+    const request = [{ scryfallId: 'id-1', quantity: 1, condition: 'NM', language: 'EN', price: 10 }];
+    
+    await expect(useCase.execute(request)).rejects.toThrow('Tenant context not found');
+  });
 });

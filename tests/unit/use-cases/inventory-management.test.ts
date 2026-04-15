@@ -61,6 +61,50 @@ describe('Inventory Management Use Cases', () => {
 
       expect(inventoryRepo.update).toHaveBeenCalledWith('inv-1', { quantity: 10, active: true });
     });
+
+    it('should fetch template from Scryfall if it does not exist in DB', async () => {
+      const useCase = new AddInventoryUseCase(inventoryRepo, templateRepo);
+      templateRepo.findById.mockResolvedValue(null);
+      
+      const { scryfall } = await import('@/lib/scryfall');
+      (scryfall.getCardById as any).mockResolvedValue({
+        id: 'scry-1',
+        name: 'New Card',
+        set: 'SET',
+        image_uris: { normal: 'url' }
+      });
+
+      templateRepo.save.mockResolvedValue({ id: 'scry-1', name: 'New Card' } as any);
+      inventoryRepo.findByTemplate.mockResolvedValue(null);
+
+      await useCase.execute({
+        scryfallId: 'scry-1',
+        price: 10,
+        quantity: 5,
+        condition: 'NEAR_MINT',
+        language: 'EN'
+      });
+
+      expect(scryfall.getCardById).toHaveBeenCalledWith('scry-1');
+      expect(templateRepo.save).toHaveBeenCalled();
+      expect(inventoryRepo.save).toHaveBeenCalled();
+    });
+
+    it('should throw error if card not found in Scryfall', async () => {
+      const useCase = new AddInventoryUseCase(inventoryRepo, templateRepo);
+      templateRepo.findById.mockResolvedValue(null);
+      
+      const { scryfall } = await import('@/lib/scryfall');
+      (scryfall.getCardById as any).mockResolvedValue(null);
+
+      await expect(useCase.execute({
+        scryfallId: 'missing',
+        price: 10,
+        quantity: 1,
+        condition: 'NM',
+        language: 'EN'
+      })).rejects.toThrow('Card not found in Scryfall');
+    });
   });
 
   describe('UpdateInventoryUseCase', () => {
