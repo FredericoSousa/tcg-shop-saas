@@ -12,6 +12,8 @@ const envSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
   JWT_EXPIRATION_TIME: z.string().default("1h"),
   SESSION_COOKIE_MAX_AGE: z.coerce.number().default(60 * 60), // 1h
+  REDIS_URL: z.string().url().optional(),
+  CACHE_STORE: z.enum(["memory", "redis"]).default("memory"),
 });
 
 const getEnv = () => {
@@ -48,4 +50,8 @@ export const config = {
   jwtExpirationTime: env.JWT_EXPIRATION_TIME,
   /** Duração do cookie de sessão em segundos (deve ser >= ao jwtExpirationTime) */
   sessionCookieMaxAge: env.SESSION_COOKIE_MAX_AGE,
+  cache: {
+    store: env.CACHE_STORE,
+    redisUrl: env.REDIS_URL,
+  },
 } as const;

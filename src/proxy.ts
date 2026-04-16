@@ -6,27 +6,28 @@ import { container } from "./lib/infrastructure/container";
 import { GetTenantUseCase } from "./lib/application/use-cases/get-tenant.use-case";
 import { config as appConfig } from "./lib/config";
 import { checkRateLimit } from "./lib/rate-limiter";
+import { TOKENS } from "./lib/infrastructure/tokens";
+import { ICacheService } from "./lib/infrastructure/cache/cache-service";
 
 const JWT_SECRET = appConfig.jwtSecret;
 
 // Routes that require authentication
 const PROTECTED_ROUTES = ["/admin"];
 
-// Simple tenant slug → id cache to avoid repeated DB hits within request pipeline
-const globalProxy = globalThis as unknown as { tenantSlugCache: Map<string, { id: string; expiresAt: number }> };
-if (!globalProxy.tenantSlugCache) globalProxy.tenantSlugCache = new Map();
-const tenantSlugCache = globalProxy.tenantSlugCache;
-const TENANT_CACHE_TTL = 60_000; // 60 segundos
+const TENANT_CACHE_TTL = 60; // 60 segundos em Redis/CacheService
 
 async function resolveTenantId(slug: string): Promise<string | null> {
-  const cached = tenantSlugCache.get(slug);
-  if (cached && cached.expiresAt > Date.now()) return cached.id;
+  const cache = container.resolve<ICacheService>(TOKENS.CacheService);
+  const cacheKey = `tenant:slug:${slug}`;
+
+  const cachedId = await cache.get<string>(cacheKey);
+  if (cachedId) return cachedId;
 
   try {
     const getTenantUseCase = container.resolve(GetTenantUseCase);
     const tenant = await getTenantUseCase.execute({ slug });
     if (tenant?.id) {
-      tenantSlugCache.set(slug, { id: tenant.id, expiresAt: Date.now() + TENANT_CACHE_TTL });
+      await cache.set(cacheKey, tenant.id, TENANT_CACHE_TTL);
       return tenant.id;
     }
   } catch (err) {
@@ -47,7 +48,7 @@ export async function proxy(request: NextRequest) {
       request.headers.get("x-real-ip") ||
       "unknown";
 
-    const result = checkRateLimit(`api:${ip}`, { limit: 60, windowSeconds: 60 });
+    const result = await checkRateLimit(`api:${ip}`, { limit: 60, windowSeconds: 60 });
 
     if (!result.allowed) {
       return new NextResponse(

@@ -12,9 +12,23 @@ import { PrismaCustomerCreditLedgerRepository } from "./repositories/prisma-cust
 import { PrismaBuylistRepository } from "./repositories/prisma-buylist.repository";
 import { CardTemplateService } from "../domain/services/card-template.service";
 import { registerEventHandlers } from "../application/events/handlers";
+import { MemoryCacheService, RedisCacheService } from "./cache/cache-service";
+import { config as appConfig } from "../config";
 
 import { TOKENS } from "./tokens";
 export { TOKENS };
+
+// Register Cache Service
+container.register(TOKENS.CacheService, {
+  useFactory: () => {
+    if (appConfig.cache.store === "redis" && appConfig.cache.redisUrl) {
+      console.log("[Container] Using RedisCacheService");
+      return new RedisCacheService(appConfig.cache.redisUrl);
+    }
+    console.log("[Container] Using MemoryCacheService");
+    return new MemoryCacheService();
+  },
+});
 
 // Register Repositories as Singletons
 container.register(TOKENS.InventoryRepository, { useClass: PrismaInventoryRepository }, { lifecycle: Lifecycle.Singleton });

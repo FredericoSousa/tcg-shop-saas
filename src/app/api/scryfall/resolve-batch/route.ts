@@ -77,28 +77,30 @@ export async function POST(request: NextRequest) {
 
     // Cache all results for future lookups
     const cardsMap = new Map<string, ScryfallCard>();
-    cards.forEach((card) => {
-      const cacheKey = generateCardCacheKey({
-        name: card.name,
-        set: card.set,
-        collector_number: card.collector_number,
-      });
-      cardCache.set(cacheKey, card);
+    await Promise.all(
+      cards.map(async (card) => {
+        const cacheKey = generateCardCacheKey({
+          name: card.name,
+          set: card.set,
+          collector_number: card.collector_number,
+        });
+        await cardCache.set(cacheKey, card);
 
-      const cName = card.name.toLowerCase();
-      const cSet = card.set.toLowerCase();
-      const cNum = card.collector_number || "";
+        const cName = card.name.toLowerCase();
+        const cSet = card.set.toLowerCase();
+        const cNum = card.collector_number || "";
 
-      const key1 = `${cName}|${cSet}|${cNum}`;
-      const key2 = `${cName}|${cSet}|`;
-      const key3 = `${cName}`;
-      const key4 = `|${cSet}|${cNum}`;
+        const key1 = `${cName}|${cSet}|${cNum}`;
+        const key2 = `${cName}|${cSet}|`;
+        const key3 = `${cName}`;
+        const key4 = `|${cSet}|${cNum}`;
 
-      if (!cardsMap.has(key1)) cardsMap.set(key1, card);
-      if (!cardsMap.has(key2)) cardsMap.set(key2, card);
-      if (!cardsMap.has(key3)) cardsMap.set(key3, card);
-      if (cSet && cNum && !cardsMap.has(key4)) cardsMap.set(key4, card);
-    });
+        if (!cardsMap.has(key1)) cardsMap.set(key1, card);
+        if (!cardsMap.has(key2)) cardsMap.set(key2, card);
+        if (!cardsMap.has(key3)) cardsMap.set(key3, card);
+        if (cSet && cNum && !cardsMap.has(key4)) cardsMap.set(key4, card);
+      })
+    );
 
     const results: (BulkItemResult & { originalLine: string })[] = items.map(
       (item) => {

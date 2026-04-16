@@ -1,53 +1,31 @@
+import { container } from "../infrastructure/container";
+import { TOKENS } from "../infrastructure/tokens";
+import { ICacheService } from "../infrastructure/cache/cache-service";
+
 /**
- * In-memory cache para cards do Scryfall
- * Evita requisições duplicadas durante o mesmo fluxo de importação
- * Cache é limpo após cada sessão para economizar memória
+ * Cache para cards do Scryfall usando o ICacheService centralizado
  */
-
-interface CacheEntry {
-  data: unknown;
-  timestamp: number;
-  ttl: number;
-}
-
 class CardCache {
-  private cache: Map<string, CacheEntry> = new Map();
-  private readonly DEFAULT_TTL = 5 * 60 * 1000; // 5 minutos
+  private readonly DEFAULT_TTL = 5 * 60; // 5 minutos em segundos
 
-  set(key: string, data: unknown, ttl?: number): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl: ttl ?? this.DEFAULT_TTL,
-    });
+  private get service(): ICacheService {
+    return container.resolve<ICacheService>(TOKENS.CacheService);
   }
 
-  get(key: string): unknown | null {
-    const entry = this.cache.get(key);
-    if (!entry) return null;
-
-    const isExpired = Date.now() - entry.timestamp > entry.ttl;
-    if (isExpired) {
-      this.cache.delete(key);
-      return null;
-    }
-
-    return entry.data;
+  async set(key: string, data: unknown, ttlSeconds?: number): Promise<void> {
+    await this.service.set(key, data, ttlSeconds ?? this.DEFAULT_TTL);
   }
 
-  has(key: string): boolean {
-    return this.get(key) !== null;
+  async get<T>(key: string): Promise<T | null> {
+    return await this.service.get<T>(key);
   }
 
-  clear(): void {
-    this.cache.clear();
+  async has(key: string): Promise<boolean> {
+    return await this.service.has(key);
   }
 
-  getStats(): { size: number; keys: string[] } {
-    return {
-      size: this.cache.size,
-      keys: Array.from(this.cache.keys()),
-    };
+  async clear(): Promise<void> {
+    await this.service.clear();
   }
 }
 
