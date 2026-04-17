@@ -70,9 +70,11 @@ export class PlaceOrderUseCase implements IUseCase<PlaceOrderRequest, PlaceOrder
     });
 
     // Publish event outside transaction
+    const tenantId = getTenantId()!;
     domainEvents.publish(DOMAIN_EVENTS.ORDER_PLACED, {
       orderId,
-      customerId: (await this.customerRepo.findByPhoneNumber(request.customerData.phoneNumber))?.id,
+      tenantId,
+      customerId: (await this.customerRepo.findByPhoneNumber(request.customerData.phoneNumber))?.id || "",
       items: request.items
     }).catch(err => {
       console.error("Error publishing ORDER_PLACED event:", err);

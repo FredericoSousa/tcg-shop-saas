@@ -3,6 +3,7 @@ import { CreditLedgerSource } from "@/lib/domain/entities/customer-credit-ledger
 
 export interface OrderPlacedPayload {
   orderId: string;
+  tenantId: string;
   customerId: string;
   items: {
     productId?: string;
@@ -55,6 +56,12 @@ export interface BuylistApprovedPayload {
 
 export interface InventoryUpdatedPayload {
   tenantId: string;
-  cardIds?: string[];
+  cardIds?: string[]; // Scryfall IDs
+  inventoryIds?: string[]; // IDs from the inventory table
   source?: string;
+}
+
+export interface InventoryDeletedPayload {
+  tenantId: string;
+  inventoryIds: string[];
 }

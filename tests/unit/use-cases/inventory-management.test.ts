@@ -16,6 +16,7 @@ vi.mock('@/lib/domain/events/domain-events', () => ({
   },
   DOMAIN_EVENTS: {
     INVENTORY_UPDATED: 'inventory.updated',
+    INVENTORY_DELETED: 'inventory.deleted',
   }
 }));
 
@@ -26,7 +27,7 @@ vi.mock('@/lib/scryfall', () => ({
   },
 }));
 
-vi.mock('../../tenant-context', () => ({
+vi.mock('@/lib/tenant-context', () => ({
   getTenantId: vi.fn(() => 'test-tenant-id'),
 }));
 
@@ -56,7 +57,8 @@ describe('Inventory Management Use Cases', () => {
 
       expect(inventoryRepo.save).toHaveBeenCalled();
       expect(domainEvents.publish).toHaveBeenCalledWith(DOMAIN_EVENTS.INVENTORY_UPDATED, expect.objectContaining({
-        scryfallId: 'tmpl-1'
+        cardIds: ['tmpl-1'],
+        tenantId: 'test-tenant-id'
       }));
     });
 
@@ -126,6 +128,10 @@ describe('Inventory Management Use Cases', () => {
       const useCase = new UpdateInventoryUseCase(inventoryRepo);
       await useCase.execute({ id: 'inv-1', price: 15 });
       expect(inventoryRepo.update).toHaveBeenCalledWith('inv-1', { price: 15, quantity: undefined });
+      expect(domainEvents.publish).toHaveBeenCalledWith(DOMAIN_EVENTS.INVENTORY_UPDATED, expect.objectContaining({
+        inventoryIds: ['inv-1'],
+        tenantId: 'test-tenant-id'
+      }));
     });
   });
 
@@ -134,6 +140,10 @@ describe('Inventory Management Use Cases', () => {
       const useCase = new BulkUpdateInventoryUseCase(inventoryRepo);
       await useCase.execute({ ids: ['1', '2'], quantity: 10 });
       expect(inventoryRepo.updateMany).toHaveBeenCalledWith(['1', '2'], { price: undefined, quantity: 10 });
+      expect(domainEvents.publish).toHaveBeenCalledWith(DOMAIN_EVENTS.INVENTORY_UPDATED, expect.objectContaining({
+        inventoryIds: ['1', '2'],
+        tenantId: 'test-tenant-id'
+      }));
     });
   });
 
@@ -142,6 +152,10 @@ describe('Inventory Management Use Cases', () => {
       const useCase = new DeleteInventoryUseCase(inventoryRepo);
       await useCase.execute({ ids: ['1', '2'] });
       expect(inventoryRepo.deactivateMany).toHaveBeenCalledWith(['1', '2']);
+      expect(domainEvents.publish).toHaveBeenCalledWith(DOMAIN_EVENTS.INVENTORY_DELETED, expect.objectContaining({
+        inventoryIds: ['1', '2'],
+        tenantId: 'test-tenant-id'
+      }));
     });
   });
 

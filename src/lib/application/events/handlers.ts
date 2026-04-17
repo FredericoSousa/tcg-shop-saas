@@ -11,6 +11,7 @@ import {
 import { 
   decrementStockOnOrderPlaced 
 } from "./inventory-event-handlers";
+import { handleInventoryCacheInvalidation } from "./cache-handlers";
 
 /**
  * Register all domain event handlers
@@ -41,4 +42,6 @@ export function registerEventHandlers() {
 
   // 3. Inventory & Product Handlers
   domainEvents.subscribe(DOMAIN_EVENTS.ORDER_PLACED, decrementStockOnOrderPlaced);
+  domainEvents.subscribe(DOMAIN_EVENTS.INVENTORY_UPDATED, handleInventoryCacheInvalidation);
+  domainEvents.subscribe(DOMAIN_EVENTS.INVENTORY_DELETED, handleInventoryCacheInvalidation);
 }

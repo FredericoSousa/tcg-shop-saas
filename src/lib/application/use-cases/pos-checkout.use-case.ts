@@ -99,8 +99,10 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
 
 
     // Publish event outside transaction
+    const tenantId = getTenantId()!;
     domainEvents.publish(DOMAIN_EVENTS.ORDER_PLACED, {
       orderId: result.orderId,
+      tenantId,
       customerId: request.customerData.id || result.orderId,
       items: request.items
     }).catch(err => {

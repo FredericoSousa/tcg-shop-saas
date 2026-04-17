@@ -103,12 +103,9 @@ export class AddInventoryUseCase implements IUseCase<AddInventoryRequest, AddInv
 
     // Publish event
     domainEvents.publish(DOMAIN_EVENTS.INVENTORY_UPDATED, {
-      scryfallId,
-      quantity,
-      price,
-      condition,
-      language,
-      tenantId: getTenantId()!
+      tenantId: getTenantId()!,
+      cardIds: [scryfallId],
+      source: "add_use_case"
     }).catch(err => console.error("Error publishing INVENTORY_UPDATED:", err));
 
     return { success: true };
