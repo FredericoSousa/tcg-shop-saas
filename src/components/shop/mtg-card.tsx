@@ -11,6 +11,7 @@ import { SetBadge } from "@/components/ui/set-badge";
 import { QuickAddButton } from "@/components/shop/quick-add-button";
 import { useCart } from "@/store/use-cart";
 import { formatCurrency } from "@/lib/utils/format";
+import { MTGCardTitle } from "@/components/ui/mtg-card-title";
 
 export type MTGCardItem = {
   id: string;
@@ -150,17 +151,10 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
           title={item.cardTemplate?.name}
         >
           <Link href={`/singles/${item.id}`}>
-            {item.cardTemplate?.name?.includes(" // ") ? (
-              <>
-                {item.cardTemplate.name.split(" // ")[0]}
-                <br />
-                <span className="text-[10px] text-zinc-500 font-medium">
-                  {"// "}{item.cardTemplate.name.split(" // ").slice(1).join(" // ")}
-                </span>
-              </>
-            ) : (
-              item.cardTemplate?.name
-            )}
+            <MTGCardTitle 
+              name={item.cardTemplate?.name || ""} 
+              mainClassName="group-hover:text-primary transition-colors" 
+            />
           </Link>
         </h3>
 

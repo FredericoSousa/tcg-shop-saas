@@ -17,6 +17,7 @@ import { BuylistService } from '@/lib/api/services/buylist.service'
 import { useRouter } from 'next/navigation'
 import { feedback } from '@/lib/utils/feedback'
 import Link from 'next/link'
+import { MTGCardTitle } from '@/components/ui/mtg-card-title'
 
 const dateFormatter = new Intl.DateTimeFormat('pt-BR', {
   day: '2-digit',
@@ -64,9 +65,9 @@ export const buylistItemColumns: ColumnDef<BuylistItemRow>[] = [
           ) : (
             <div className="w-10 h-14 bg-muted rounded" />
           )}
-          <div className="flex flex-col">
-            <span className="font-semibold">{template.name}</span>
-            <div className="flex items-center gap-1">
+          <div className="flex flex-col gap-0.5">
+            <MTGCardTitle name={template.name} />
+            <div className="flex items-center gap-1 mt-0.5">
               <SetBadge setCode={template.set} />
             </div>
           </div>

@@ -21,6 +21,7 @@ import { CONDITION_OPTIONS } from "@/lib/constants/conditions";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MTGCardTitle } from "@/components/ui/mtg-card-title";
 
 interface BuylistCardProps {
   item: BuylistItem;
@@ -111,17 +112,10 @@ export function BuylistCard({ item }: BuylistCardProps) {
 
       <div className="p-4 flex flex-col flex-1 gap-3 relative z-10">
         <h3 className="font-bold text-zinc-900 text-sm line-clamp-2 leading-tight min-h-[2.5rem] group-hover:text-primary transition-colors">
-          {item.cardTemplate?.name?.includes(" // ") ? (
-            <>
-              {item.cardTemplate.name.split(" // ")[0]}
-              <br />
-              <span className="text-[10px] text-zinc-500 font-medium">
-                {item.cardTemplate.name.split(" // ").slice(1).join(" // ")}
-              </span>
-            </>
-          ) : (
-            item.cardTemplate?.name
-          )}
+          <MTGCardTitle 
+            name={item.cardTemplate?.name || ""} 
+            mainClassName="group-hover:text-primary transition-colors" 
+          />
         </h3>
 
         <div className="space-y-3">

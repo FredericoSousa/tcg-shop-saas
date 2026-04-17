@@ -7,6 +7,7 @@ import { ArrowUpDown } from 'lucide-react'
 import { SetBadge } from '@/components/ui/set-badge'
 import { InlineEditCell } from '@/components/admin/inline-edit-cell'
 import { LanguageBadge } from '@/components/ui/language-badge'
+import { MTGCardTitle } from '@/components/ui/mtg-card-title'
 
 export type InventoryRow = {
   id: string
@@ -74,7 +75,7 @@ export const columns: ColumnDef<InventoryRow>[] = [
           ) : (
             <div className="w-10 h-14 bg-muted rounded shrink-0" />
           )}
-          <span className="font-semibold truncate max-w-[200px]" title={template.name}>{template.name}</span>
+          <MTGCardTitle name={template.name} className="max-w-[200px]" />
         </div>
       )
     }

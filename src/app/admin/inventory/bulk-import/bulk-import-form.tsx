@@ -30,6 +30,7 @@ import { ChipListInput } from "@/components/ui/chip-list-input";
 import { ImportProgressDisplay } from "@/components/admin/import-progress-display";
 import { ScryfallService } from "@/lib/api/services/scryfall.service";
 import { InventoryService, BulkInventoryItemDto } from "@/lib/api/services/inventory.service";
+import { MTGCardTitle } from "@/components/ui/mtg-card-title";
 
 
 type ParsedLine = {
@@ -860,12 +861,7 @@ export function BulkImportForm() {
                           ) : (
                             <div className="w-8 h-11 bg-muted rounded shrink-0" />
                           )}
-                          <span
-                            className="font-semibold truncate max-w-[200px]"
-                            title={item.cardName}
-                          >
-                            {item.cardName}
-                          </span>
+                          <MTGCardTitle name={item.cardName} className="max-w-[200px]" />
                         </div>
                       )}
                     </td>

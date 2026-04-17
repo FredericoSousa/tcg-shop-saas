@@ -24,6 +24,7 @@ import { StatusBadge } from '@/components/admin/status-badge'
 import { PageHeader } from '@/components/admin/page-header'
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
+import { MTGCardTitle } from '@/components/ui/mtg-card-title'
 
 export default function AdminBuylistProposalDetailsPage() {
   const { id } = useParams()
@@ -153,9 +154,9 @@ export default function AdminBuylistProposalDetailsPage() {
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2">
                                 <Badge variant="outline" className="gap-0 cursor-default p-0 px-1.5 border-zinc-200">
-                                  <SetBadge setCode={item.cardTemplate?.set || ""} setName={item.cardTemplate?.metadata?.set_name || ""} showText={true} />
+                                  <SetBadge setCode={item.cardTemplate?.set || ""} setName={item.cardTemplate?.metadata?.set_name as string || ""} showText={true} />
                                 </Badge>
-                                <p className="font-bold text-zinc-900 leading-tight">{item.cardTemplate?.name}</p>
+                                <MTGCardTitle name={item.cardTemplate?.name || ""} />
                               </div>
                               <div className="flex items-center gap-1.5 mt-0.5">
                                 <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 font-black border-zinc-300 text-zinc-600 bg-zinc-50">
