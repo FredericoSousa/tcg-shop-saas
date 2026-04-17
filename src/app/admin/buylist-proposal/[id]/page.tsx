@@ -4,14 +4,14 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { 
-  CheckCircle, 
-  XCircle, 
-  ChevronLeft, 
-  Package, 
-  Clock, 
-  Phone, 
-  User, 
+import {
+  CheckCircle,
+  XCircle,
+  ChevronLeft,
+  Package,
+  Clock,
+  Phone,
+  User,
   HandCoins,
   Loader2,
   FileText
@@ -22,6 +22,8 @@ import { feedback } from '@/lib/utils/feedback'
 import { SetBadge } from '@/components/ui/set-badge'
 import { StatusBadge } from '@/components/admin/status-badge'
 import { PageHeader } from '@/components/admin/page-header'
+import Image from 'next/image'
+import { Badge } from '@/components/ui/badge'
 
 export default function AdminBuylistProposalDetailsPage() {
   const { id } = useParams()
@@ -66,7 +68,7 @@ export default function AdminBuylistProposalDetailsPage() {
       const updatedResponse = await fetch(`/api/buylist/proposals/${id}`)
       const res = await updatedResponse.json()
       if (res.success) setProposal(res.data)
-      
+
     } catch {
       feedback.error("Erro ao processar proposta")
     } finally {
@@ -132,13 +134,37 @@ export default function AdminBuylistProposalDetailsPage() {
                     {proposal.items?.map((item) => (
                       <tr key={item.id} className="hover:bg-muted/30 transition-colors">
                         <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <SetBadge setCode={item.cardTemplate?.set || ""} />
-                            <div>
-                              <p className="font-bold text-zinc-900">{item.cardTemplate?.name}</p>
-                              <p className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">
-                                {item.condition} | {item.language}
-                              </p>
+                          <div className="flex items-center gap-4">
+                            {item.cardTemplate?.imageUrl ? (
+                              <div className="relative w-12 h-16 shrink-0 rounded-md overflow-hidden shadow-sm border border-zinc-200">
+                                <Image
+                                  src={item.cardTemplate.imageUrl}
+                                  alt={item.cardTemplate.name}
+                                  className="object-cover"
+                                  fill
+                                  sizes="48px"
+                                />
+                              </div>
+                            ) : (
+                              <div className="w-12 h-16 bg-muted rounded-md flex items-center justify-center text-muted-foreground/30">
+                                <Package className="h-6 w-6" />
+                              </div>
+                            )}
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="gap-0 cursor-default p-0 px-1.5 border-zinc-200">
+                                  <SetBadge setCode={item.cardTemplate?.set || ""} setName={item.cardTemplate?.metadata?.set_name || ""} showText={true} />
+                                </Badge>
+                                <p className="font-bold text-zinc-900 leading-tight">{item.cardTemplate?.name}</p>
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 font-black border-zinc-300 text-zinc-600 bg-zinc-50">
+                                  {item.condition}
+                                </Badge>
+                                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-4 font-black bg-zinc-100 text-zinc-500 border-transparent">
+                                  {item.language}
+                                </Badge>
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -228,7 +254,7 @@ export default function AdminBuylistProposalDetailsPage() {
 
               {proposal.status === 'PENDING' ? (
                 <div className="flex flex-col gap-3">
-                  <Button 
+                  <Button
                     className="w-full h-12 font-black shadow-lg shadow-primary/20"
                     disabled={isProcessing}
                     onClick={() => handleProcess('APPROVE', 'STORE_CREDIT')}
@@ -236,16 +262,16 @@ export default function AdminBuylistProposalDetailsPage() {
                     {isProcessing ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle className="h-4 w-4 mr-2" />}
                     APROVAR (CRÉDITO)
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full h-12 font-bold"
                     disabled={isProcessing}
                     onClick={() => handleProcess('APPROVE', 'CASH')}
                   >
                     APROVAR (DINHEIRO)
                   </Button>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 font-bold"
                     disabled={isProcessing}
                     onClick={() => handleProcess('CANCEL', 'CASH')}

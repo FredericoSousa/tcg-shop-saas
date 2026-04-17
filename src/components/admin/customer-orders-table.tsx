@@ -66,7 +66,6 @@ export function CustomerOrdersTable({ customerId }: CustomerOrdersTableProps) {
           Histórico de Pedidos
         </h2>
       </div>
-
       <div className="flex-1">
         {loading ? (
           <div className="flex h-64 items-center justify-center">
@@ -107,7 +106,7 @@ export function CustomerOrdersTable({ customerId }: CustomerOrdersTableProps) {
                       {formatCurrency(order.totalAmount)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Link href={`/admin/orders/${order.id}`} passHref>
+                      <Link href={`/admin/orders/${order.id}`}>
                         <Button variant="ghost" size="sm" className="hover:bg-primary/10 hover:text-primary transition-all">
                           Ver Detalhes
                           <ChevronRight className="w-4 h-4 ml-1" />

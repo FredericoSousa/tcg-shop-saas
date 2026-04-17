@@ -174,14 +174,14 @@ export const buylistProposalColumns: ColumnDef<BuylistProposalRow>[] = [
 
       return (
         <div className="flex items-center gap-2">
-          <Link href={`/admin/buylist-proposal/${proposal.id}`} passHref legacyBehavior>
+          <Link href={`/admin/buylist-proposal/${proposal.id}`}>
             <Button variant="ghost" size="sm" className="h-8 gap-2">
               <Eye className="h-4 w-4" />
               Ver Detalhes
             </Button>
           </Link>
         </div>
-      )
+      );
     }
   }
 ]
