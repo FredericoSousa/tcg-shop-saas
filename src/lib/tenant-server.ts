@@ -124,7 +124,7 @@ function handleDomainError(error: DomainError): Response {
  * Applies rate limiting and returns a response if limited, or null if allowed.
  */
 async function applyRateLimit(key: string, limit = 60, window = 60) {
-  const result = checkRateLimit(key, { limit, windowSeconds: window });
+  const result = await checkRateLimit(key, { limit, windowSeconds: window });
   
   if (!result.allowed) {
     return new Response(JSON.stringify({

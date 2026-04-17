@@ -78,7 +78,11 @@ export function BuylistCard({ item }: BuylistCardProps) {
               onLoad={() => setIsImageLoaded(true)}
             />
             <div className="absolute top-2 left-2 z-10 flex flex-col gap-2">
-              <SetBadge setCode={item.cardTemplate?.set || ""} className="bg-white/90 backdrop-blur-md px-1.5 py-0.5 rounded-lg shadow-sm border-none" />
+              <SetBadge 
+                setCode={item.cardTemplate?.set || ""} 
+                setName={(item.cardTemplate?.metadata as any)?.set_name}
+                className="bg-white/90 backdrop-blur-md px-1.5 py-0.5 rounded-lg shadow-sm border-none" 
+              />
 
               {item.cardTemplate.backImageUrl && (
                 <button

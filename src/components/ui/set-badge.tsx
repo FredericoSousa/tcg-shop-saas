@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 
 interface SetBadgeProps {
   setCode: string
+  setName?: string
   className?: string
   iconClassName?: string
   showText?: boolean
@@ -12,6 +13,7 @@ interface SetBadgeProps {
 
 export function SetBadge({
   setCode,
+  setName,
   className,
   iconClassName,
   showText = true,
@@ -31,17 +33,15 @@ export function SetBadge({
   }
 
   return (
-    <div className={cn("flex items-center gap-1.5", className)}>
+    <div 
+      className={cn("flex items-center gap-1.5", className)}
+      title={setName || `Set: ${setCode}`}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={imgSrc}
         alt={`${setCode} set icon`}
-        title={`Set: ${setCode}`}
         className={cn("h-3.5 w-3.5 shrink-0", iconClassName)}
-        onError={(e) => {
-          e.currentTarget.src = "https://svgs.scryfall.io/sets/star.svg"
-          e.currentTarget.onerror = null // Evita loop infinito se a estrela também falhar
-        }}
       />
       {showText && (
         <span className={cn("text-xs text-muted-foreground uppercase font-mono tracking-wider", textClassName)}>

@@ -167,6 +167,7 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
         <div className="flex items-center flex-wrap gap-1.5 mt-auto">
           <SetBadge
             setCode={item.cardTemplate?.set || ""}
+            setName={item.cardTemplate?.metadata?.set_name}
             className="gap-1 shadow-none bg-zinc-50 border-zinc-100 px-1.5 py-0.5 rounded"
             iconClassName="h-3 w-3"
             textClassName="text-[10px] font-bold text-zinc-400"

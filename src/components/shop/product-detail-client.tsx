@@ -23,6 +23,7 @@ interface ProductDetailClientProps {
       set: string;
       imageUrl: string | null;
       backImageUrl?: string | null;
+      metadata?: any;
     } | null;
   };
 }
@@ -116,6 +117,7 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
           <div className="flex flex-wrap items-center gap-3">
             <SetBadge 
               setCode={item.cardTemplate?.set || ""} 
+              setName={item.cardTemplate?.metadata?.set_name}
               className="bg-zinc-100 px-3 py-1.5 rounded-xl border border-zinc-200"
               textClassName="font-black text-zinc-500"
             />

@@ -106,7 +106,8 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
                       <Image
                         src={related.cardTemplate.imageUrl}
                         alt={related.cardTemplate.name}
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        fill
+                        className="object-cover transition-transform duration-700 group-hover:scale-110"
                       />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -114,7 +115,7 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
                   <div className="space-y-1">
                     <h4 className="font-black text-sm text-zinc-900 group-hover:text-primary transition-colors truncate">{related.cardTemplate?.name}</h4>
                     <div className="flex items-center justify-between">
-                      <SetBadge setCode={related.cardTemplate?.set || ""} showText={false} iconClassName="h-3 w-3" />
+                      <SetBadge setCode={related.cardTemplate?.set || ""} setName={(related.cardTemplate?.metadata as any)?.set_name} showText={false} iconClassName="h-3 w-3" />
                       <span className="font-black text-primary text-sm">{formatCurrency(related.price)}</span>
                     </div>
                   </div>

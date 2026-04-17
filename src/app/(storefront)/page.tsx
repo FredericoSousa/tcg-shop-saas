@@ -47,7 +47,7 @@ export default async function HomePage() {
             {/* Brand Mark */}
             <div className="inline-block">
               {tenant?.logoUrl ? (
-                <Image src={tenant.logoUrl} alt={shopName} className="h-20 w-auto object-contain mx-auto drop-shadow-2xl" />
+                <Image src={tenant.logoUrl} alt={shopName} width={200} height={80} className="h-20 w-auto object-contain mx-auto drop-shadow-2xl" />
               ) : (
                 <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mx-auto shadow-2xl">
                   <span className="text-4xl font-black text-white">{shopName.charAt(0)}</span>

@@ -121,11 +121,11 @@ export function SellCartDrawer() {
                 <div className="space-y-4">
                   {items.map((item) => (
                     <div key={`${item.buylistItemId}-${item.condition}-${item.language}`} className="flex gap-4 group p-3 rounded-2xl border bg-card hover:border-primary/50 transition-colors relative">
-                      <div className="h-20 w-14 shrink-0 rounded-md overflow-hidden bg-muted">
-                        {item.imageUrl && (
-                          <Image src={item.imageUrl} alt={item.name} className="w-full h-full object-cover" />
-                        )}
-                      </div>
+                    <div className="h-20 w-14 shrink-0 rounded-md overflow-hidden bg-muted relative">
+                      {item.imageUrl && (
+                        <Image src={item.imageUrl} alt={item.name} fill className="object-cover" />
+                      )}
+                    </div>
                       <div className="flex-1 flex flex-col justify-between py-0.5">
                         <div>
                           <p className="text-sm font-bold line-clamp-1">{item.name}</p>
