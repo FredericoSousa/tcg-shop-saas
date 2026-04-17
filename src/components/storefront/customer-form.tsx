@@ -35,7 +35,7 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
       const res = await response.json();
       return res.data;
     },
-    enabled: cleanPhone.length >= 8,
+    enabled: cleanPhone.length === 11,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
@@ -43,8 +43,7 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
 
   // Sync name field when customer is found
   if (customerExists && form.getValues('name') === '') {
-    form.setValue('name', 'CLIENTE_ID_' + customerLookup.id); 
-    feedback.success(`Bem-vindo de volta!`);
+    form.setValue('name', 'CLIENTE_EXISTENTE');
   }
 
   const handleReset = () => {
@@ -84,7 +83,7 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
             </div>
           )}
           {errors.phoneNumber && (
-            <motion.span 
+            <motion.span
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-[10px] text-destructive font-bold pl-2"
@@ -96,7 +95,7 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
 
         <AnimatePresence mode="wait">
           {isCheckingPhone ? (
-            <motion.div 
+            <motion.div
               key="loader"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -106,7 +105,7 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
               <Skeleton className="h-14 w-full rounded-2xl" />
             </motion.div>
           ) : customerExists ? (
-            <motion.div 
+            <motion.div
               key="exists"
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -128,8 +127,8 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
                 Trocar
               </button>
             </motion.div>
-          ) : cleanPhone.length >= 8 ? (
-            <motion.div 
+          ) : cleanPhone.length === 11 ? (
+            <motion.div
               key="new"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -148,7 +147,7 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
                   )}
                 />
                 {errors.name && (
-                  <motion.span 
+                  <motion.span
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="text-[10px] text-destructive font-bold pl-2"
