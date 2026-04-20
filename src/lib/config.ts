@@ -5,16 +5,32 @@ import { z } from "zod";
  * Single source of truth for environment variables and constants.
  */
 
-const envSchema = z.object({
-  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-  JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url("NEXT_PUBLIC_SUPABASE_URL must be a valid URL"),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
-  JWT_EXPIRATION_TIME: z.string().default("1h"),
-  SESSION_COOKIE_MAX_AGE: z.coerce.number().default(60 * 60), // 1h
-  REDIS_URL: z.string().url().optional(),
-  CACHE_STORE: z.enum(["memory", "redis"]).default("memory"),
-});
+const envSchema = z
+  .object({
+    NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+    JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
+    NEXT_PUBLIC_SUPABASE_URL: z.string().url("NEXT_PUBLIC_SUPABASE_URL must be a valid URL"),
+    SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
+    JWT_EXPIRATION_TIME: z.string().default("1h"),
+    SESSION_COOKIE_MAX_AGE: z.coerce.number().default(60 * 60),
+    REDIS_URL: z.string().url().optional(),
+    CACHE_STORE: z.enum(["memory", "redis"]).default("memory"),
+    SENTRY_DSN: z.string().url().optional(),
+    NEXT_PUBLIC_SENTRY_DSN: z.string().url().optional(),
+  })
+  .superRefine((data, ctx) => {
+    const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+    if (data.NODE_ENV === "production" && !isBuildPhase) {
+      if (data.CACHE_STORE !== "redis" || !data.REDIS_URL) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["REDIS_URL"],
+          message:
+            "Redis é obrigatório em produção. Defina CACHE_STORE=redis e REDIS_URL.",
+        });
+      }
+    }
+  });
 
 const getEnv = () => {
   const result = envSchema.safeParse(process.env);
@@ -53,5 +69,9 @@ export const config = {
   cache: {
     store: env.CACHE_STORE,
     redisUrl: env.REDIS_URL,
+  },
+  sentry: {
+    serverDsn: env.SENTRY_DSN,
+    clientDsn: env.NEXT_PUBLIC_SENTRY_DSN,
   },
 } as const;

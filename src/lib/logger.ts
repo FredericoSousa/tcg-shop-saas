@@ -18,6 +18,14 @@ interface LogContext {
   [key: string]: unknown;
 }
 
+type ErrorReporter = (error: Error, context?: LogContext) => void;
+
+let errorReporter: ErrorReporter | null = null;
+
+export function setErrorReporter(reporter: ErrorReporter): void {
+  errorReporter = reporter;
+}
+
 class Logger {
   private isDev = process.env.NODE_ENV === "development";
 
@@ -73,6 +81,14 @@ class Logger {
     const stack = error instanceof Error ? error.stack : undefined;
     const fullContext = { ...context, error: errorMsg, ...(stack && !this.isDev ? { stack } : {}) };
     console.error(this.format("error", message, fullContext));
+
+    if (errorReporter && error instanceof Error) {
+      try {
+        errorReporter(error, { ...context, message });
+      } catch {
+        // never let the reporter crash the app
+      }
+    }
   }
 }
 

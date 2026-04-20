@@ -8,13 +8,15 @@ import { config as appConfig } from "./lib/config";
 import { checkRateLimit } from "./lib/rate-limiter";
 import { TOKENS } from "./lib/infrastructure/tokens";
 import { ICacheService } from "./lib/infrastructure/cache/cache-service";
+import { generateNonce, buildCspHeader } from "./lib/security/csp";
+import { requiresCsrfCheck, isOriginAllowed } from "./lib/security/csrf";
+import { logger } from "./lib/logger";
 
 const JWT_SECRET = appConfig.jwtSecret;
 
-// Routes that require authentication
 const PROTECTED_ROUTES = ["/admin"];
 
-const TENANT_CACHE_TTL = 60; // 60 segundos em Redis/CacheService
+const TENANT_CACHE_TTL = 60;
 
 async function resolveTenantId(slug: string): Promise<string | null> {
   const cache = container.resolve<ICacheService>(TOKENS.CacheService);
@@ -31,15 +33,43 @@ async function resolveTenantId(slug: string): Promise<string | null> {
       return tenant.id;
     }
   } catch (err) {
-    console.error("Proxy tenant lookup error:", err);
+    logger.warn("Proxy tenant lookup failed", {
+      action: "proxy_tenant_lookup",
+      slug,
+      error: err instanceof Error ? err.message : String(err),
+    });
   }
   return null;
+}
+
+function applySecurityHeaders(response: NextResponse, nonce: string) {
+  const isDev = process.env.NODE_ENV !== "production";
+  response.headers.set("Content-Security-Policy", buildCspHeader(nonce, isDev));
+  response.headers.set("x-nonce", nonce);
+  return response;
 }
 
 export async function proxy(request: NextRequest) {
   const url = request.nextUrl;
   const pathname = url.pathname;
   const hostname = request.headers.get("host") || "";
+
+  const nonce = generateNonce();
+
+  // ─── CSRF: reject unsafe cross-origin requests ────────────────────────────
+  if (requiresCsrfCheck(request) && !isOriginAllowed(request)) {
+    return new NextResponse(
+      JSON.stringify({
+        success: false,
+        message: "Origem não autorizada.",
+        error: { code: "CSRF_ORIGIN_MISMATCH" },
+      }),
+      {
+        status: 403,
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+  }
 
   // ─── Rate Limiting nas rotas de API ───────────────────────────────────────
   if (pathname.startsWith("/api/")) {
@@ -89,25 +119,29 @@ export async function proxy(request: NextRequest) {
   }
 
   // ─── Multi-tenant: subdomain routing ──────────────────────────────────────
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+
   const subdomain = hostname.split(".")[0];
-  console.log(`[Proxy] hostname: ${hostname}, subdomain: ${subdomain}, pathname: ${pathname}`);
 
   if (!subdomain || subdomain === "www" || subdomain === "localhost" || subdomain.includes(":")) {
-    console.log(`[Proxy] Skipping tenant lookup for subdomain: ${subdomain}`);
-    return NextResponse.next();
+    return applySecurityHeaders(
+      NextResponse.next({ request: { headers: requestHeaders } }),
+      nonce,
+    );
   }
 
   const tenantId = await resolveTenantId(subdomain);
   if (tenantId) {
-    const requestHeaders = new Headers(request.headers);
     requestHeaders.set("x-tenant-id", tenantId);
-    return NextResponse.next({ request: { headers: requestHeaders } });
   }
 
-  return NextResponse.next();
+  return applySecurityHeaders(
+    NextResponse.next({ request: { headers: requestHeaders } }),
+    nonce,
+  );
 }
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico|public).*)"],
 };
-

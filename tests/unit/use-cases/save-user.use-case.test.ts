@@ -11,6 +11,10 @@ vi.mock('@/lib/tenant-context', () => ({
   getTenantId: vi.fn(() => 'test-tenant-id'),
 }));
 
+const VALID_USER_ID = '11111111-1111-4111-8111-111111111111';
+const VALID_PASSWORD = 'StrongP@ss1';
+const VALID_NEW_PASSWORD = 'NewValidP@ss2';
+
 describe('SaveUserUseCase', () => {
   let userRepo: MockProxy<IUserRepository>;
 
@@ -23,66 +27,72 @@ describe('SaveUserUseCase', () => {
     it('should create new user with hashed password', async () => {
       const useCase = new SaveUserUseCase(userRepo);
       userRepo.findByUsername.mockResolvedValue(null);
-      userRepo.save.mockResolvedValue({ id: 'u1', username: 'u1', role: 'ADMIN' } as any);
-      
-      const result = await useCase.execute({ username: 'u1', password: 'password123', role: 'ADMIN' });
-      
+      userRepo.save.mockResolvedValue({ id: 'u1', username: 'user1', role: 'ADMIN' } as any);
+
+      const result = await useCase.execute({ username: 'user1', password: VALID_PASSWORD, role: 'ADMIN' });
+
       expect(userRepo.save).toHaveBeenCalledWith(expect.objectContaining({
-        username: 'u1',
+        username: 'user1',
         passwordHash: 'hashed-password',
         role: 'ADMIN',
         tenantId: 'test-tenant-id'
       }));
-      expect(result.username).toBe('u1');
+      expect(result.username).toBe('user1');
     });
 
     it('should throw error if password is missing for new user', async () => {
       const useCase = new SaveUserUseCase(userRepo);
-      await expect(useCase.execute({ username: 'u1' }))
+      await expect(useCase.execute({ username: 'user1' }))
         .rejects.toThrow('Senha é obrigatória para novos usuários.');
     });
 
     it('should throw error if user already exists', async () => {
       const useCase = new SaveUserUseCase(userRepo);
       userRepo.findByUsername.mockResolvedValue({ id: 'old' } as any);
-      
-      await expect(useCase.execute({ username: 'u1', password: 'p1' }))
+
+      await expect(useCase.execute({ username: 'user1', password: VALID_PASSWORD }))
         .rejects.toThrow('Usuário já existe.');
     });
 
     it('should use USER role by default if not provided', async () => {
       const useCase = new SaveUserUseCase(userRepo);
       userRepo.findByUsername.mockResolvedValue(null);
-      userRepo.save.mockResolvedValue({ id: 'u1', username: 'u1', role: 'USER' } as any);
-      
-      await useCase.execute({ username: 'u1', password: 'p1' });
-      
+      userRepo.save.mockResolvedValue({ id: 'u1', username: 'user1', role: 'USER' } as any);
+
+      await useCase.execute({ username: 'user1', password: VALID_PASSWORD });
+
       expect(userRepo.save).toHaveBeenCalledWith(expect.objectContaining({
         role: 'USER'
       }));
+    });
+
+    it('should reject weak passwords', async () => {
+      const useCase = new SaveUserUseCase(userRepo);
+      await expect(useCase.execute({ username: 'user1', password: '123' }))
+        .rejects.toThrow();
     });
   });
 
   describe('Update', () => {
     it('should update existing user without changing password', async () => {
       const useCase = new SaveUserUseCase(userRepo);
-      userRepo.update.mockResolvedValue({ id: 'u1', username: 'new-name', role: 'ADMIN' } as any);
-      
-      await useCase.execute({ id: 'u1', username: 'new-name', role: 'ADMIN' });
-      
-      expect(userRepo.update).toHaveBeenCalledWith('u1', { 
-        username: 'new-name', 
-        role: 'ADMIN' 
+      userRepo.update.mockResolvedValue({ id: VALID_USER_ID, username: 'new-name', role: 'ADMIN' } as any);
+
+      await useCase.execute({ id: VALID_USER_ID, username: 'new-name', role: 'ADMIN' });
+
+      expect(userRepo.update).toHaveBeenCalledWith(VALID_USER_ID, {
+        username: 'new-name',
+        role: 'ADMIN'
       });
     });
 
     it('should update existing user and hash new password if provided', async () => {
       const useCase = new SaveUserUseCase(userRepo);
-      userRepo.update.mockResolvedValue({ id: 'u1', username: 'u1' } as any);
-      
-      await useCase.execute({ id: 'u1', username: 'u1', password: 'new-password' });
-      
-      expect(userRepo.update).toHaveBeenCalledWith('u1', expect.objectContaining({
+      userRepo.update.mockResolvedValue({ id: VALID_USER_ID, username: 'user1' } as any);
+
+      await useCase.execute({ id: VALID_USER_ID, username: 'user1', password: VALID_NEW_PASSWORD });
+
+      expect(userRepo.update).toHaveBeenCalledWith(VALID_USER_ID, expect.objectContaining({
         passwordHash: 'hashed-password'
       }));
     });

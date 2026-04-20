@@ -71,6 +71,7 @@ describe('Decoupled Event Handlers', () => {
       const data: OrderPlacedPayload = {
         orderId: 'o1',
         customerId: 'c1',
+        tenantId: 't1',
         items: [
           { productId: 'p1', quantity: 2, price: 10 },
           { inventoryId: 'i1', quantity: 1, price: 20 }

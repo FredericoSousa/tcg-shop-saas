@@ -21,7 +21,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: '*.supabase.co',
       },
-    ]
+    ],
+    minimumCacheTTL: 2678400,
+    qualities: [75],
+    formats: ['image/webp'],
   },
   async headers() {
     return [
@@ -42,11 +45,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains',
-          },
-          {
-            key: 'Content-Security-Policy',
-            value: "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data: https://cards.scryfall.io https://c1.scryfall.com https://svgs.scryfall.io https://*.supabase.co; font-src 'self' data:; connect-src 'self' https://*.supabase.co https://api.scryfall.com;",
+            value: 'max-age=31536000; includeSubDomains; preload',
           },
         ],
       },

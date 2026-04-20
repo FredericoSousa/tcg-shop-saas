@@ -11,9 +11,10 @@ interface ICorrelationContext {
 let implementation: ICorrelationContext;
 
 if (typeof window === "undefined" && process.env.NEXT_RUNTIME !== "edge") {
-  // Server-side implementation (Node.js)
   try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { AsyncLocalStorage } = require("node:async_hooks");
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { randomUUID } = require("node:crypto");
     const correlationContext = new AsyncLocalStorage();
 
@@ -25,21 +26,15 @@ if (typeof window === "undefined" && process.env.NEXT_RUNTIME !== "edge") {
       },
     };
   } catch {
-    // Fallback for environments where require might fail despite being server-side
     implementation = {
       getCorrelationId: () => undefined,
       runWithCorrelationId: <T>(callback: () => T): T => callback(),
     };
   }
 } else {
-  // Browser or Edge implementation (Stubs)
   implementation = {
     getCorrelationId: () => undefined,
-    runWithCorrelationId: <T>(callback: () => T, _id?: string): T => {
-      // In the browser, we don't have AsyncLocalStorage, but we can still generate a UUID if needed
-      // though it won't be persisted across calls like on the server.
-      return callback();
-    },
+    runWithCorrelationId: <T>(callback: () => T): T => callback(),
   };
 }
 

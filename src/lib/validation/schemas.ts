@@ -4,6 +4,24 @@ import { z } from "zod";
  * Reusable Zod schemas for API route input validation.
  */
 
+// Password policy: min 10 chars, at least one uppercase, one lowercase, one digit, one symbol.
+export const passwordSchema = z
+  .string()
+  .min(10, "Senha deve ter no mínimo 10 caracteres")
+  .max(128, "Senha deve ter no máximo 128 caracteres")
+  .regex(/[A-Z]/, "Senha deve conter pelo menos uma letra maiúscula")
+  .regex(/[a-z]/, "Senha deve conter pelo menos uma letra minúscula")
+  .regex(/\d/, "Senha deve conter pelo menos um número")
+  .regex(/[^A-Za-z0-9]/, "Senha deve conter pelo menos um símbolo");
+
+// User creation/update payload
+export const saveUserSchema = z.object({
+  id: z.string().uuid().optional(),
+  username: z.string().min(3, "Usuário deve ter no mínimo 3 caracteres").max(64),
+  password: passwordSchema.optional(),
+  role: z.enum(["ADMIN", "USER"]).optional(),
+});
+
 // Common pagination params
 export const paginationSchema = z.object({
   page: z.coerce.number().int().positive().default(1),

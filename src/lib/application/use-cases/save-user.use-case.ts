@@ -5,6 +5,7 @@ import { User, UserRole } from "@/lib/domain/entities/tenant";
 import { hashPassword } from "@/lib/auth";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
+import { saveUserSchema } from "@/lib/validation/schemas";
 
 export interface SaveUserRequest {
   id?: string;
@@ -18,7 +19,7 @@ export class SaveUserUseCase implements IUseCase<SaveUserRequest, Partial<User>>
   constructor(@inject(TOKENS.UserRepository) private userRepo: IUserRepository) {}
 
   async execute(request: SaveUserRequest): Promise<Partial<User>> {
-    const { id, username, password, role } = request;
+    const { id, username, password, role } = saveUserSchema.parse(request);
 
     if (id) {
       const updateData: Partial<User> = { username, role };

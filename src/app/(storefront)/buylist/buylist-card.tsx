@@ -81,7 +81,7 @@ export function BuylistCard({ item }: BuylistCardProps) {
             <div className="absolute top-2 left-2 z-10 flex flex-col gap-2">
               <SetBadge 
                 setCode={item.cardTemplate?.set || ""} 
-                setName={(item.cardTemplate?.metadata as any)?.set_name}
+                setName={(item.cardTemplate?.metadata as { set_name?: string } | null | undefined)?.set_name}
                 className="bg-white/90 backdrop-blur-md px-1.5 py-0.5 rounded-lg shadow-sm border-none" 
               />
 

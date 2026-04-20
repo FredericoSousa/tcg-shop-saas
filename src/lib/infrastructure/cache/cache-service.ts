@@ -10,7 +10,7 @@ export interface ICacheService {
 }
 
 export class MemoryCacheService implements ICacheService {
-  private cache: Map<string, { value: any; expiresAt: number | null }> = new Map();
+  private cache: Map<string, { value: unknown; expiresAt: number | null }> = new Map();
 
   async get<T>(key: string): Promise<T | null> {
     const entry = this.cache.get(key);
