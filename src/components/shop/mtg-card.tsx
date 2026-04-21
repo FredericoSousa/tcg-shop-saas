@@ -125,7 +125,7 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-zinc-200 text-[10px] font-bold uppercase tracking-wider space-y-2">
+          <div className="flex flex-col items-center justify-center h-full text-zinc-200 text-2xs font-bold uppercase tracking-wider space-y-2">
             <div className="w-12 h-16 border border-dashed border-zinc-200 rounded-lg flex items-center justify-center bg-white">
               ?
             </div>
@@ -134,7 +134,7 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
         )}
 
         {item.extras.includes("FOIL") && (
-          <div className="absolute top-2 right-2 bg-amber-400 text-zinc-950 text-[9px] font-bold px-1.5 py-0.5 rounded shadow-sm z-30 uppercase tracking-wider">
+          <div className="absolute top-2 right-2 bg-warning text-warning-foreground text-2xs font-bold px-1.5 py-0.5 rounded shadow-sm z-30 uppercase tracking-wider">
             Foil
           </div>
         )}
@@ -164,14 +164,14 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
             setName={item.cardTemplate?.metadata?.set_name}
             className="gap-1 shadow-none bg-zinc-50 border-zinc-100 px-1.5 py-0.5 rounded"
             iconClassName="h-3 w-3"
-            textClassName="text-[10px] font-bold text-zinc-400"
+            textClassName="text-2xs font-bold text-zinc-400"
           />
           <span
-            className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${item.condition === "NM"
-                ? "bg-emerald-50 text-emerald-600 border-emerald-100"
+            className={`text-2xs font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${item.condition === "NM"
+                ? "bg-success-muted text-success border-success/20"
                 : item.condition === "SP"
-                  ? "bg-blue-50 text-blue-600 border-blue-100"
-                  : "bg-zinc-50 text-zinc-400 border-zinc-100"
+                  ? "bg-info-muted text-info border-info/20"
+                  : "bg-muted text-muted-foreground border-border"
               }`}
           >
             {item.condition}
@@ -185,7 +185,7 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
             </span>
             {isStore && (
               <span
-                className={`text-[10px] font-bold ${item.quantity > 3 ? "text-zinc-400" : "text-amber-600"
+                className={`text-2xs font-bold ${item.quantity > 3 ? "text-muted-foreground" : "text-warning"
                   }`}
               >
                 {item.quantity} un.
@@ -197,7 +197,7 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
             <Button
               size="sm"
               className={`w-full font-bold text-xs h-9 rounded-xl transition-all duration-300 ${isAdded
-                  ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                  ? "bg-success hover:bg-success/90 text-success-foreground"
                   : "bg-zinc-950 hover:bg-primary text-white"
                 }`}
               onClick={handleAddToCart}

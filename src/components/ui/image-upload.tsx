@@ -187,7 +187,7 @@ export function ImageUpload({
                 <span className="text-sm font-semibold text-foreground">
                   Clique ou arraste uma imagem
                 </span>
-                <span className="text-[10px] text-muted-foreground mt-1">
+                <span className="text-2xs text-muted-foreground mt-1">
                   JPEG, PNG, WebP, SVG • Máx. {maxSizeMB}MB
                 </span>
               </>

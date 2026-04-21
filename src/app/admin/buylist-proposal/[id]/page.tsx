@@ -159,10 +159,10 @@ export default function AdminBuylistProposalDetailsPage() {
                                 <MTGCardTitle name={item.cardTemplate?.name || ""} />
                               </div>
                               <div className="flex items-center gap-1.5 mt-0.5">
-                                <Badge variant="outline" className="text-[10px] py-0 px-1.5 h-4 font-black border-zinc-300 text-zinc-600 bg-zinc-50">
+                                <Badge variant="outline" className="text-2xs py-0 px-1.5 h-4 font-black border-border text-muted-foreground bg-muted">
                                   {item.condition}
                                 </Badge>
-                                <Badge variant="secondary" className="text-[10px] py-0 px-1.5 h-4 font-black bg-zinc-100 text-zinc-500 border-transparent">
+                                <Badge variant="secondary" className="text-2xs py-0 px-1.5 h-4 font-black bg-muted text-muted-foreground border-transparent">
                                   {item.language}
                                 </Badge>
                               </div>

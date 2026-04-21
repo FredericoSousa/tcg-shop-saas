@@ -17,6 +17,7 @@ import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { formatCurrency } from '@/lib/utils'
 import { CustomerForm, customerSchema, CustomerFormValues } from '@/components/storefront/customer-form'
+import { toastFromError } from '@/lib/ui/toast-from-error'
 
 export function CartDrawer() {
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCart()
@@ -66,10 +67,10 @@ export function CartDrawer() {
         form.reset()
         router.push(`/singles/success?orderId=${res.data.orderId}`)
       } else {
-        toast.error(res.message || res.error || 'Erro ao processar checkout.')
+        toastFromError(res, { fallbackTitle: 'Erro ao processar checkout', context: 'checkout' })
       }
-    } catch {
-      toast.error('Erro ao processar checkout.')
+    } catch (err) {
+      toastFromError(err, { fallbackTitle: 'Erro ao processar checkout', context: 'checkout' })
     } finally {
       setIsProcessing(false)
     }
@@ -87,7 +88,7 @@ export function CartDrawer() {
       >
         <ShoppingCart className="h-6 w-6 text-primary-foreground" />
             {items.length > 0 && (
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold h-6 w-6 rounded-full flex items-center justify-center shadow-md animate-in zoom-in">
+          <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-2xs font-bold h-6 w-6 rounded-full flex items-center justify-center shadow-md animate-in zoom-in">
             {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
             {items.reduce((acc, item) => acc + (item as any).quantity, 0)}
           </span>
@@ -134,7 +135,7 @@ export function CartDrawer() {
                     <div className="flex-1 flex flex-col justify-between">
                       <div>
                         <h4 className="font-semibold text-sm leading-tight text-foreground line-clamp-2" title={item.name}>{item.name}</h4>
-                        <p className="text-[10px] text-muted-foreground uppercase mt-0.5">{item.set}</p>
+                        <p className="text-2xs text-muted-foreground uppercase mt-0.5">{item.set}</p>
                       </div>
                       <div className="flex items-end justify-between mt-2">
                         <div className="flex items-center gap-1.5 bg-muted/50 rounded-md p-1 border">
@@ -165,7 +166,7 @@ export function CartDrawer() {
                           <button
                             type="button"
                             onClick={() => removeItem(item.inventoryId)}
-                            className="text-[10px] text-destructive hover:underline font-medium hover:text-red-700 transition-colors"
+                            className="text-2xs text-destructive hover:underline font-medium hover:text-destructive/80 transition-colors"
                           >
                             Remover
                           </button>
@@ -191,7 +192,7 @@ export function CartDrawer() {
 
               <Button
                 type="submit"
-                className="w-full h-11 mt-4 font-bold text-[15px] shadow-sm transition-all disabled:opacity-50"
+                className="w-full h-11 mt-4 font-bold text-sm shadow-sm transition-all disabled:opacity-50"
                 disabled={items.length === 0 || isProcessing}
               >
                 {isProcessing ? 'Processando Checkout...' : 'Finalizar Pedido Reservado'}

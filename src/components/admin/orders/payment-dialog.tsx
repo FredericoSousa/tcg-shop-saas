@@ -150,19 +150,19 @@ export function PaymentDialog({
           <div className="flex flex-col gap-4 w-full">
             <div className="px-1 space-y-2 border-t pt-4">
               <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground font-medium uppercase tracking-tight text-[10px]">Total Pago</span>
+                <span className="text-muted-foreground font-medium uppercase tracking-tight text-2xs">Total Pago</span>
                 <span className={cn(
                   "font-black text-base tabular-nums",
-                  totalPaid >= totalAmount - 0.01 ? "text-emerald-600" : "text-zinc-600"
+                  totalPaid >= totalAmount - 0.01 ? "text-success" : "text-muted-foreground"
                 )}>
                   R$ {totalPaid.toFixed(2)}
                 </span>
               </div>
               <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground font-medium uppercase tracking-tight text-[10px]">Restante</span>
+                <span className="text-muted-foreground font-medium uppercase tracking-tight text-2xs">Restante</span>
                 <span className={cn(
                   "font-black text-base tabular-nums",
-                  remaining > 0.01 ? "text-destructive" : "text-emerald-600"
+                  remaining > 0.01 ? "text-destructive" : "text-success"
                 )}>
                   R$ {Math.max(0, remaining).toFixed(2)}
                 </span>
@@ -210,17 +210,17 @@ export function PaymentDialog({
                 <div key={index} className="group flex flex-col gap-3 p-4 border border-zinc-200/60 rounded-2xl bg-white/50 hover:bg-white hover:border-zinc-300 transition-all duration-300 shadow-sm">
                   <div className="flex gap-3 items-end">
                     <div className="flex-1 space-y-2">
-                      <label className="text-[10px] text-muted-foreground uppercase font-black tracking-widest ml-1">Forma</label>
+                      <label className="text-2xs text-muted-foreground uppercase font-black tracking-widest ml-1">Forma</label>
                       <Select
                         onValueChange={(v) => updatePayment(index, "method", v as string)}
                       >
                         <SelectTrigger className="h-11 rounded-xl bg-muted/20 border-zinc-200/50">
                           <SelectValue placeholder="Selecione">
                             <div className="flex items-center gap-2">
-                              {payment.method === 'CASH' && <Banknote className="w-4 h-4 text-emerald-500" />}
-                              {payment.method === 'CREDIT_CARD' && <CreditCard className="w-4 h-4 text-blue-500" />}
-                              {payment.method === 'PIX' && <Smartphone className="w-4 h-4 text-teal-500" />}
-                              {payment.method === 'STORE_CREDIT' && <Wallet className="w-4 h-4 text-amber-500" />}
+                              {payment.method === 'CASH' && <Banknote className="w-4 h-4 text-success" />}
+                              {payment.method === 'CREDIT_CARD' && <CreditCard className="w-4 h-4 text-info" />}
+                              {payment.method === 'PIX' && <Smartphone className="w-4 h-4 text-primary" />}
+                              {payment.method === 'STORE_CREDIT' && <Wallet className="w-4 h-4 text-warning" />}
                               {methodData?.label}
                             </div>
                           </SelectValue>
@@ -241,7 +241,7 @@ export function PaymentDialog({
                       </Select>
                     </div>
                     <div className="w-32 space-y-2">
-                      <label className="text-[10px] text-muted-foreground uppercase font-black tracking-widest ml-1">Valor</label>
+                      <label className="text-2xs text-muted-foreground uppercase font-black tracking-widest ml-1">Valor</label>
                       <MaskedInput
                         mask="currency"
                         value={payment.amount.toFixed(2)}
@@ -261,15 +261,15 @@ export function PaymentDialog({
                   </div>
 
                   {payment.method === "STORE_CREDIT" && (
-                    <div className="flex items-center gap-2 px-3 py-2 bg-amber-50/50 border border-amber-100 rounded-xl text-xs animate-in slide-in-from-top-2">
-                      <Wallet className="w-3.5 h-3.5 text-amber-500" />
-                      <span className="text-amber-700 font-medium">Saldo disponível:</span>
+                    <div className="flex items-center gap-2 px-3 py-2 bg-warning-muted border border-warning/20 rounded-xl text-xs animate-in slide-in-from-top-2">
+                      <Wallet className="w-3.5 h-3.5 text-warning" />
+                      <span className="text-warning font-medium">Saldo disponível:</span>
                       {loadingBalance ? (
-                        <Loader2 className="w-3 h-3 animate-spin text-amber-500" />
+                        <Loader2 className="w-3 h-3 animate-spin text-warning" />
                       ) : (
                         <span className={cn(
                           "font-black text-sm tabular-nums",
-                          customerBalance && customerBalance >= payment.amount ? 'text-emerald-600' : 'text-destructive'
+                          customerBalance && customerBalance >= payment.amount ? 'text-success' : 'text-destructive'
                         )}>
                           R$ {customerBalance?.toFixed(2) || "0.00"}
                         </span>

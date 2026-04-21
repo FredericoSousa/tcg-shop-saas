@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import { container } from "@/lib/infrastructure/container";
 import { PageHeader } from "@/components/admin/page-header";
 import { StatusBadge } from "@/components/admin/status-badge";
-import { LayoutDashboard, Package, ShoppingCart, DollarSign, TrendingUp, Calendar, PieChart as PieChartIcon } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingCart, DollarSign, TrendingUp, Calendar, PieChart as PieChartIcon, LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { getAdminContext } from "@/lib/tenant-server";
@@ -35,30 +35,26 @@ export default async function AdminDashboardPage() {
   const { inventoryCount, totalInventoryValue, ordersCount, totalRevenue, weeklyRevenue } = summary;
   const recentOrders = ordersData.items;
 
-  const kpis = [
+  const kpis: { title: string; value: string; icon: LucideIcon }[] = [
     {
       title: "Cartas em Estoque",
       value: inventoryCount.toLocaleString("pt-BR"),
       icon: Package,
-      color: "text-blue-500 bg-blue-500/10 border-blue-500/20",
     },
     {
       title: "Valor do Estoque",
       value: formatCurrency(totalInventoryValue),
       icon: TrendingUp,
-      color: "text-emerald-500 bg-emerald-500/10 border-emerald-500/20",
     },
     {
       title: "Vendas Realizadas",
       value: ordersCount.toLocaleString("pt-BR"),
       icon: ShoppingCart,
-      color: "text-violet-500 bg-violet-500/10 border-violet-500/20",
     },
     {
       title: "Receita Total",
       value: formatCurrency(totalRevenue),
       icon: DollarSign,
-      color: "text-amber-500 bg-amber-500/10 border-amber-500/20",
     },
   ];
 
@@ -83,38 +79,22 @@ export default async function AdminDashboardPage() {
       />
 
       {/* KPI Cards Grid */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {kpis.map((kpi, idx) => (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {kpis.map((kpi) => (
           <div
             key={kpi.title}
-            className="group relative overflow-hidden rounded-2xl bg-card/40 border border-zinc-200/50 shadow-sm backdrop-blur-md bg-gradient-to-br from-card/80 to-card/40 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-primary/30 p-6"
-            style={{
-              animation: `fadeInUp 0.6s ease-out ${idx * 0.15}s both`,
-            }}
+            className="rounded-xl bg-card border border-border p-5 flex items-start justify-between gap-4"
           >
-            <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
-            
-            <div className="relative flex items-start justify-between">
-              <div
-                className={`p-3 rounded-xl border shadow-sm transition-all duration-500 group-hover:scale-110 group-hover:shadow-md ${kpi.color}`}
-              >
-                <kpi.icon className="h-6 w-6" />
-              </div>
-              <div className="text-right flex-1 min-w-0 ml-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-1">
-                  {kpi.title}
-                </p>
-                <p className="text-2xl font-black tracking-tight leading-none tabular-nums text-foreground group-hover:text-primary transition-colors">
-                  {kpi.value}
-                </p>
-                <div className="flex items-center justify-end gap-1 mt-3">
-                   <div className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-500">
-                     <TrendingUp className="h-3 w-3" />
-                     +5%
-                   </div>
-                   <span className="text-[10px] text-muted-foreground/60">vs ontem</span>
-                </div>
-              </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-2xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                {kpi.title}
+              </p>
+              <p className="text-2xl font-black tracking-tight leading-none tabular-nums text-foreground">
+                {kpi.value}
+              </p>
+            </div>
+            <div className="p-2 rounded-lg bg-muted text-muted-foreground">
+              <kpi.icon className="h-5 w-5" aria-hidden="true" />
             </div>
           </div>
         ))}
@@ -222,7 +202,7 @@ export default async function AdminDashboardPage() {
                           );
                         })}
                         {(order.items?.length || 0) > 3 && (
-                          <div className="h-12 w-9 rounded-lg border-2 border-background bg-zinc-800 shadow-lg flex items-center justify-center text-[10px] font-bold text-white shrink-0 ring-1 ring-border/30">
+                          <div className="h-12 w-9 rounded-lg border-2 border-background bg-zinc-800 shadow-lg flex items-center justify-center text-2xs font-bold text-white shrink-0 ring-1 ring-border/30">
                             +{order.items!.length - 3}
                           </div>
                         )}
@@ -231,7 +211,7 @@ export default async function AdminDashboardPage() {
                         <p className="text-sm font-bold text-foreground truncate group-hover:text-primary transition-colors">
                           {order.customer?.name || "Cliente Desconhecido"}
                         </p>
-                        <p className="text-[11px] font-medium text-muted-foreground mt-0.5">
+                        <p className="text-2xs font-medium text-muted-foreground mt-0.5">
                           {new Date(order.createdAt).toLocaleDateString(
                             "pt-BR",
                             { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }

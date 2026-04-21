@@ -93,7 +93,7 @@ export function SellCartDrawer() {
               <Button size="lg" className="rounded-full h-14 w-14 shadow-2xl shadow-primary/40 relative">
                 <ShoppingBag className="h-6 w-6" />
                 {items.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-white text-primary text-[10px] font-black h-5 w-5 rounded-full flex items-center justify-center border-2 border-primary shadow-sm animate-in zoom-in duration-300">
+                  <span className="absolute -top-1 -right-1 bg-white text-primary text-2xs font-black h-5 w-5 rounded-full flex items-center justify-center border-2 border-primary shadow-sm animate-in zoom-in duration-300">
                     {items.reduce((acc, i) => acc + i.quantity, 0)}
                   </span>
                 )}
@@ -129,7 +129,7 @@ export function SellCartDrawer() {
                       <div className="flex-1 flex flex-col justify-between py-0.5">
                         <div>
                           <p className="text-sm font-bold line-clamp-1">{item.name}</p>
-                          <p className="text-[10px] text-muted-foreground uppercase font-medium tracking-tight">
+                          <p className="text-2xs text-muted-foreground uppercase font-medium tracking-tight">
                             {item.set} | {item.condition} | {item.language}
                           </p>
                         </div>

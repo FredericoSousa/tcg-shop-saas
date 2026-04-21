@@ -23,7 +23,7 @@ export function DashboardChart({ data, title, total }: DashboardChartProps) {
           <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none mb-2">{title}</h2>
           <p className="text-2xl font-black text-foreground tracking-tight">{total}</p>
         </div>
-        <div className="flex items-center gap-1.5 text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 uppercase tracking-widest shadow-sm">
+        <div className="flex items-center gap-1.5 text-2xs font-black text-success bg-success/10 px-3 py-1 rounded-full border border-success/20 uppercase tracking-widest shadow-sm">
           <TrendingUp className="h-3 w-3" />
           +12.5%
         </div>
@@ -46,12 +46,12 @@ export function DashboardChart({ data, title, total }: DashboardChartProps) {
               </div>
 
               {/* Tooltip on hover */}
-              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 font-bold border border-zinc-700 shadow-xl">
+              <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-2xs px-2 py-1 rounded opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-20 font-bold border border-zinc-700 shadow-xl">
                 R$ {item.amount.toLocaleString('pt-BR')}
               </div>
             </div>
 
-            <span className="text-[10px] font-bold text-muted-foreground group-hover/bar:text-foreground transition-colors uppercase">
+            <span className="text-2xs font-bold text-muted-foreground group-hover/bar:text-foreground transition-colors uppercase">
               {item.day}
             </span>
           </div>

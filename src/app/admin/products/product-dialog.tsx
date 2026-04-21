@@ -252,7 +252,7 @@ export function ProductDialog({
               >
                 Permitir estoque negativo
               </label>
-              <p className="text-[10px] text-muted-foreground font-medium">
+              <p className="text-2xs text-muted-foreground font-medium">
                 Vendas permitidas mesmo sem saldo físico.
               </p>
             </div>

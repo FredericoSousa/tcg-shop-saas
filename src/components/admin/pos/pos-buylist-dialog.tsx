@@ -95,12 +95,12 @@ export function POSBuylistDialog() {
                       <p className="font-bold">{proposal.customer?.name}</p>
                       <StatusBadge status={proposal.status} />
                     </div>
-                    <p className="text-[10px] text-muted-foreground font-mono uppercase">ID: {proposal.id.split('-')[0]}</p>
+                    <p className="text-2xs text-muted-foreground font-mono uppercase">ID: {proposal.id.split('-')[0]}</p>
                   </div>
                   
                   <div className="flex items-center gap-6">
                     <div className="text-right">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase">Crédito Estimado</p>
+                      <p className="text-2xs font-bold text-muted-foreground uppercase">Crédito Estimado</p>
                       <p className="font-black text-primary">{formatCurrency(proposal.totalCredit)}</p>
                     </div>
                     <Button 

@@ -9,6 +9,8 @@ import { motion } from "framer-motion";
 
 type ProductType = Omit<CartItem, "quantity"> & {
   category?: { name: string } | null;
+  stock?: number;
+  allowNegativeStock?: boolean;
 };
 
 interface ProductSearchProps {
@@ -98,7 +100,16 @@ export const ProductSearch = forwardRef<ProductSearchHandle, ProductSearchProps>
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.2 }}
                 className="group relative flex flex-col bg-background border rounded-xl overflow-hidden shadow-sm hover:shadow-md hover:border-primary/40 transition-all cursor-pointer"
-                onClick={() => onSelect(product)}
+                onClick={() =>
+                  onSelect({
+                    id: product.id,
+                    name: product.name,
+                    imageUrl: product.imageUrl,
+                    price: product.price,
+                    maxStock: product.stock,
+                    allowNegativeStock: product.allowNegativeStock,
+                  })
+                }
               >
                 <div className="aspect-square relative bg-muted overflow-hidden">
                   {product.imageUrl ? (
@@ -110,7 +121,7 @@ export const ProductSearch = forwardRef<ProductSearchHandle, ProductSearchProps>
                     />
                   ) : (
                     <div className="h-full w-full flex items-center justify-center bg-gradient-to-br from-muted to-muted/50">
-                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Sem Imagem</span>
+                      <span className="text-2xs font-bold text-muted-foreground uppercase tracking-widest">Sem Imagem</span>
                     </div>
                   )}
                   {/* Overlay on hover */}
@@ -123,7 +134,7 @@ export const ProductSearch = forwardRef<ProductSearchHandle, ProductSearchProps>
                 
                 <div className="p-3 flex flex-col flex-1">
                   <div className="flex-1 min-w-0 mb-2">
-                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-1">
+                    <p className="text-2xs font-bold text-primary uppercase tracking-wider mb-1">
                       {product.category?.name || "Geral"}
                     </p>
                     <h3 className="text-sm font-bold leading-tight line-clamp-2 group-hover:text-primary transition-colors">
@@ -135,6 +146,23 @@ export const ProductSearch = forwardRef<ProductSearchHandle, ProductSearchProps>
                     <span className="text-base font-black text-foreground">
                       R$ {Number(product.price).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </span>
+                    {typeof product.stock === "number" && !product.allowNegativeStock && (
+                      <span
+                        className={`text-2xs font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                          product.stock <= 0
+                            ? "bg-destructive-muted text-destructive"
+                            : product.stock === 1
+                              ? "bg-warning-muted text-warning"
+                              : "bg-muted text-muted-foreground"
+                        }`}
+                      >
+                        {product.stock <= 0
+                          ? "Esgotado"
+                          : product.stock === 1
+                            ? "Último"
+                            : `${product.stock} em estoque`}
+                      </span>
+                    )}
                     <div className="h-6 w-6 rounded-md bg-muted group-hover:bg-primary/20 flex items-center justify-center transition-colors">
                       <Plus className="h-3 w-3 text-muted-foreground group-hover:text-primary" />
                     </div>

@@ -20,10 +20,10 @@ const STATUS_OPTIONS: { value: OrderStatus; label: string }[] = [
 ];
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
-  PENDING: "bg-yellow-500 hover:bg-yellow-600",
-  PAID: "bg-green-500 hover:bg-green-600",
-  SHIPPED: "bg-blue-500 hover:bg-blue-600",
-  CANCELLED: "bg-red-500 hover:bg-red-600",
+  PENDING: "bg-warning hover:bg-warning/90",
+  PAID: "bg-success hover:bg-success/90",
+  SHIPPED: "bg-info hover:bg-info/90",
+  CANCELLED: "bg-destructive hover:bg-destructive/90",
 };
 
 interface OrderStatusManagerProps {
@@ -101,12 +101,12 @@ export function OrderStatusManager({
                 value={option.value}
                 className={`font-bold ${
                   option.value === "PENDING"
-                    ? "text-yellow-600"
+                    ? "text-warning"
                     : option.value === "PAID"
-                      ? "text-green-600"
+                      ? "text-success"
                       : option.value === "SHIPPED"
-                        ? "text-blue-600"
-                        : "text-red-600"
+                        ? "text-info"
+                        : "text-destructive"
                 }`}
               >
                 {option.label}

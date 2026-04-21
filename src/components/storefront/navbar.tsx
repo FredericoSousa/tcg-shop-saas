@@ -54,7 +54,7 @@ export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | 
 
                 <div className="flex-1 overflow-y-auto py-6 px-6 space-y-8">
                   <div className="space-y-4">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-2">Navegação</p>
+                    <p className="text-2xs font-bold uppercase tracking-widest text-zinc-400 px-2">Navegação</p>
                     <div className="grid gap-1">
                       <Link
                         href="/"
@@ -82,7 +82,7 @@ export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | 
 
                   {pathname === "/" && (
                     <div className="space-y-4">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 px-2">Busca Rápida</p>
+                      <p className="text-2xs font-bold uppercase tracking-widest text-zinc-400 px-2">Busca Rápida</p>
                       <LiveSearch
                         inputClassName="h-11 bg-zinc-50 border-zinc-100 rounded-xl focus:ring-primary/20 focus:border-primary"
                         onResultClick={() => setIsMobileMenuOpen(false)}
@@ -92,7 +92,7 @@ export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | 
                 </div>
 
                 <div className="p-6 border-t border-zinc-50">
-                  <p className="text-[10px] font-bold text-zinc-400 uppercase leading-relaxed">
+                  <p className="text-2xs font-bold text-zinc-400 uppercase leading-relaxed">
                     {tenant?.description || "Sua loja favorita de TCG."}
                   </p>
                 </div>
@@ -119,7 +119,7 @@ export function Navbar({ tenant }: { tenant: { name: string; logoUrl?: string | 
           </Link>
         </div>
 
-        <div className="hidden lg:flex items-center space-x-6 text-[11px] font-bold uppercase tracking-wider text-zinc-600">
+        <div className="hidden lg:flex items-center space-x-6 text-2xs font-bold uppercase tracking-wider text-zinc-600">
           <Link
             href="/"
             className="transition-all hover:text-zinc-950"

@@ -7,10 +7,10 @@ export const CONDITION_LABELS = {
 } as const;
 
 export const CONDITION_OPTIONS = [
-  { value: "NM", label: "Near Mint (NM)", color: "text-emerald-500", detail: "Impecável" },
-  { value: "SP", label: "Slightly Played (SP)", color: "text-blue-500", detail: "Sinais leves" },
-  { value: "MP", label: "Moderately Played (MP)", color: "text-amber-500", detail: "Sinais visíveis" },
-  { value: "HP", label: "Heavily Played (HP)", color: "text-orange-500", detail: "Muito usado" },
+  { value: "NM", label: "Near Mint (NM)", color: "text-success", detail: "Impecável" },
+  { value: "SP", label: "Slightly Played (SP)", color: "text-info", detail: "Sinais leves" },
+  { value: "MP", label: "Moderately Played (MP)", color: "text-warning", detail: "Sinais visíveis" },
+  { value: "HP", label: "Heavily Played (HP)", color: "text-warning", detail: "Muito usado" },
   { value: "D", label: "Damaged (D)", color: "text-destructive", detail: "Danificado" },
 ] as const;
 

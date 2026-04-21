@@ -82,7 +82,7 @@ export function OrderBulkActionsBar({
             size="sm"
             onClick={() => confirmAction("PAID")}
             disabled={isUpdating}
-            className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 gap-2 h-10 px-4 rounded-xl"
+            className="text-success hover:text-success/80 hover:bg-success/10 gap-2 h-10 px-4 rounded-xl"
           >
             <CreditCard className="h-4 w-4" />
             Marcar Pago
@@ -93,7 +93,7 @@ export function OrderBulkActionsBar({
             size="sm"
             onClick={() => confirmAction("SHIPPED")}
             disabled={isUpdating}
-            className="text-blue-400 hover:text-blue-300 hover:bg-blue-500/10 gap-2 h-10 px-4 rounded-xl"
+            className="text-info hover:text-info/80 hover:bg-info/10 gap-2 h-10 px-4 rounded-xl"
           >
             <Truck className="h-4 w-4" />
             Marcar Enviado
@@ -104,7 +104,7 @@ export function OrderBulkActionsBar({
             size="sm"
             onClick={() => confirmAction("CANCELLED")}
             disabled={isUpdating}
-            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 gap-2 h-10 px-4 rounded-xl"
+            className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 gap-2 h-10 px-4 rounded-xl"
           >
             <Ban className="h-4 w-4" />
             Cancelar
@@ -133,7 +133,7 @@ export function OrderBulkActionsBar({
               Deseja alterar o status de {selectedCount} pedidos para{" "}
               <span className="font-bold text-white uppercase">{pendingStatus}</span>?
               {pendingStatus === "CANCELLED" && (
-                <span className="block mt-2 text-red-400">
+                <span className="block mt-2 text-destructive">
                   Atenção: Os itens destes pedidos retornarão ao estoque.
                 </span>
               )}
@@ -152,7 +152,7 @@ export function OrderBulkActionsBar({
               onClick={() => pendingStatus && handleBulkStatusUpdate(pendingStatus)} 
               disabled={isUpdating}
               className={`gap-2 ${
-                pendingStatus === "CANCELLED" ? "bg-red-600 hover:bg-red-700" : "bg-primary hover:bg-primary/90"
+                pendingStatus === "CANCELLED" ? "bg-destructive hover:bg-destructive/90" : "bg-primary hover:bg-primary/90"
               } text-white`}
             >
               {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}

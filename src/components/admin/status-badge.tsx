@@ -6,31 +6,31 @@ export type StatusType = "PENDING" | "PAID" | "SHIPPED" | "CANCELLED" | "ACTIVE"
 const statusConfig: Record<StatusType, { label: string; className: string }> = {
   PENDING: {
     label: "Pendente",
-    className: "bg-yellow-100 text-yellow-800 border-yellow-200/50",
+    className: "bg-warning-muted text-warning border-warning/20",
   },
   PAID: {
     label: "Pago",
-    className: "bg-green-100 text-green-800 border-green-200/50",
+    className: "bg-success-muted text-success border-success/20",
   },
   SHIPPED: {
     label: "Enviado",
-    className: "bg-blue-100 text-blue-800 border-blue-200/50",
+    className: "bg-info-muted text-info border-info/20",
   },
   CANCELLED: {
     label: "Cancelado",
-    className: "bg-red-100 text-red-800 border-red-200/50",
+    className: "bg-destructive-muted text-destructive border-destructive/20",
   },
   ACTIVE: {
     label: "Ativo",
-    className: "bg-emerald-100 text-emerald-800 border-emerald-200/50",
+    className: "bg-success-muted text-success border-success/20",
   },
   INACTIVE: {
     label: "Inativo",
-    className: "bg-gray-100 text-gray-800 border-gray-200/50",
+    className: "bg-muted text-muted-foreground border-border/50",
   },
   ADMIN: {
     label: "Administrador",
-    className: "bg-violet-100 text-violet-800 border-violet-200/50",
+    className: "bg-primary/10 text-primary border-primary/20",
   },
   USER: {
     label: "Usuário",
@@ -53,7 +53,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     <Badge
       variant="outline"
       className={cn(
-        "px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider border-0 shadow-none",
+        "px-2.5 py-0.5 text-2xs font-bold uppercase tracking-wider border-0 shadow-none",
         config.className,
         className
       )}

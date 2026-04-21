@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils/format";
 import { SetBadge } from "@/components/ui/set-badge";
 import { LanguageBadge } from "@/components/ui/language-badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ShoppingCart, Check, RotateCcw, ShieldCheck, Truck, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
@@ -31,6 +32,8 @@ interface ProductDetailClientProps {
 export function ProductDetailClient({ item }: ProductDetailClientProps) {
   const [showBack, setShowBack] = useState(false);
   const [isAdded, setIsAdded] = useState(false);
+  const [frontLoaded, setFrontLoaded] = useState(false);
+  const [backLoaded, setBackLoaded] = useState(false);
   const { addItem } = useCart();
 
   const handleAddToCart = () => {
@@ -57,23 +60,34 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
         <div className="relative aspect-[2/3] w-full max-w-md mx-auto group">
           {/* Main Image Card with Flip Logic */}
           <div className="relative w-full h-full perspective-1000">
-            <div className={cn(
-              "relative w-full h-full transition-all duration-700 preserve-3d",
-              showBack ? "rotate-y-180" : ""
-            )}>
+            <div
+              className={cn(
+                "relative w-full h-full transition-all duration-700 preserve-3d will-change-transform [transform:translateZ(0)]",
+                showBack ? "rotate-y-180" : ""
+              )}
+            >
               {/* Front */}
               <div className="absolute inset-0 backface-hidden">
-                <div className="relative w-full h-full rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 bg-zinc-900">
+                <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-zinc-900">
                   {item.cardTemplate?.imageUrl ? (
-                    <Image
-                      src={item.cardTemplate.imageUrl}
-                      alt={item.cardTemplate.name || "Product image"}
-                      fill
-                      priority
-                      className="object-cover"
-                    />
+                    <>
+                      {!frontLoaded && (
+                        <Skeleton className="absolute inset-0 rounded-2xl" />
+                      )}
+                      <Image
+                        src={item.cardTemplate.imageUrl}
+                        alt={item.cardTemplate.name || "Product image"}
+                        fill
+                        priority
+                        onLoad={() => setFrontLoaded(true)}
+                        className={cn(
+                          "object-cover transition-opacity duration-500",
+                          frontLoaded ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                    </>
                   ) : (
-                    <div className="flex items-center justify-center h-full text-zinc-500 font-bold">Sem Imagem</div>
+                    <div className="flex items-center justify-center h-full text-muted-foreground font-bold">Sem Imagem</div>
                   )}
                   {/* Foil Effect Overlay (Subtle) */}
                   {item.extras?.includes("Foil") && (
@@ -85,29 +99,37 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
               {/* Back */}
               {hasBackImage && (
                 <div className="absolute inset-0 backface-hidden rotate-y-180">
-                  <div className="relative w-full h-full rounded-[2rem] overflow-hidden shadow-2xl border border-white/10 bg-zinc-900">
+                  <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl border border-white/10 bg-zinc-900">
+                    {!backLoaded && (
+                      <Skeleton className="absolute inset-0 rounded-2xl" />
+                    )}
                     <Image
                       src={item.cardTemplate?.backImageUrl || ""}
                       alt={`${item.cardTemplate?.name || "Product"} Back`}
                       fill
-                      className="object-cover"
+                      onLoad={() => setBackLoaded(true)}
+                      className={cn(
+                        "object-cover transition-opacity duration-500",
+                        backLoaded ? "opacity-100" : "opacity-0"
+                      )}
                     />
                   </div>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Flip Button */}
-          {hasBackImage && (
-            <button
-              onClick={() => setShowBack(!showBack)}
-              className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-white text-zinc-950 px-6 py-3 rounded-2xl shadow-2xl font-black text-xs uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all z-30 border border-zinc-200"
-            >
-              <RotateCcw className="w-4 h-4" />
-              {showBack ? "Ver Frente" : "Ver Verso"}
-            </button>
-          )}
+            {/* Flip Button — inside card bounds for mobile safety */}
+            {hasBackImage && (
+              <button
+                onClick={() => setShowBack(!showBack)}
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-white text-zinc-950 px-5 py-2.5 rounded-2xl shadow-2xl font-black text-2xs uppercase tracking-widest flex items-center gap-2 hover:scale-105 active:scale-95 transition-all z-30 border border-zinc-200 min-h-[44px]"
+                aria-label={showBack ? "Ver frente da carta" : "Ver verso da carta"}
+              >
+                <RotateCcw className="w-4 h-4" />
+                {showBack ? "Ver Frente" : "Ver Verso"}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -123,9 +145,9 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
             />
             <span className={cn(
               "px-3 py-1.5 rounded-xl border font-black text-xs uppercase tracking-widest",
-              item.condition === 'NM' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' :
-              item.condition === 'SP' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-              'bg-zinc-100 text-zinc-500 border-zinc-200'
+              item.condition === 'NM' ? 'bg-success-muted text-success border-success/20' :
+              item.condition === 'SP' ? 'bg-info-muted text-info border-info/20' :
+              'bg-muted text-muted-foreground border-border'
             )}>
               {item.condition}
             </span>
@@ -145,7 +167,7 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
           </p>
         </div>
 
-        <div className="bg-white rounded-[2.5rem] p-8 shadow-xl border border-zinc-100 space-y-8">
+        <div className="bg-white rounded-2xl p-8 shadow-xl border border-zinc-100 space-y-8">
           <div className="flex items-end justify-between">
             <div className="space-y-1">
               <span className="text-xs font-black text-zinc-400 uppercase tracking-widest">Preço Individual</span>
@@ -159,12 +181,12 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
             <div className="text-right">
               <span className={cn(
                 "inline-flex items-center gap-2 px-4 py-2 rounded-2xl font-black text-xs uppercase tracking-widest",
-                item.quantity > 5 ? "bg-emerald-50 text-emerald-600" : 
-                item.quantity > 0 ? "bg-amber-50 text-amber-600" : "bg-red-50 text-red-600"
+                item.quantity > 5 ? "bg-success-muted text-success" :
+                item.quantity > 0 ? "bg-warning-muted text-warning" : "bg-destructive-muted text-destructive"
               )}>
-                <span className={cn("w-2 h-2 rounded-full animate-pulse", 
-                  item.quantity > 5 ? "bg-emerald-500" : 
-                  item.quantity > 0 ? "bg-amber-500" : "bg-red-500"
+                <span className={cn("w-2 h-2 rounded-full animate-pulse",
+                  item.quantity > 5 ? "bg-success" :
+                  item.quantity > 0 ? "bg-warning" : "bg-destructive"
                 )} />
                 {item.quantity > 0 ? `${item.quantity} em estoque` : "Fora de estoque"}
               </span>
@@ -176,8 +198,8 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
               size="lg"
               disabled={item.quantity <= 0}
               className={cn(
-                "w-full h-20 rounded-3xl text-xl font-black uppercase tracking-tighter transition-all duration-500 group",
-                isAdded ? "bg-emerald-500" : "bg-zinc-950 hover:bg-primary shadow-[0_20px_40px_rgba(0,0,0,0.15)] hover:shadow-[0_25px_50px_rgba(0,0,0,0.2)] hover:-translate-y-1"
+                "w-full h-20 rounded-2xl text-xl font-black uppercase tracking-tighter transition-all duration-500 group",
+                isAdded ? "bg-success" : "bg-zinc-950 hover:bg-primary shadow-[0_20px_40px_rgba(0,0,0,0.15)] hover:shadow-[0_25px_50px_rgba(0,0,0,0.2)] hover:-translate-y-1"
               )}
               onClick={handleAddToCart}
             >
@@ -196,11 +218,11 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
             
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-3 p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
-                <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                <ShieldCheck className="w-5 h-5 text-success" />
                 <span className="text-xs font-bold text-zinc-600">Compra Segura</span>
               </div>
               <div className="flex items-center gap-3 p-4 bg-zinc-50 rounded-2xl border border-zinc-100">
-                <Truck className="w-5 h-5 text-blue-600" />
+                <Truck className="w-5 h-5 text-info" />
                 <span className="text-xs font-bold text-zinc-600">Envio Protegido</span>
               </div>
             </div>
@@ -216,20 +238,20 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
           
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             <div className="space-y-1 pb-4 border-b border-zinc-100">
-              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Condição</span>
+              <span className="text-2xs font-black text-zinc-400 uppercase tracking-widest">Condição</span>
               <p className="font-bold text-zinc-900">{item.condition === 'NM' ? 'Near Mint' : item.condition === 'SP' ? 'Slightly Played' : item.condition}</p>
             </div>
             <div className="space-y-1 pb-4 border-b border-zinc-100">
-              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Idioma</span>
+              <span className="text-2xs font-black text-zinc-400 uppercase tracking-widest">Idioma</span>
               <p className="font-bold text-zinc-900">{item.language?.toUpperCase()}</p>
             </div>
             <div className="space-y-1 pb-4 border-b border-zinc-100">
-              <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Coleção</span>
+              <span className="text-2xs font-black text-zinc-400 uppercase tracking-widest">Coleção</span>
               <p className="font-bold text-zinc-900">{item.cardTemplate?.set?.toUpperCase()}</p>
             </div>
             {item.extras?.map((ex: string) => (
               <div key={ex} className="space-y-1 pb-4 border-b border-zinc-100">
-                <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Extra</span>
+                <span className="text-2xs font-black text-zinc-400 uppercase tracking-widest">Extra</span>
                 <p className="font-bold text-zinc-900">{ex}</p>
               </div>
             ))}

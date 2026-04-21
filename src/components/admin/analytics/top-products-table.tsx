@@ -52,7 +52,7 @@ export function TopProductsTable() {
             <CardTitle className="text-lg font-bold">Top 5 Produtos</CardTitle>
             <CardDescription className="text-xs font-medium">Mais vendidos em faturamento</CardDescription>
           </div>
-          <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black uppercase tracking-tighter text-[9px]">
+          <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 font-black uppercase tracking-tighter text-2xs">
             Popularidade
           </Badge>
         </div>
@@ -76,16 +76,16 @@ export function TopProductsTable() {
                       className="object-cover"
                     />
                   ) : (
-                    <div className="flex items-center justify-center h-full text-[10px] text-muted-foreground font-bold">TCG</div>
+                    <div className="flex items-center justify-center h-full text-2xs text-muted-foreground font-bold">TCG</div>
                   )}
-                  <div className="absolute top-0 left-0 bg-primary/90 backdrop-blur-sm text-white text-[8px] font-black px-1.5 py-0.5 rounded-br-lg shadow-sm">
+                  <div className="absolute top-0 left-0 bg-primary/90 backdrop-blur-sm text-white text-2xs font-black px-1.5 py-0.5 rounded-br-lg shadow-sm">
                     #{idx + 1}
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold truncate group-hover:text-primary transition-colors leading-tight mb-0.5">{product.name}</p>
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-muted-foreground/80 flex items-center gap-1 uppercase tracking-tighter">
+                    <span className="text-2xs font-bold text-muted-foreground/80 flex items-center gap-1 uppercase tracking-tighter">
                       <ShoppingCart className="h-2.5 w-2.5" />
                       {product.count} vendidos
                     </span>
@@ -95,7 +95,7 @@ export function TopProductsTable() {
                   <p className="text-sm font-black text-primary tabular-nums">
                     {formatCurrency(product.revenue)}
                   </p>
-                  <p className="text-[9px] text-emerald-500 font-black flex items-center justify-end gap-0.5 uppercase tracking-tight">
+                  <p className="text-2xs text-success font-black flex items-center justify-end gap-0.5 uppercase tracking-tight">
                     <TrendingUp className="h-2.5 w-2.5" />
                     +5%
                   </p>

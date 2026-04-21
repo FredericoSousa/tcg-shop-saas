@@ -82,35 +82,35 @@ export function RevenueDashboard() {
               {formatCurrency(data.totalRevenue)}
             </div>
             <p className="text-xs text-muted-foreground mt-1.5 flex items-center gap-1 font-bold">
-              <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-              <span className="text-emerald-500">+12.5%</span> 
+              <TrendingUp className="h-3.5 w-3.5 text-success" />
+              <span className="text-success">+12.5%</span>
               <span className="opacity-60 ml-1">vendas no período</span>
             </p>
           </CardContent>
         </Card>
 
-        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-blue-500/20">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-info/20">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
-            <Package className="h-12 w-12 text-blue-500" />
+            <Package className="h-12 w-12 text-info" />
           </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Itens Vendidos</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-black text-blue-500">{data.totalItemsSold}</div>
+            <div className="text-2xl font-black text-info">{data.totalItemsSold}</div>
             <p className="text-xs text-muted-foreground mt-1.5 font-bold uppercase tracking-tighter opacity-70">Volume total do estoque</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-emerald-500/20">
+        <Card className="bg-card/40 backdrop-blur-md border-zinc-200/50 shadow-sm overflow-hidden relative group transition-all duration-300 hover:shadow-lg hover:border-success/20">
           <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:scale-110 transition-transform">
-            <Box className="h-12 w-12 text-emerald-500" />
+            <Box className="h-12 w-12 text-success" />
           </div>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Categorias Ativas</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-black text-emerald-500">{data.byCategory.length}</div>
+            <div className="text-2xl font-black text-success">{data.byCategory.length}</div>
             <p className="text-xs text-muted-foreground mt-1.5 font-bold uppercase tracking-tighter opacity-70">Diversificação de catálogo</p>
           </CardContent>
         </Card>

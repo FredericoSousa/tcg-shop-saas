@@ -90,7 +90,7 @@ export function CustomerSelector({
             </div>
             <div>
               <p className="text-sm font-black uppercase tracking-tight">{selectedCustomer.name}</p>
-              <p className="text-[10px] font-bold text-muted-foreground tracking-widest">{formatPhone(selectedCustomer.phoneNumber)}</p>
+              <p className="text-2xs font-bold text-muted-foreground tracking-widest">{formatPhone(selectedCustomer.phoneNumber)}</p>
             </div>
           </div>
           <button 

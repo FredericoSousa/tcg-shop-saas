@@ -138,7 +138,7 @@ export function LiveSearch({
                   <h4 className="font-bold text-xs text-zinc-900 truncate">{item.name}</h4>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <SetBadge setCode={item.set} showText={false} iconClassName="h-3 w-3" />
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase">{item.set}</span>
+                    <span className="text-2xs font-bold text-zinc-400 uppercase">{item.set}</span>
                   </div>
                 </div>
                 <div className="text-right">
@@ -150,7 +150,7 @@ export function LiveSearch({
           <div className="p-2 border-t border-zinc-50 mt-1">
             <button
               onClick={handleSearch}
-              className="w-full py-1.5 text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-950 transition-colors"
+              className="w-full py-1.5 text-2xs font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-950 transition-colors"
             >
               Ver todos os resultados
             </button>
@@ -159,7 +159,7 @@ export function LiveSearch({
       )}
 
       {isOpen && query.length >= 2 && results.length === 0 && !isLoading && (
-        <div className="absolute top-full left-0 right-0 mt-3 p-6 bg-zinc-900/95 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-2xl z-40 text-center animate-in fade-in slide-in-from-top-2">
+        <div className="absolute top-full left-0 right-0 mt-3 p-6 bg-zinc-900/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl z-40 text-center animate-in fade-in slide-in-from-top-2">
           <p className="text-zinc-500 text-sm font-medium">Nenhum card encontrado para &quot;{query}&quot;</p>
         </div>
       )}

@@ -87,7 +87,7 @@ export default async function HomePage() {
               </h2>
               <Link
                 href="/singles?sort=id_desc"
-                className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-950 transition-colors flex items-center gap-2 group"
+                className="text-2xs font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-950 transition-colors flex items-center gap-2 group"
               >
                 Ver Todas
                 <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
@@ -116,7 +116,7 @@ export default async function HomePage() {
             </h2>
             <Link
               href="/singles"
-              className="text-[10px] font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-950 transition-colors flex items-center gap-2 group"
+              className="text-2xs font-bold uppercase tracking-widest text-zinc-400 hover:text-zinc-950 transition-colors flex items-center gap-2 group"
             >
               Catalogos Completo
               <ChevronRight className="w-3 h-3 transition-transform group-hover:translate-x-1" />
@@ -144,7 +144,7 @@ export default async function HomePage() {
             </div>
             <div>
               <h3 className="font-bold text-xs uppercase tracking-widest text-zinc-900">Originalidade</h3>
-              <p className="text-zinc-500 text-[10px] uppercase font-bold mt-0.5 tracking-tight">Cards verificados 100%</p>
+              <p className="text-zinc-500 text-2xs uppercase font-bold mt-0.5 tracking-tight">Cards verificados 100%</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -153,7 +153,7 @@ export default async function HomePage() {
             </div>
             <div>
               <h3 className="font-bold text-xs uppercase tracking-widest text-zinc-900">Segurança</h3>
-              <p className="text-zinc-500 text-[10px] uppercase font-bold mt-0.5 tracking-tight">Checkout criptografado</p>
+              <p className="text-zinc-500 text-2xs uppercase font-bold mt-0.5 tracking-tight">Checkout criptografado</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -162,7 +162,7 @@ export default async function HomePage() {
             </div>
             <div>
               <h3 className="font-bold text-xs uppercase tracking-widest text-zinc-900">Agilidade</h3>
-              <p className="text-zinc-500 text-[10px] uppercase font-bold mt-0.5 tracking-tight">Envio no próximo dia útil</p>
+              <p className="text-zinc-500 text-2xs uppercase font-bold mt-0.5 tracking-tight">Envio no próximo dia útil</p>
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,32 @@ const VALID_EXTRAS = [
 
 type Card = ScryfallCard;
 
+const DEFAULTS_STORAGE_KEY = "admin:last-card-defaults";
+
+interface PersistedDefaults {
+  condition: string;
+  language: string;
+  extras: string[];
+}
+
+function loadDefaults(): PersistedDefaults {
+  if (typeof window === "undefined") {
+    return { condition: "NM", language: "EN", extras: [] };
+  }
+  try {
+    const raw = window.localStorage.getItem(DEFAULTS_STORAGE_KEY);
+    if (!raw) return { condition: "NM", language: "EN", extras: [] };
+    const parsed = JSON.parse(raw) as Partial<PersistedDefaults>;
+    return {
+      condition: typeof parsed.condition === "string" ? parsed.condition : "NM",
+      language: typeof parsed.language === "string" ? parsed.language : "EN",
+      extras: Array.isArray(parsed.extras) ? parsed.extras.filter((e): e is string => typeof e === "string") : [],
+    };
+  } catch {
+    return { condition: "NM", language: "EN", extras: [] };
+  }
+}
+
 export function AddCardDialog() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -55,6 +82,44 @@ export function AddCardDialog() {
   const [isPending, startTransition] = useTransition();
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const defaults = loadDefaults();
+    setConditionState(defaults.condition);
+    setLanguageState(defaults.language);
+    setSelectedExtras(defaults.extras);
+  }, []);
+
+  useEffect(() => {
+    if (searchParams.get("add") === "1") setOpen(true);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "n" && e.key !== "N") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      if (document.querySelector("[role='dialog'][data-state='open']")) return;
+      e.preventDefault();
+      setOpen(true);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const resetDefaults = () => {
+    setConditionState("NM");
+    setLanguageState("EN");
+    setSelectedExtras([]);
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(DEFAULTS_STORAGE_KEY);
+    }
+    feedback.success("Padrões restaurados");
+  };
 
   const handleSearch = async () => {
     if (!query) return;
@@ -77,12 +142,14 @@ export function AddCardDialog() {
   const handleSubmit = async (formData: FormData) => {
     startTransition(async () => {
       try {
+        const condition = formData.get("condition") as string;
+        const language = formData.get("language") as string;
         const body = {
           scryfallId: formData.get("scryfallId") as string,
           price: parseCurrency(formData.get("price") as string),
           quantity: parseInt(formData.get("quantity") as string, 10),
-          condition: formData.get("condition") as string,
-          language: formData.get("language") as string,
+          condition,
+          language,
           extras: selectedExtras,
           allowNegativeStock: formData.get("allowNegativeStock") === "on",
         };
@@ -93,12 +160,16 @@ export function AddCardDialog() {
           throw new Error(result.message || "Erro ao salvar o card");
         }
 
+        if (typeof window !== "undefined") {
+          const toStore: PersistedDefaults = { condition, language, extras: selectedExtras };
+          window.localStorage.setItem(DEFAULTS_STORAGE_KEY, JSON.stringify(toStore));
+        }
+
         feedback.success("Card adicionado ao inventário!");
         setOpen(false);
         setQuery("");
         setResults([]);
         setSelectedCardId("");
-        setSelectedExtras([]);
         setHasSearched(false);
       } catch (error) {
         feedback.apiError(error, "Erro ao salvar o card");
@@ -111,8 +182,13 @@ export function AddCardDialog() {
     setQuery("");
     setResults([]);
     setSelectedCardId("");
-    setSelectedExtras([]);
     setHasSearched(false);
+    if (searchParams.get("add") === "1") {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("add");
+      const qs = params.toString();
+      router.replace(qs ? `/admin/inventory?${qs}` : "/admin/inventory");
+    }
   };
 
   return (
@@ -207,7 +283,7 @@ export function AddCardDialog() {
                       type="button"
                       variant="ghost"
                       size="sm"
-                      className="h-7 text-[10px] font-black uppercase px-3 bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20 rounded-lg transition-all"
+                      className="h-7 text-2xs font-black uppercase px-3 bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20 rounded-lg transition-all"
                       onClick={() => setSelectedCardId("")}
                     >
                       Trocar Edição
@@ -286,8 +362,8 @@ export function AddCardDialog() {
                                 {(card.printed_name as string) || card.name}
                               </span>
                               <span className="text-xs font-medium text-muted-foreground flex items-center gap-1.5 capitalize">
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                {card.set_name} · <span className="uppercase text-[10px] font-black">{card.set}</span>
+                                <span className="w-1.5 h-1.5 rounded-full bg-info" />
+                                {card.set_name} · <span className="uppercase text-2xs font-black">{card.set}</span>
                               </span>
                             </div>
                             {isSelected && (
@@ -351,7 +427,7 @@ export function AddCardDialog() {
                     >
                       Estado de Conservação
                     </label>
-                    <Select name="condition" defaultValue="NM" required onValueChange={(val) => val && setConditionState(val)}>
+                    <Select name="condition" value={conditionState} required onValueChange={(val) => val && setConditionState(val)}>
                       <SelectTrigger
                         id="condition"
                         className="h-12 transition-all duration-300 focus-visible:ring-2 rounded-xl font-medium"
@@ -363,7 +439,7 @@ export function AddCardDialog() {
                       <SelectContent className="rounded-xl">
                         {CONDITION_OPTIONS.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label} · <span className={cn("text-[10px] font-bold uppercase", opt.color)}>{opt.detail}</span>
+                            {opt.label} · <span className={cn("text-2xs font-bold uppercase", opt.color)}>{opt.detail}</span>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -377,7 +453,7 @@ export function AddCardDialog() {
                     >
                       Idioma Original
                     </label>
-                    <Select name="language" defaultValue="EN" required onValueChange={(val) => val && setLanguageState(val)}>
+                    <Select name="language" value={languageState} required onValueChange={(val) => val && setLanguageState(val)}>
                       <SelectTrigger
                         id="language"
                         className="h-12 transition-all duration-300 focus-visible:ring-2 rounded-xl font-medium"
@@ -396,7 +472,7 @@ export function AddCardDialog() {
                             <div className="flex items-center gap-2">
                               <span className="text-lg">{lang.flag}</span>
                               <span className="font-semibold">{lang.label}</span>
-                              <span className="text-muted-foreground text-[10px] uppercase">({lang.code})</span>
+                              <span className="text-muted-foreground text-2xs uppercase">({lang.code})</span>
                             </div>
                           </SelectItem>
                         ))}
@@ -407,9 +483,18 @@ export function AddCardDialog() {
 
                 {/* Seção de Extras */}
                 <div className="space-y-3">
-                  <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">
-                    Atributos Especiais (Extras)
-                  </label>
+                  <div className="flex items-center justify-between ml-1">
+                    <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      Atributos Especiais (Extras)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={resetDefaults}
+                      className="text-2xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Resetar padrões
+                    </button>
+                  </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {VALID_EXTRAS.map((extra) => {
                       const isSelected = selectedExtras.includes(extra.value);
@@ -433,7 +518,7 @@ export function AddCardDialog() {
                             }}
                             className="w-4 h-4 accent-primary cursor-pointer rounded-md"
                           />
-                          <span className={`text-[10px] font-black uppercase tracking-tight truncate ${isSelected ? "text-primary" : "text-muted-foreground"}`}>
+                          <span className={`text-2xs font-black uppercase tracking-tight truncate ${isSelected ? "text-primary" : "text-muted-foreground"}`}>
                             {extra.label}
                           </span>
                         </label>
@@ -459,7 +544,7 @@ export function AddCardDialog() {
                   >
                     Permitir estoque negativo
                   </label>
-                  <p className="text-[10px] text-muted-foreground font-medium">
+                  <p className="text-2xs text-muted-foreground font-medium">
                     Se ativado, este card poderá ser vendido via PDV mesmo sem estoque físico.
                   </p>
                 </div>

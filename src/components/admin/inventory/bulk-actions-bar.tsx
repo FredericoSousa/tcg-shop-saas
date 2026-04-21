@@ -7,6 +7,7 @@ import { Trash2, Edit3, Loader2, X, Check } from "lucide-react";
 import {
   Dialog,
 } from "@/components/ui/dialog";
+import { DestructiveConfirmDialog } from "@/components/ui/destructive-confirm";
 import { feedback } from "@/lib/utils/feedback";
 import { InventoryService } from "@/lib/api/services/inventory.service";
 
@@ -98,7 +99,7 @@ export function BulkActionsBar({
             variant="ghost"
             size="sm"
             onClick={() => setIsDeleteDialogOpen(true)}
-            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 gap-2 h-10 px-4 rounded-xl transition-all"
+            className="text-destructive hover:text-destructive/80 hover:bg-destructive/10 gap-2 h-10 px-4 rounded-xl transition-all"
           >
             <Trash2 className="h-4 w-4" />
             Excluir
@@ -119,43 +120,14 @@ export function BulkActionsBar({
       </div>
 
       {/* Delete Confirmation */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <ModalLayout
-          title="Excluir em Massa"
-          description={`Deseja realmente remover ${selectedCount} itens do seu estoque? Esta ação não pode ser desfeita.`}
-          containerClassName="sm:max-w-[450px]"
-          footer={
-            <div className="flex justify-end gap-3 w-full">
-              <Button 
-                variant="outline" 
-                onClick={() => setIsDeleteDialogOpen(false)} 
-                disabled={isDeleting}
-                className="font-bold rounded-xl h-11"
-              >
-                Cancelar
-              </Button>
-              <Button 
-                variant="destructive" 
-                onClick={handleBulkDelete} 
-                disabled={isDeleting}
-                className="font-bold rounded-xl h-11 px-6 shadow-lg shadow-destructive/10 gap-2"
-              >
-                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                Confirmar Exclusão
-              </Button>
-            </div>
-          }
-        >
-          <div className="py-6 px-1">
-            <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3 text-red-800">
-              <Trash2 className="h-5 w-5 shrink-0" />
-              <p className="text-sm font-medium leading-relaxed">
-                Atenção: Você está prestes a excluir <span className="font-black underline">{selectedCount}</span> itens permanentemente.
-              </p>
-            </div>
-          </div>
-        </ModalLayout>
-      </Dialog>
+      <DestructiveConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={handleBulkDelete}
+        count={selectedCount}
+        itemType={selectedCount === 1 ? "carta" : "cartas"}
+        isPending={isDeleting}
+      />
 
       {/* Update Dialog */}
       <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
@@ -186,7 +158,7 @@ export function BulkActionsBar({
         >
           <div className="grid gap-6 py-6 px-1">
             <div className="space-y-2.5">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Novo Preço (R$)</label>
+              <label className="text-2xs font-black uppercase tracking-widest text-muted-foreground ml-1">Novo Preço (R$)</label>
               <Input
                 type="number"
                 step="0.01"
@@ -197,7 +169,7 @@ export function BulkActionsBar({
               />
             </div>
             <div className="space-y-2.5">
-              <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Nova Quantidade</label>
+              <label className="text-2xs font-black uppercase tracking-widest text-muted-foreground ml-1">Nova Quantidade</label>
               <Input
                 type="number"
                 placeholder="Ex: 5"
@@ -207,7 +179,7 @@ export function BulkActionsBar({
               />
             </div>
             
-            <p className="text-[11px] text-muted-foreground italic px-1">
+            <p className="text-2xs text-muted-foreground italic px-1">
               * Deixe os campos em branco para manter os valores originais.
             </p>
           </div>

@@ -35,7 +35,7 @@ export function CartPanel({
   isSubmitting,
   activeOrderFriendlyId
 }: CartPanelProps) {
-  console.log('CartPanel Render:', { items: items.map(i => i.id), existingItems: existingItems.map(i => i.id) });
+  const existingQtyById = new Map(existingItems.map((i) => [i.id, i.quantity]));
 
   return (
     <div className="flex flex-col h-full gap-6">
@@ -52,7 +52,7 @@ export function CartPanel({
               variant="ghost"
               size="sm"
               onClick={() => onRemove("ALL")}
-              className="h-8 text-[10px] font-bold uppercase tracking-wider text-muted-foreground hover:text-destructive gap-1.5"
+              className="h-8 text-2xs font-bold uppercase tracking-wider text-muted-foreground hover:text-destructive gap-1.5"
             >
               <Trash2 className="h-3 w-3" />
               Limpar
@@ -68,7 +68,7 @@ export function CartPanel({
               <div key="existing-items-section" className="space-y-3 opacity-60">
                 <div className="flex items-center gap-2 px-1">
                   <Receipt className="h-3 w-3 text-muted-foreground" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Já na Comanda</span>
+                  <span className="text-2xs font-bold uppercase tracking-widest text-muted-foreground">Já na Comanda</span>
                 </div>
                 {existingItems.map((item) => (
                   <motion.div
@@ -90,8 +90,8 @@ export function CartPanel({
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
                       <p className="font-bold text-xs truncate leading-tight uppercase tracking-tight">{item.name}</p>
                       <div className="flex justify-between items-center mt-1">
-                        <span className="text-[10px] font-black tabular-nums">R$ {item.price.toFixed(2)} x {item.quantity}</span>
-                        <span className="font-black text-[11px] tabular-nums">R$ {(item.price * item.quantity).toFixed(2)}</span>
+                        <span className="text-2xs font-black tabular-nums">R$ {item.price.toFixed(2)} x {item.quantity}</span>
+                        <span className="font-black text-2xs tabular-nums">R$ {(item.price * item.quantity).toFixed(2)}</span>
                       </div>
                     </div>
                   </motion.div>
@@ -105,9 +105,15 @@ export function CartPanel({
               <div key="new-items-section" className="space-y-3">
                 <div className="flex items-center gap-2 px-1">
                   <Plus className="h-3 w-3 text-primary" />
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-primary">Para Adicionar</span>
+                  <span className="text-2xs font-bold uppercase tracking-widest text-primary">Para Adicionar</span>
                 </div>
-                {items.map((item) => (
+                {items.map((item) => {
+                  const onOrder = existingQtyById.get(item.id) ?? 0;
+                  const stockCap = item.maxStock ?? Infinity;
+                  const remaining = stockCap - onOrder - item.quantity;
+                  const atCap = !item.allowNegativeStock && remaining <= 0;
+                  const isLast = !item.allowNegativeStock && remaining === 0 && stockCap > 0;
+                  return (
                   <motion.div
                     key={item.id}
                     layout
@@ -125,6 +131,11 @@ export function CartPanel({
                       <div className="flex justify-between items-start gap-2">
                         <h4 className="text-xs font-bold leading-tight line-clamp-2 uppercase tracking-tight group-hover:text-primary transition-colors">
                           {item.name}
+                          {isLast && (
+                            <span className="ml-2 text-2xs font-black uppercase tracking-widest text-warning bg-warning-muted px-1.5 py-0.5 rounded">
+                              Último
+                            </span>
+                          )}
                         </h4>
                         <button
                           onClick={() => onRemove(item.id)}
@@ -139,6 +150,7 @@ export function CartPanel({
                           <Button
                             variant="ghost" size="icon" className="h-7 w-7 rounded-md"
                             onClick={() => onUpdateQuantity(item.id, -1)}
+                            disabled={item.quantity <= 1}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
@@ -146,6 +158,8 @@ export function CartPanel({
                           <Button
                             variant="ghost" size="icon" className="h-7 w-7 rounded-md"
                             onClick={() => onUpdateQuantity(item.id, 1)}
+                            disabled={atCap}
+                            title={atCap ? "Estoque esgotado" : undefined}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
@@ -158,7 +172,8 @@ export function CartPanel({
                       </div>
                     </div>
                   </motion.div>
-                ))}
+                  );
+                })}
               </div>
             ) : existingItems.length === 0 && (
               <div key="empty-cart-message" className="h-full flex flex-col items-center justify-center text-muted-foreground/40 text-center space-y-4 py-20">
@@ -196,7 +211,7 @@ export function CartPanel({
               </div>
               <div>
                 <p className="text-sm font-black truncate max-w-[200px] uppercase tracking-tight">{selectedCustomer.name}</p>
-                {activeOrderFriendlyId && <p className="text-[10px] font-bold text-primary tracking-widest">COMANDA #{activeOrderFriendlyId}</p>}
+                {activeOrderFriendlyId && <p className="text-2xs font-bold text-primary tracking-widest">COMANDA #{activeOrderFriendlyId}</p>}
               </div>
             </div>
             <Button

@@ -191,7 +191,7 @@ export function AddBuylistItemDialog() {
                           </div>
                           <div className="flex flex-col flex-1 min-w-0">
                             <span className="font-bold text-sm truncate">{card.name}</span>
-                            <span className="text-[10px] font-medium text-muted-foreground uppercase">{card.set_name} ({card.set})</span>
+                            <span className="text-2xs font-medium text-muted-foreground uppercase">{card.set_name} ({card.set})</span>
                           </div>
                           {isSelected && <Check className="h-4 w-4 text-primary" />}
                         </label>

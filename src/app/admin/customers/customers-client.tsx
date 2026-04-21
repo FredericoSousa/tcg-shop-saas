@@ -307,7 +307,7 @@ export function CustomersClient({
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="text-muted-foreground hover:text-red-500"
+                            className="text-muted-foreground hover:text-destructive"
                             onClick={(e) => { e.stopPropagation(); setCustomerToDelete({ id: customer.id, name: customer.name }); }}
                             title="Excluir"
                           >

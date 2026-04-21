@@ -101,7 +101,7 @@ export function BuylistCard({ item }: BuylistCardProps) {
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-full text-zinc-200 text-[10px] font-bold uppercase tracking-wider space-y-2">
+          <div className="flex flex-col items-center justify-center h-full text-zinc-200 text-2xs font-bold uppercase tracking-wider space-y-2">
             <div className="w-12 h-16 border border-dashed border-zinc-200 rounded-lg flex items-center justify-center bg-white">
               ?
             </div>
@@ -121,9 +121,9 @@ export function BuylistCard({ item }: BuylistCardProps) {
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">Condição</span>
+              <span className="text-2xs font-bold text-zinc-400 uppercase tracking-tight">Condição</span>
               <Select value={condition} onValueChange={(val) => setCondition(val || "NM")}>
-                <SelectTrigger className="h-8 text-[11px] font-bold rounded-xl px-2 bg-zinc-50 border-zinc-100">
+                <SelectTrigger className="h-8 text-2xs font-bold rounded-xl px-2 bg-zinc-50 border-zinc-100">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -135,9 +135,9 @@ export function BuylistCard({ item }: BuylistCardProps) {
             </div>
 
             <div className="space-y-1">
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-tight">Idioma</span>
+              <span className="text-2xs font-bold text-zinc-400 uppercase tracking-tight">Idioma</span>
               <Select value={language} onValueChange={(val) => setLanguage(val || "EN")}>
-                <SelectTrigger className="h-8 text-[11px] font-bold rounded-xl px-2 bg-zinc-50 border-zinc-100">
+                <SelectTrigger className="h-8 text-2xs font-bold rounded-xl px-2 bg-zinc-50 border-zinc-100">
                   <SelectValue>
                     <div className="flex items-center gap-1.5">
                       <span>{getLanguageData(language).flag}</span>
@@ -183,11 +183,11 @@ export function BuylistCard({ item }: BuylistCardProps) {
         <div className="mt-auto pt-3 border-t border-zinc-50 space-y-2">
           <div className="flex flex-col gap-1">
             <div className="flex justify-between items-center">
-              <span className="text-[10px] text-zinc-400 uppercase font-black tracking-wider">Em Crédito</span>
+              <span className="text-2xs text-zinc-400 uppercase font-black tracking-wider">Em Crédito</span>
               <span className="text-sm font-black text-primary tracking-tight">{formatCurrency(item.priceCredit)}</span>
             </div>
             <div className="flex justify-between items-center opacity-70">
-              <span className="text-[10px] text-zinc-400 uppercase font-black tracking-wider">Em Dinheiro</span>
+              <span className="text-2xs text-zinc-400 uppercase font-black tracking-wider">Em Dinheiro</span>
               <span className="text-xs font-bold text-zinc-600">{formatCurrency(item.priceCash)}</span>
             </div>
           </div>
@@ -195,7 +195,7 @@ export function BuylistCard({ item }: BuylistCardProps) {
           <Button
             className={cn(
               "w-full h-10 rounded-xl font-bold text-xs transition-all duration-300 gap-2 shadow-sm",
-              isAdded ? "bg-emerald-500 hover:bg-emerald-600 text-white" : "bg-zinc-950 hover:bg-primary text-white"
+              isAdded ? "bg-success hover:bg-success/90 text-success-foreground" : "bg-zinc-950 hover:bg-primary text-white"
             )}
             onClick={handleAdd}
           >

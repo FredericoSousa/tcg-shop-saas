@@ -13,6 +13,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import * as React from "react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -54,6 +55,7 @@ export function DataTable<TData, TValue>({
   pageCount: serverPageCount,
   total: serverTotal,
 }: DataTableProps<TData, TValue>) {
+  const router = useRouter();
   const {
     page,
     limit,
@@ -270,7 +272,7 @@ export function DataTable<TData, TValue>({
           onClearSelection={() => setRowSelection({})}
           onActionComplete={() => {
             setRowSelection({});
-            window.location.reload();
+            router.refresh();
           }}
         />
       )}

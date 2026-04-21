@@ -38,12 +38,12 @@ export async function TopBuyersCard({ tenantId }: TopBuyersCardProps) {
             customers.map((customer, idx) => (
               <div key={customer.id} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-all duration-300">
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-[10px] shrink-0 border border-primary/20 shadow-sm">
+                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center font-black text-primary text-2xs shrink-0 border border-primary/20 shadow-sm">
                     {customer.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold truncate max-w-[120px]">{customer.name}</p>
-                    <p className="text-[10px] text-muted-foreground font-medium">{customer.orderCount} pedidos realizados</p>
+                    <p className="text-2xs text-muted-foreground font-medium">{customer.orderCount} pedidos realizados</p>
                   </div>
                 </div>
                 <div className="text-right ml-4">
@@ -52,14 +52,14 @@ export async function TopBuyersCard({ tenantId }: TopBuyersCardProps) {
                   </p>
                   <div className="flex items-center justify-end gap-0.5 mt-0.5">
                     {idx === 0 && (
-                      <span className="flex items-center px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-[8px] font-black tracking-widest text-emerald-500 uppercase border border-emerald-500/20">
+                      <span className="flex items-center px-1.5 py-0.5 rounded-full bg-success/10 text-2xs font-black tracking-widest text-success uppercase border border-success/20">
                         Top Player
                       </span>
                     )}
                     {idx > 0 && idx < 3 && (
                       <div className="flex gap-0.5">
-                        <Star className="h-2 w-2 fill-amber-500 text-amber-500" />
-                        <Star className="h-2 w-2 fill-amber-500 text-amber-500" />
+                        <Star className="h-2 w-2 fill-warning text-warning" />
+                        <Star className="h-2 w-2 fill-warning text-warning" />
                       </div>
                     )}
                   </div>

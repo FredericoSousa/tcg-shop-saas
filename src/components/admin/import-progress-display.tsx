@@ -21,10 +21,10 @@ export function ImportProgressDisplay({
 
   if (!progress) {
     return (
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div className="p-4 bg-info-muted border border-info/20 rounded-lg">
         <div className="flex items-center gap-3">
-          <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
-          <span className="text-sm font-medium text-blue-900">
+          <Loader2 className="h-5 w-5 text-info animate-spin" />
+          <span className="text-sm font-medium text-info">
             {title}
           </span>
         </div>
@@ -39,54 +39,54 @@ export function ImportProgressDisplay({
 
   const statusStyles = {
     fetching: {
-      bg: "bg-blue-50",
-      border: "border-blue-200",
+      bg: "bg-info-muted",
+      border: "border-info/20",
       icon: (
-        <Loader2 className="h-5 w-5 text-blue-600 animate-spin" />
+        <Loader2 className="h-5 w-5 text-info animate-spin" />
       ),
-      text: "text-blue-900",
-      textColor: "text-blue-600",
-      barColor: "bg-blue-500",
+      text: "text-info",
+      textColor: "text-info",
+      barColor: "bg-info",
     },
     parsing: {
-      bg: "bg-purple-50",
-      border: "border-purple-200",
+      bg: "bg-primary/10",
+      border: "border-primary/20",
       icon: (
-        <Loader2 className="h-5 w-5 text-purple-600 animate-spin" />
+        <Loader2 className="h-5 w-5 text-primary animate-spin" />
       ),
-      text: "text-purple-900",
-      textColor: "text-purple-600",
-      barColor: "bg-purple-500",
+      text: "text-primary",
+      textColor: "text-primary",
+      barColor: "bg-primary",
     },
     validating: {
-      bg: "bg-yellow-50",
-      border: "border-yellow-200",
+      bg: "bg-warning-muted",
+      border: "border-warning/20",
       icon: (
-        <Loader2 className="h-5 w-5 text-yellow-600 animate-spin" />
+        <Loader2 className="h-5 w-5 text-warning animate-spin" />
       ),
-      text: "text-yellow-900",
-      textColor: "text-yellow-600",
-      barColor: "bg-yellow-500",
+      text: "text-warning",
+      textColor: "text-warning",
+      barColor: "bg-warning",
     },
     completed: {
-      bg: "bg-emerald-50",
-      border: "border-emerald-200",
+      bg: "bg-success-muted",
+      border: "border-success/20",
       icon: (
-        <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+        <CheckCircle2 className="h-5 w-5 text-success" />
       ),
-      text: "text-emerald-900",
-      textColor: "text-emerald-600",
-      barColor: "bg-emerald-500",
+      text: "text-success",
+      textColor: "text-success",
+      barColor: "bg-success",
     },
     error: {
-      bg: "bg-red-50",
-      border: "border-red-200",
+      bg: "bg-destructive-muted",
+      border: "border-destructive/20",
       icon: (
-        <AlertTriangle className="h-5 w-5 text-red-600" />
+        <AlertTriangle className="h-5 w-5 text-destructive" />
       ),
-      text: "text-red-900",
-      textColor: "text-red-600",
-      barColor: "bg-red-500",
+      text: "text-destructive",
+      textColor: "text-destructive",
+      barColor: "bg-destructive",
     },
   };
 

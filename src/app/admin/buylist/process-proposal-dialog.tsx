@@ -92,7 +92,7 @@ export function ProcessProposalDialog({ proposal, children }: ProcessProposalDia
                          <SetBadge setCode={item.cardTemplate?.set || ""} />
                          <div>
                            <p className="font-medium">{item.cardTemplate?.name}</p>
-                           <p className="text-[10px] text-muted-foreground uppercase">{item.condition} | {item.language}</p>
+                           <p className="text-2xs text-muted-foreground uppercase">{item.condition} | {item.language}</p>
                          </div>
                        </div>
                     </td>

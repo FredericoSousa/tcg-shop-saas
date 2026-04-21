@@ -126,7 +126,7 @@ export const columns: ColumnDef<InventoryRow>[] = [
             <Badge
               key={extra}
               variant="secondary"
-              className="text-[10px] px-1.5 py-0 font-medium bg-primary/10 text-primary border-primary/20"
+              className="text-2xs px-1.5 py-0 font-medium bg-primary/10 text-primary border-primary/20"
             >
               {extra}
             </Badge>

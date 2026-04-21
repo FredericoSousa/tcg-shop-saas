@@ -101,7 +101,7 @@ export default async function ProductPage(props: { params: Promise<{ id: string 
                   href={`/singles/${related.id}`}
                   className="group block space-y-4"
                 >
-                  <div className="aspect-[2/3] relative rounded-3xl overflow-hidden bg-zinc-100 border border-zinc-200 transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-2">
+                  <div className="aspect-[2/3] relative rounded-2xl overflow-hidden bg-zinc-100 border border-zinc-200 transition-all duration-500 group-hover:shadow-2xl group-hover:-translate-y-2">
                     {related.cardTemplate?.imageUrl && (
                       <Image
                         src={related.cardTemplate.imageUrl}

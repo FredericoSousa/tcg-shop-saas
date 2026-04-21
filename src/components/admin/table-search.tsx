@@ -10,6 +10,7 @@ interface TableSearchProps {
   onChange: (value: string) => void;
   placeholder?: string;
   isLoading?: boolean;
+  shortcut?: boolean;
 }
 
 export function TableSearch({
@@ -17,9 +18,27 @@ export function TableSearch({
   onChange,
   placeholder = "Buscar...",
   isLoading = false,
+  shortcut = true,
 }: TableSearchProps) {
   const [localValue, setLocalValue] = React.useState(value);
   const debouncedValue = useDebounce(localValue, 500);
+  const inputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (!shortcut) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "/") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      if (document.querySelector("[role='dialog'][data-state='open']")) return;
+      e.preventDefault();
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [shortcut]);
 
   // Sync with prop value (e.g. from URL)
   React.useEffect(() => {
@@ -48,6 +67,7 @@ export function TableSearch({
         )}
       </div>
       <Input
+        ref={inputRef}
         placeholder={placeholder}
         value={localValue}
         onChange={(e) => setLocalValue(e.target.value)}

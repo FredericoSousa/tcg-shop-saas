@@ -91,7 +91,7 @@ export const createColumns = (categories: { id: string; name: string }[]): Colum
         <div className="flex items-center gap-2">
           <div className={`font-bold px-2 py-0.5 rounded-full text-xs ${
             isCritical ? "bg-destructive/10 text-destructive border border-destructive/20" : 
-            isWarning ? "bg-amber-100 text-amber-700 border border-amber-200" :
+            isWarning ? "bg-warning-muted text-warning border border-warning/20" :
             "text-foreground"
           }`}>
             {stock}

@@ -113,19 +113,19 @@ export function CustomerCreditSection({ customerId, initialBalance }: CustomerCr
                     })}
                   </TableCell>
                   <TableCell>
-                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                      entry.type === 'CREDIT' 
-                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' 
-                        : 'bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-400'
+                    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-2xs font-black uppercase tracking-widest ${
+                      entry.type === 'CREDIT'
+                        ? 'bg-success-muted text-success'
+                        : 'bg-destructive-muted text-destructive'
                     }`}>
                       {entry.type === 'CREDIT' ? (
                         <span className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-success" />
                           Entrada
                         </span>
                       ) : (
                         <span className="flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+                          <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
                           Saída
                         </span>
                       )}
@@ -136,7 +136,7 @@ export function CustomerCreditSection({ customerId, initialBalance }: CustomerCr
                       <span className="text-sm font-semibold truncate text-foreground/80">{entry.description || "Ajuste manual"}</span>
                       {entry.orderFriendlyId && (
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] text-muted-foreground font-bold bg-muted px-1.5 py-0.5 rounded uppercase tracking-tighter border">
+                          <span className="text-2xs text-muted-foreground font-bold bg-muted px-1.5 py-0.5 rounded uppercase tracking-tighter border">
                             Pedido #{entry.orderFriendlyId}
                           </span>
                         </div>
@@ -144,7 +144,7 @@ export function CustomerCreditSection({ customerId, initialBalance }: CustomerCr
                     </div>
                   </TableCell>
                   <TableCell className={`text-right font-black tabular-nums transition-transform group-hover:scale-105 ${
-                    entry.type === 'CREDIT' ? 'text-emerald-600' : 'text-rose-600'
+                    entry.type === 'CREDIT' ? 'text-success' : 'text-destructive'
                   }`}>
                     {entry.type === 'CREDIT' ? '+' : '-'} {formatCurrency(entry.amount)}
                   </TableCell>

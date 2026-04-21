@@ -529,17 +529,17 @@ export function BulkImportForm() {
           {importMode === "text" && (
             <div className="p-6 md:p-8 flex flex-col gap-6">
               {/* Info box with better styling */}
-              <div className="flex gap-4 p-4 md:p-5 bg-blue-50 border border-blue-200 rounded-xl">
-                <FileText className="h-6 w-6 text-blue-600 shrink-0 mt-0.5" />
+              <div className="flex gap-4 p-4 md:p-5 bg-info-muted border border-info/20 rounded-xl">
+                <FileText className="h-6 w-6 text-info shrink-0 mt-0.5" />
                 <div className="text-sm space-y-2">
-                  <p className="font-semibold text-blue-900">
+                  <p className="font-semibold text-info">
                     Formato esperado (uma linha por card):
                   </p>
-                  <code className="text-xs bg-background px-3 py-2 rounded-lg font-mono block border border-blue-200">
+                  <code className="text-xs bg-background px-3 py-2 rounded-lg font-mono block border border-info/20">
                     &lt;quantidade&gt; &lt;nome do card&gt; [SET] #Nº
                     &lt;condição&gt; &lt;idioma&gt; &lt;preço&gt;
                   </code>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-blue-800">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-info">
                     <div>
                       <span className="font-semibold">[SET]:</span> obrigatório
                       (ex: [M25])
@@ -556,7 +556,7 @@ export function BulkImportForm() {
                       <span className="font-semibold">Idiomas:</span> EN, PT, JP
                     </div>
                   </div>
-                  <p className="text-xs text-blue-700">
+                  <p className="text-xs text-info">
                     Linhas iniciando com{" "}
                     <code className="bg-background px-1 rounded">
                       #
@@ -714,24 +714,24 @@ export function BulkImportForm() {
           <div className="p-4 md:p-6 border-b bg-gradient-to-r from-muted/50 to-muted/30 flex flex-col sm:flex-row items-start sm:items-center gap-4 justify-between">
             <div className="flex flex-wrap items-center gap-6">
               <div className="flex items-center gap-3 text-sm font-semibold">
-                <div className="flex items-center justify-center h-8 w-8 bg-emerald-100 rounded-lg">
-                  <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                <div className="flex items-center justify-center h-8 w-8 bg-success-muted rounded-lg">
+                  <CheckCircle2 className="h-5 w-5 text-success" />
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Encontrados</p>
-                  <p className="text-lg font-bold text-emerald-600">
+                  <p className="text-lg font-bold text-success">
                     {successItems.length}
                   </p>
                 </div>
               </div>
               {errorItems.length > 0 && (
                 <div className="flex items-center gap-3 text-sm font-semibold">
-                  <div className="flex items-center justify-center h-8 w-8 bg-red-100 rounded-lg">
-                    <XCircle className="h-5 w-5 text-red-600" />
+                  <div className="flex items-center justify-center h-8 w-8 bg-destructive-muted rounded-lg">
+                    <XCircle className="h-5 w-5 text-destructive" />
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Com erro</p>
-                    <p className="text-lg font-bold text-red-600">
+                    <p className="text-lg font-bold text-destructive">
                       {errorItems.length}
                     </p>
                   </div>
@@ -814,18 +814,18 @@ export function BulkImportForm() {
                   <tr
                     key={index}
                     className={`border-b transition-colors hover:bg-muted/50 ${item.status === "error"
-                      ? "bg-red-50/50"
+                      ? "bg-destructive-muted/50"
                       : "bg-background"
                       }`}
                   >
                     <td className="py-3 px-4">
                       {item.status === "success" ? (
-                        <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                        <CheckCircle2 className="h-5 w-5 text-success" />
                       ) : (
                         <div className="flex items-center gap-2">
-                          <XCircle className="h-5 w-5 text-red-500 shrink-0" />
+                          <XCircle className="h-5 w-5 text-destructive shrink-0" />
                           <span
-                            className="text-xs text-red-600 max-w-[120px] truncate"
+                            className="text-xs text-destructive max-w-[120px] truncate"
                             title={item.error}
                           >
                             {item.error}
@@ -900,9 +900,9 @@ export function BulkImportForm() {
                       </div>
                       {item.error && item.status === "success" && (
                         <div className="flex items-center gap-1 mt-1">
-                          <AlertTriangle className="h-3 w-3 text-amber-500 shrink-0" />
+                          <AlertTriangle className="h-3 w-3 text-warning shrink-0" />
                           <span
-                            className="text-[10px] text-amber-500 truncate"
+                            className="text-2xs text-warning truncate"
                             title={item.error}
                           >
                             {item.error}
@@ -1006,7 +1006,7 @@ export function BulkImportForm() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
                         onClick={() => handleRemoveItem(index)}
                       >
                         <Trash2 className="h-4 w-4" />

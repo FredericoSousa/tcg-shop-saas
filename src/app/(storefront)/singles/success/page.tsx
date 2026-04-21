@@ -1,8 +1,9 @@
 import { getTenant } from '@/lib/tenant-server'
 import { prisma } from '@/lib/prisma'
-import { CheckCircle2, Package, ArrowLeft } from 'lucide-react'
+import { CheckCircle2, Package, ArrowLeft, MessageCircle, Mail, Clock, HelpCircle } from 'lucide-react'
 import Link from 'next/link'
 import { formatCurrency } from '@/lib/utils/format'
+import { SuccessActions } from './success-actions'
 
 export default async function SuccessPage({
   searchParams,
@@ -60,28 +61,29 @@ export default async function SuccessPage({
     )
   }
 
+  const friendlyId = order.friendlyId || order.id.slice(0, 8).toUpperCase()
 
   return (
     <main className="flex-1 bg-muted/20 min-h-screen flex flex-col">
       <div className="container mx-auto px-4 py-16 flex-1 flex flex-col items-center justify-center max-w-2xl">
         <div className="bg-white p-8 rounded-2xl shadow-xl border w-full text-center">
-          <div className="mx-auto w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
+          <div className="mx-auto w-20 h-20 bg-success-muted text-success rounded-full flex items-center justify-center mb-6">
             <CheckCircle2 className="w-10 h-10" />
           </div>
 
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight mb-2">Pedido Confirmado!</h1>
-          <p className="text-gray-500 mb-8 max-w-md mx-auto">
+          <h1 className="text-3xl font-black text-foreground tracking-tight mb-2">Pedido Confirmado!</h1>
+          <p className="text-muted-foreground mb-8 max-w-md mx-auto">
             Agradecemos a sua compra na loja <span className="font-semibold">{tenant?.name || 'TCG Shop'}</span>. Seu pedido foi reservado com sucesso no nosso estoque.
           </p>
 
-          <div className="bg-gray-50 rounded-xl p-6 mb-8 text-left border">
+          <div className="bg-muted/40 rounded-xl p-6 mb-6 text-left border">
             <div className="flex items-center justify-between mb-4 border-b pb-4">
               <div>
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Cód. Pedido</p>
-                <p className="font-mono text-sm font-semibold">{order.friendlyId || order.id.slice(0, 8).toUpperCase()}</p>
+                <p className="text-2xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Cód. Pedido</p>
+                <p className="font-mono text-sm font-semibold">{friendlyId}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Cliente</p>
+                <p className="text-2xs font-bold text-muted-foreground uppercase tracking-widest mb-1">Cliente</p>
                 <p className="text-sm font-semibold">{order.customer.name}</p>
               </div>
             </div>
@@ -96,7 +98,7 @@ export default async function SuccessPage({
                     <span className="font-medium">{item.quantity}x</span>
                     <span className="truncate">{item.inventoryItem?.cardTemplate?.name || 'Item não disponível'}</span>
                   </div>
-                  <span className="font-semibold text-gray-600">
+                  <span className="font-semibold text-muted-foreground">
                     {formatCurrency(Number(item.priceAtPurchase) * item.quantity)}
                   </span>
                 </div>
@@ -111,13 +113,41 @@ export default async function SuccessPage({
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="bg-info-muted/60 border border-info/20 rounded-xl p-5 mb-6 text-left">
+            <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-3">
+              <HelpCircle className="w-4 h-4 text-info" />
+              O que acontece agora?
+            </h3>
+            <ul className="space-y-2.5 text-xs text-muted-foreground">
+              <li className="flex items-start gap-2.5">
+                <MessageCircle className="w-4 h-4 mt-0.5 text-info shrink-0" />
+                <span>
+                  <strong className="text-foreground font-semibold">Confirmação por WhatsApp</strong> — enviaremos o status do seu pedido para {order.customer.phoneNumber ? <span className="font-mono">{order.customer.phoneNumber}</span> : 'o telefone cadastrado'}.
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <Clock className="w-4 h-4 mt-0.5 text-info shrink-0" />
+                <span>
+                  <strong className="text-foreground font-semibold">Preparo em até 24h úteis</strong> — sua carta será separada, conferida e embalada para envio.
+                </span>
+              </li>
+              <li className="flex items-start gap-2.5">
+                <Mail className="w-4 h-4 mt-0.5 text-info shrink-0" />
+                <span>
+                  <strong className="text-foreground font-semibold">Suporte</strong> — guarde o código <span className="font-mono font-bold">{friendlyId}</span> para qualquer dúvida.
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link
               href="/singles"
-              className="px-8 py-3 bg-primary text-primary-foreground font-bold rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+              className="px-6 py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 min-h-[44px]"
             >
               <ArrowLeft className="w-4 h-4" /> Continuar Comprando
             </Link>
+            <SuccessActions friendlyId={friendlyId} />
           </div>
         </div>
       </div>

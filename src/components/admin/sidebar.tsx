@@ -62,7 +62,7 @@ export function Sidebar({ tenant, username }: SidebarProps) {
                 <span className="text-foreground font-semibold">
                   {tenant.name || "TCG Admin"}
                 </span>
-                <span className="text-xs text-muted-foreground font-normal">
+                <span className="text-xs text-muted-foreground font-medium">
                   Painel de Controle
                 </span>
               </div>
@@ -116,7 +116,7 @@ export function Sidebar({ tenant, username }: SidebarProps) {
               <span className="text-sm font-semibold truncate">
                 {username || "Usuário"}
               </span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-widest leading-tight">
+              <span className="text-2xs text-muted-foreground uppercase tracking-widest leading-tight">
                 Administrador
               </span>
             </div>
@@ -128,7 +128,7 @@ export function Sidebar({ tenant, username }: SidebarProps) {
               await fetch("/api/auth/logout", { method: "POST" });
               router.push("/login");
             }}
-            className="p-2 text-muted-foreground hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+            className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive-muted rounded-lg transition-all"
             title="Sair"
           >
             <LogOut className="h-4.5 w-4.5" />

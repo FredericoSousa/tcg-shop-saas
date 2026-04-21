@@ -2,9 +2,17 @@
 
 import { OrderStatus } from "@prisma/client";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { MoreHorizontal, Eye, Printer } from "lucide-react";
 import { cn, formatPhone, formatCurrency } from "@/lib/utils";
 import * as React from "react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   Select,
   SelectContent,
@@ -88,9 +96,10 @@ const OrderTableView = ({
             />
           </TableHead>
           <TableHead className="font-bold">ID / Data</TableHead>
+          <TableHead className="font-bold w-[110px]">Itens</TableHead>
           <TableHead className="font-bold">Cliente</TableHead>
           <TableHead className="font-bold text-center">Origem</TableHead>
-          <TableHead className="font-bold text-right">Itens</TableHead>
+          <TableHead className="font-bold text-right">Qtd</TableHead>
           <TableHead className="font-bold text-right">Total</TableHead>
           <TableHead className="font-bold">Status</TableHead>
           <TableHead className="w-[50px]"></TableHead>
@@ -99,12 +108,17 @@ const OrderTableView = ({
       <TableBody>
         {items.length === 0 ? (
           <TableRow>
-            <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+            <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
               Nenhum pedido encontrado.
             </TableCell>
           </TableRow>
         ) : (
-          items.map((order) => (
+          items.map((order) => {
+            const thumbs = order.items
+              .slice(0, 3)
+              .map((it) => it.inventoryItem?.cardTemplate?.imageUrl || it.product?.imageUrl || null);
+            const extraCount = Math.max(0, order.items.length - 3);
+            return (
             <TableRow key={order.id} className={selectedIds.includes(order.id) ? "bg-primary/5" : ""}>
               <TableCell>
                 <input
@@ -115,21 +129,41 @@ const OrderTableView = ({
                 />
               </TableCell>
               <TableCell>
-                <div className="flex flex-col">
-                  <span className="font-mono text-[10px] font-bold text-muted-foreground">
+                <Link href={`/admin/orders/${order.id}`} className="flex flex-col group">
+                  <span className="font-mono text-2xs font-bold text-muted-foreground group-hover:text-primary transition-colors">
                     {order.friendlyId ? `#${order.friendlyId}` : `#${order.id.slice(-8).toUpperCase()}`}
                   </span>
                   <span className="text-xs font-medium">{new Date(order.createdAt).toLocaleDateString("pt-BR")}</span>
+                </Link>
+              </TableCell>
+              <TableCell>
+                <div className="flex -space-x-2">
+                  {thumbs.map((url, idx) => (
+                    <div
+                      key={idx}
+                      className="h-10 w-7 rounded-md border-2 border-background bg-card shadow-sm overflow-hidden shrink-0 ring-1 ring-border/30"
+                    >
+                      {url && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={url} alt="" className="h-full w-full object-cover" />
+                      )}
+                    </div>
+                  ))}
+                  {extraCount > 0 && (
+                    <div className="h-10 w-7 rounded-md border-2 border-background bg-muted shadow-sm flex items-center justify-center text-2xs font-bold text-muted-foreground shrink-0 ring-1 ring-border/30">
+                      +{extraCount}
+                    </div>
+                  )}
                 </div>
               </TableCell>
               <TableCell>
                 <div className="flex flex-col">
                   <span className="font-bold text-sm tracking-tight">{order.customer.name}</span>
-                  <span className="text-[10px] text-muted-foreground">{formatPhone(order.customer.phoneNumber)}</span>
+                  <span className="text-2xs text-muted-foreground">{formatPhone(order.customer.phoneNumber)}</span>
                 </div>
               </TableCell>
               <TableCell className="text-center">
-                <Badge variant="outline" className={`text-[9px] font-black uppercase tracking-tighter ${order.source === "POS" ? "bg-blue-100/50 text-blue-700" : "bg-emerald-100/50 text-emerald-700"
+                <Badge variant="outline" className={`text-2xs font-black uppercase tracking-tighter ${order.source === "POS" ? "bg-info-muted text-info" : "bg-success-muted text-success"
                   }`}>
                   {order.source === "POS" ? "PDV" : "E-COM"}
                 </Badge>
@@ -144,11 +178,11 @@ const OrderTableView = ({
                 <Badge
                   variant="outline"
                   className={cn(
-                    "font-bold uppercase tracking-wider text-[10px]",
-                    order.status === "PENDING" && "bg-yellow-100 text-yellow-700 border-yellow-200",
-                    order.status === "PAID" && "bg-green-100 text-green-700 border-green-200",
-                    order.status === "SHIPPED" && "bg-blue-100 text-blue-700 border-blue-200",
-                    order.status === "CANCELLED" && "bg-red-100 text-red-700 border-red-200"
+                    "font-bold uppercase tracking-wider text-2xs",
+                    order.status === "PENDING" && "bg-warning-muted text-warning border-warning/20",
+                    order.status === "PAID" && "bg-success-muted text-success border-success/20",
+                    order.status === "SHIPPED" && "bg-info-muted text-info border-info/20",
+                    order.status === "CANCELLED" && "bg-destructive-muted text-destructive border-destructive/20"
                   )}
                 >
                   {order.status === "PENDING" ? "Pendente" :
@@ -157,12 +191,33 @@ const OrderTableView = ({
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <Link href={`/admin/orders/${order.id}`} className="hover:text-primary">
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+                <DropdownMenu>
+                  <DropdownMenuTrigger
+                    render={
+                      <button
+                        className="h-8 w-8 rounded-md flex items-center justify-center hover:bg-muted transition-colors"
+                        aria-label="Ações do pedido"
+                      />
+                    }
+                  >
+                    <MoreHorizontal className="h-4 w-4" />
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-44">
+                    <DropdownMenuItem render={<Link href={`/admin/orders/${order.id}`} />}>
+                      <Eye className="h-4 w-4" />
+                      <span>Ver detalhes</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem render={<Link href={`/admin/orders/${order.id}?print=1`} />}>
+                      <Printer className="h-4 w-4" />
+                      <span>Imprimir recibo</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
-          ))
+            );
+          })
         )}
       </TableBody>
     </Table>
@@ -178,6 +233,7 @@ export function OrdersClient({
   total: number;
   pageCount: number;
 }) {
+  const router = useRouter();
   const {
     page,
     limit,
@@ -296,9 +352,7 @@ export function OrdersClient({
           onClearSelection={clearSelection}
           onActionComplete={() => {
             clearSelection();
-            // The status update API revalidates path, 
-            // but we might need a router refresh or just trust revalidation
-            window.location.reload();
+            router.refresh();
           }}
         />
       )}

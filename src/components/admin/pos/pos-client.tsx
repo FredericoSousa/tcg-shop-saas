@@ -18,6 +18,8 @@ export type CartItem = {
   imageUrl?: string | null;
   price: number;
   quantity: number;
+  maxStock?: number;
+  allowNegativeStock?: boolean;
 };
 
 export function POSClient() {
@@ -34,6 +36,7 @@ export function POSClient() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(null);
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
+  const draftRestoredRef = useRef(false);
 
   // React Query for daily summary
   const { data: dailySummary } = useQuery({
@@ -142,6 +145,62 @@ export function POSClient() {
     return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
+  // Draft persistence: restore on mount (deferred via microtask so setState runs outside effect body)
+  useEffect(() => {
+    if (draftRestoredRef.current) return;
+    draftRestoredRef.current = true;
+    queueMicrotask(() => {
+      try {
+        const raw = window.localStorage.getItem("admin:pos-draft");
+        if (!raw) return;
+        const parsed = JSON.parse(raw) as { cart?: CartItem[]; customer?: CustomerType | null; ts?: number };
+        const stale = !parsed.ts || Date.now() - parsed.ts > 24 * 60 * 60 * 1000;
+        if (stale) {
+          window.localStorage.removeItem("admin:pos-draft");
+          return;
+        }
+        if (parsed.cart && parsed.cart.length > 0) {
+          const label = parsed.customer?.name ? `para ${parsed.customer.name}` : "anterior";
+          feedback.success(
+            "Rascunho retomado",
+            `Carrinho ${label} restaurado (${parsed.cart.length} ${parsed.cart.length === 1 ? "item" : "itens"})`,
+            {
+              label: "Descartar",
+              onClick: () => {
+                window.localStorage.removeItem("admin:pos-draft");
+                setCart([]);
+                setSelectedCustomer(null);
+              },
+            }
+          );
+          setCart(parsed.cart);
+          if (parsed.customer) setSelectedCustomer(parsed.customer);
+        }
+      } catch {
+        window.localStorage.removeItem("admin:pos-draft");
+      }
+    });
+  }, []);
+
+  // Draft persistence: save with debounce on changes
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (cart.length === 0 && !selectedCustomer) {
+        window.localStorage.removeItem("admin:pos-draft");
+        return;
+      }
+      try {
+        window.localStorage.setItem(
+          "admin:pos-draft",
+          JSON.stringify({ cart, customer: selectedCustomer, ts: Date.now() })
+        );
+      } catch {
+        // quota exceeded — ignore
+      }
+    }, 500);
+    return () => clearTimeout(timeout);
+  }, [cart, selectedCustomer]);
+
   const handleSelectCustomer = useCallback((customer: CustomerType | null) => {
     setSelectedCustomer(customer);
     setCart([]);
@@ -151,6 +210,17 @@ export function POSClient() {
   }, [queryClient]);
 
   const addToCart = useCallback((product: Omit<CartItem, "quantity">) => {
+    const existingOnOrder = (existingItems as CartItem[]).find((i) => i.id === product.id)?.quantity ?? 0;
+    const existingInCart = cart.find((i) => i.id === product.id)?.quantity ?? 0;
+    const projected = existingOnOrder + existingInCart + 1;
+    const stockCap = product.maxStock ?? Infinity;
+    const allowNegative = product.allowNegativeStock ?? false;
+
+    if (!allowNegative && projected > stockCap) {
+      feedback.error(`Estoque esgotado`, `${product.name}: apenas ${stockCap} em estoque.`);
+      return;
+    }
+
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
@@ -173,7 +243,7 @@ export function POSClient() {
         });
       }
     });
-  }, []);
+  }, [cart, existingItems]);
 
   const removeFromCart = useCallback((id: string) => {
     if (id === "ALL") {
@@ -209,14 +279,20 @@ export function POSClient() {
   const updateQuantity = useCallback((id: string, delta: number) => {
     setCart((prev) =>
       prev.map((item) => {
-        if (item.id === id) {
-          const newQty = Math.max(1, item.quantity + delta);
-          return { ...item, quantity: newQty };
+        if (item.id !== id) return item;
+        const onOrder = (existingItems as CartItem[]).find((i) => i.id === id)?.quantity ?? 0;
+        const stockCap = item.maxStock ?? Infinity;
+        const allowNegative = item.allowNegativeStock ?? false;
+        const proposed = item.quantity + delta;
+        const maxInCart = allowNegative ? Infinity : Math.max(1, stockCap - onOrder);
+        const newQty = Math.min(maxInCart, Math.max(1, proposed));
+        if (delta > 0 && newQty === item.quantity) {
+          feedback.error(`Estoque esgotado`, `${item.name}: apenas ${stockCap} em estoque.`);
         }
-        return item;
+        return { ...item, quantity: newQty };
       })
     );
-  }, []);
+  }, [existingItems]);
 
   const handleCheckout = useCallback(async () => {
     if (cart.length === 0) return true;
@@ -275,6 +351,11 @@ export function POSClient() {
   const handleFinalizeSuccess = useCallback(() => {
     setCart([]);
     setSelectedCustomer(null);
+    try {
+      window.localStorage.removeItem("admin:pos-draft");
+    } catch {
+      // ignore
+    }
     queryClient.removeQueries({ queryKey: ["order-in-progress"] });
   }, [queryClient]);
 
@@ -291,7 +372,7 @@ export function POSClient() {
         title={isFullscreen ? "Sair da Tela Cheia" : "Tela Cheia"}
       >
         {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
-        <span className="absolute right-full mr-2 py-1 px-2 rounded bg-black text-white text-[10px] whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+        <span className="absolute right-full mr-2 py-1 px-2 rounded bg-black text-white text-2xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
           {isFullscreen ? "Sair (Esc)" : "Tela Cheia (F11)"}
         </span>
       </button>
@@ -309,7 +390,7 @@ export function POSClient() {
             <div className="w-full max-w-md text-center space-y-8">
               <div className="relative inline-block">
                 <div className="absolute -inset-4 bg-primary/20 rounded-full blur-2xl animate-pulse" />
-                <div className="relative bg-primary/10 p-6 rounded-3xl border border-primary/20 shadow-inner">
+                <div className="relative bg-primary/10 p-6 rounded-2xl border border-primary/20 shadow-inner">
                   <UserPlus className="h-12 w-12 text-primary" />
                 </div>
               </div>
@@ -334,7 +415,7 @@ export function POSClient() {
                 ].map((item, i) => (
                   <div key={i} className="p-3 rounded-xl border bg-muted/30 text-center space-y-1">
                     <item.icon className="h-5 w-5 mx-auto text-primary/60" />
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-primary/80">{item.label}</p>
+                    <p className="text-2xs font-bold uppercase tracking-wider text-primary/80">{item.label}</p>
                   </div>
                 ))}
               </div>
@@ -388,11 +469,11 @@ export function POSClient() {
                     <POSBuylistDialog />
                     <div className="h-8 w-px bg-border mx-2" />
                     <div className="text-right border-r pr-4">
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Vendas Hoje</p>
+                      <p className="text-2xs font-bold text-muted-foreground uppercase tracking-widest">Vendas Hoje</p>
                       <p className="text-sm font-black">{dailySummary.orderCount}</p>
                     </div>
                     <div>
-                      <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Receita Hoje</p>
+                      <p className="text-2xs font-bold text-muted-foreground uppercase tracking-widest">Receita Hoje</p>
                       <p className="text-sm font-black text-primary">R$ {Number(dailySummary.revenue).toFixed(2)}</p>
                     </div>
                   </div>

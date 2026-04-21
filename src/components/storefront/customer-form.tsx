@@ -51,10 +51,10 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
   };
 
   return (
-    <div className="space-y-3 bg-white/40 backdrop-blur-sm p-5 rounded-3xl border border-zinc-200/50 shadow-xl shadow-zinc-200/20 relative overflow-hidden transition-all duration-500">
+    <div className="space-y-3 bg-white/40 backdrop-blur-sm p-5 rounded-2xl border border-zinc-200/50 shadow-xl shadow-zinc-200/20 relative overflow-hidden transition-all duration-500">
       <div className="flex items-center justify-center gap-2 mb-2">
         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zinc-200 to-transparent" />
-        <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest opacity-70">
+        <h4 className="text-2xs font-black text-zinc-400 uppercase tracking-widest opacity-70">
           Identificação do Cliente
         </h4>
         <div className="h-px flex-1 bg-gradient-to-r from-transparent via-zinc-200 to-transparent" />
@@ -85,7 +85,7 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
             <motion.span
               initial={{ opacity: 0, y: -5 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-[10px] text-destructive font-bold pl-2"
+              className="text-2xs text-destructive font-bold pl-2"
             >
               {errors.phoneNumber.message as string}
             </motion.span>
@@ -115,7 +115,7 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
                 <CheckCircle2 className="h-12 w-12 text-primary" />
               </div>
               <div className="flex flex-col relative z-10">
-                <span className="text-[10px] text-primary font-black uppercase tracking-widest mb-0.5">Cliente Verificado</span>
+                <span className="text-2xs text-primary font-black uppercase tracking-widest mb-0.5">Cliente Verificado</span>
                 <span className="text-sm font-black text-zinc-900 truncate max-w-[200px]">Reconhecido pelo sistema</span>
               </div>
               <button
@@ -149,7 +149,7 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
                   <motion.span
                     initial={{ opacity: 0, y: -5 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-[10px] text-destructive font-bold pl-2"
+                    className="text-2xs text-destructive font-bold pl-2"
                   >
                     {errors.name.message as string}
                   </motion.span>

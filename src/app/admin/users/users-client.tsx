@@ -287,7 +287,7 @@ export function UsersClient({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="text-muted-foreground hover:text-red-500 hover:bg-red-50"
+                          className="text-muted-foreground hover:text-destructive hover:bg-destructive-muted"
                           onClick={() => setUserToDelete({ id: user.id, username: user.username })}
                         >
                           <Trash2 className="h-4 w-4" />

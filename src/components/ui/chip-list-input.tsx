@@ -69,7 +69,7 @@ export function ChipListInput({
         {values.map((chip, i) => (
           <span
             key={`${chip}-${i}`}
-            className="inline-flex items-center gap-0.5 rounded-full bg-primary/15 text-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+            className="inline-flex items-center gap-0.5 rounded-full bg-primary/15 text-primary px-2 py-0.5 text-2xs font-semibold uppercase tracking-wide"
           >
             {chip}
             <button
@@ -90,7 +90,7 @@ export function ChipListInput({
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           placeholder={values.length === 0 ? placeholder : ''}
-          className="flex-1 min-w-[60px] bg-transparent outline-none text-[11px] placeholder:text-muted-foreground/50"
+          className="flex-1 min-w-[60px] bg-transparent outline-none text-2xs placeholder:text-muted-foreground/50"
           disabled={disabled}
         />
       </div>

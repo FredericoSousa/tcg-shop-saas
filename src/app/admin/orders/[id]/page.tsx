@@ -59,10 +59,10 @@ export default async function OrderDetailsPage({
         actions={
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 bg-background/50 p-3 rounded-lg border border-border/50 backdrop-blur-sm">
             <div className="flex items-center gap-3">
-              <span className={`text-[10px] uppercase font-black px-2 py-1 rounded-md border ${
-                order.source === "POS" 
-                  ? "bg-blue-100 text-blue-700 border-blue-200"
-                  : "bg-emerald-100 text-emerald-700 border-emerald-200"
+              <span className={`text-2xs uppercase font-black px-2 py-1 rounded-md border ${
+                order.source === "POS"
+                  ? "bg-info-muted text-info border-info/20"
+                  : "bg-success-muted text-success border-success/20"
               }`}>
                 {order.source === "POS" ? "PDV" : "E-commerce"}
               </span>
@@ -81,7 +81,7 @@ export default async function OrderDetailsPage({
             </div>
             <div className="h-8 w-px bg-border/50 hidden sm:block mx-1" />
             <div className="flex flex-col text-right">
-              <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-widest leading-none mb-1">Total</span>
+              <span className="text-2xs uppercase font-bold text-muted-foreground tracking-widest leading-none mb-1">Total</span>
               <span className="font-black text-xl text-primary leading-none">
                 {formatCurrency(order.totalAmount)}
               </span>
