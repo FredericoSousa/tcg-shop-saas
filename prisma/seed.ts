@@ -1,6 +1,31 @@
 import "dotenv/config";
 import { prisma } from "@/lib/prisma";
-import { hash } from "bcryptjs";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+
+async function upsertAdmin(email: string, password: string, tenantId: string) {
+  const { data: existing } = await supabaseAdmin.auth.admin.listUsers({
+    page: 1,
+    perPage: 1000,
+  });
+  const match = existing?.users.find((u) => u.email === email);
+
+  if (match) {
+    await supabaseAdmin.auth.admin.updateUserById(match.id, {
+      password,
+      app_metadata: { tenantId, role: "ADMIN" },
+    });
+    return match;
+  }
+
+  const { data, error } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    app_metadata: { tenantId, role: "ADMIN" },
+  });
+  if (error || !data.user) throw new Error(error?.message ?? "Falha ao criar admin");
+  return data.user;
+}
 
 async function main() {
   console.log("Starting seed...");
@@ -25,30 +50,9 @@ async function main() {
     },
   });
 
-  // Create test users for each tenant
-  const hashedPassword = await hash("admin123", 12);
+  const admin1 = await upsertAdmin("admin@loja1.test", "Admin@123456", tenant1.id);
+  const admin2 = await upsertAdmin("admin@cavernadodragao.test", "Admin@123456", tenant2.id);
 
-  const user1 = await prisma.user.upsert({
-    where: { username_tenantId: { username: "admin", tenantId: tenant1.id } },
-    update: {},
-    create: {
-      username: "admin",
-      passwordHash: hashedPassword,
-      tenantId: tenant1.id,
-    },
-  });
-
-  const user2 = await prisma.user.upsert({
-    where: { username_tenantId: { username: "admin", tenantId: tenant2.id } },
-    update: {},
-    create: {
-      username: "admin",
-      passwordHash: hashedPassword,
-      tenantId: tenant2.id,
-    },
-  });
-
-  // Create some Card Templates
   const card1 = await prisma.cardTemplate.upsert({
     where: { id: "00000000-0000-0000-0000-000000000001" },
     update: {},
@@ -73,7 +77,6 @@ async function main() {
     }
   });
 
-  // Add items to Tenant 1's Buylist
   await prisma.buylistItem.upsert({
     where: { id: "00000000-0000-0000-0000-000000000101" },
     update: {},
@@ -100,13 +103,9 @@ async function main() {
     }
   });
 
-  console.log(
-    `✅ Tenants criados para testes: ${tenant1.slug}, ${tenant2.slug}`,
-  );
-  console.log(
-    `✅ Usuários de teste criados: ${user1.username} (${tenant1.slug}), ${user2.username} (${tenant2.slug})`,
-  );
-  console.log(`📝 Credenciais padrão - Username: admin, Senha: admin123`);
+  console.log(`✅ Tenants criados: ${tenant1.slug}, ${tenant2.slug}`);
+  console.log(`✅ Admins criados: ${admin1.email} (${tenant1.slug}), ${admin2.email} (${tenant2.slug})`);
+  console.log(`📝 Senha padrão: Admin@123456`);
   console.log(" Seed finalizado com sucesso.");
 }
 

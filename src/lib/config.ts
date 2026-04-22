@@ -8,11 +8,9 @@ import { z } from "zod";
 const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
-    JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
     NEXT_PUBLIC_SUPABASE_URL: z.string().url("NEXT_PUBLIC_SUPABASE_URL must be a valid URL"),
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1, "NEXT_PUBLIC_SUPABASE_ANON_KEY is required"),
     SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
-    JWT_EXPIRATION_TIME: z.string().default("1h"),
-    SESSION_COOKIE_MAX_AGE: z.coerce.number().default(60 * 60),
     REDIS_URL: z.string().url().optional(),
     CACHE_STORE: z.enum(["memory", "redis"]).default("memory"),
     SENTRY_DSN: z.string().url().optional(),
@@ -55,17 +53,11 @@ const getEnv = () => {
 const env = getEnv();
 
 export const config = {
-  jwtSecret: new TextEncoder().encode(
-    env.JWT_SECRET || "dev-secret-do-not-use-in-production-must-be-long",
-  ),
   isProduction: env.NODE_ENV === "production",
   isDevelopment: env.NODE_ENV === "development",
   supabaseUrl: env.NEXT_PUBLIC_SUPABASE_URL,
+  supabaseAnonKey: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   supabaseServiceRoleKey: env.SUPABASE_SERVICE_ROLE_KEY,
-  /** Tempo de vida da sessão JWT. Valor padrão curto (1h) por segurança. */
-  jwtExpirationTime: env.JWT_EXPIRATION_TIME,
-  /** Duração do cookie de sessão em segundos (deve ser >= ao jwtExpirationTime) */
-  sessionCookieMaxAge: env.SESSION_COOKIE_MAX_AGE,
   cache: {
     store: env.CACHE_STORE,
     redisUrl: env.REDIS_URL,

@@ -82,21 +82,15 @@ test.describe("CSRF protection", () => {
 });
 
 test.describe("Auth", () => {
-  test("login with invalid credentials fails", async ({ request }) => {
-    const res = await request.post("/api/auth/login", {
-      data: { username: "admin", password: "wrong-password" },
-    });
-    expect([400, 401]).toContain(res.status());
+  test("login page renders without session", async ({ page }) => {
+    const res = await page.goto("/login");
+    expect(res?.status()).toBeLessThan(500);
+    await expect(page.getByRole("button", { name: /entrar/i })).toBeVisible();
   });
 
-  test("login endpoint does not leak user existence", async ({ request }) => {
-    const exists = await request.post("/api/auth/login", {
-      data: { username: "admin", password: "wrong-password-12345" },
-    });
-    const missing = await request.post("/api/auth/login", {
-      data: { username: "definitely-not-a-user", password: "wrong-password-12345" },
-    });
-    expect(exists.status()).toBe(missing.status());
+  test("protected admin page redirects to /login when unauthenticated", async ({ page }) => {
+    await page.goto("/admin");
+    await expect(page).toHaveURL(/\/login/);
   });
 });
 

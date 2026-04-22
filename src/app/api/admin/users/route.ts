@@ -26,9 +26,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   return withAdminApi(async ({ tenant }) => {
     try {
-      const { username, password, role } = await request.json();
+      const { email, password, role } = await request.json();
       const saveUserUseCase = container.resolve(SaveUserUseCase);
-      const user = await saveUserUseCase.execute({ username, password, role });
+      const user = await saveUserUseCase.execute({ email, password, role });
       return Response.json(user);
     } catch (error) {
       logger.error("Error in save user API", error as Error, { tenantId: tenant.id });

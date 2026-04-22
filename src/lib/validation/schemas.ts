@@ -17,7 +17,7 @@ export const passwordSchema = z
 // User creation/update payload
 export const saveUserSchema = z.object({
   id: z.string().uuid().optional(),
-  username: z.string().min(3, "Usuário deve ter no mínimo 3 caracteres").max(64),
+  email: z.email("Email inválido").max(255),
   password: passwordSchema.optional(),
   role: z.enum(["ADMIN", "USER"]).optional(),
 });

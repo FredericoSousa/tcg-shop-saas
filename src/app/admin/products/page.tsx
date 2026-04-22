@@ -5,6 +5,7 @@ import { DataTable } from "./data-table";
 import { container } from "@/lib/infrastructure/container";
 import { ListProductsUseCase } from "@/lib/application/use-cases/list-products.use-case";
 import { ListCategoriesUseCase } from "@/lib/application/use-cases/list-categories.use-case";
+import { ensureTenantContext } from "@/lib/tenant-server";
 import { ProductDialog } from "./product-dialog";
 import { CategoriesDialog } from "./categories-dialog";
 
@@ -14,6 +15,7 @@ const listCategoriesUseCase = container.resolve(ListCategoriesUseCase);
 export default async function ProductsPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  await ensureTenantContext();
   const searchParams = await props.searchParams;
   const page = Number(searchParams?.page) || 1;
   const limit = Number(searchParams?.limit) || 10;

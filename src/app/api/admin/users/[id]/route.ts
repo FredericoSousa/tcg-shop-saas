@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { withAdminApi } from "@/lib/tenant-server";
-import { container, TOKENS } from "@/lib/infrastructure/container";
-import type { IUserRepository } from "@/lib/domain/repositories/user.repository";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 
 export async function DELETE(
@@ -12,16 +11,21 @@ export async function DELETE(
     try {
       const { id } = await params;
 
-      // Prevent admin from deleting themselves
       if (session.userId === id) {
         return Response.json({ error: "Cannot delete yourself" }, { status: 400 });
       }
 
-      const userRepo = container.resolve<IUserRepository>(TOKENS.UserRepository);
-      const user = await userRepo.findById(id);
-      if (!user) return Response.json({ error: "User not found" }, { status: 404 });
+      const { data: target, error: findErr } = await supabaseAdmin.auth.admin.getUserById(id);
+      if (findErr || !target.user) {
+        return Response.json({ error: "User not found" }, { status: 404 });
+      }
+      if (target.user.app_metadata?.tenantId !== tenant.id) {
+        return Response.json({ error: "User not found" }, { status: 404 });
+      }
 
-      await userRepo.delete(id);
+      const { error: deleteErr } = await supabaseAdmin.auth.admin.deleteUser(id);
+      if (deleteErr) throw deleteErr;
+
       return Response.json({ success: true });
     } catch (error) {
       logger.error("Error deleting user", error as Error, { tenantId: tenant.id });

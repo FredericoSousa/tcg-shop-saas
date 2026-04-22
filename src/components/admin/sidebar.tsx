@@ -17,6 +17,7 @@ import {
 import { Tenant } from "@/lib/domain/entities/tenant";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
+import { createSupabaseBrowserClient } from "@/lib/supabase/client";
 
 const sidebarGroups = [
   {
@@ -53,12 +54,12 @@ const sidebarGroups = [
 
 interface SidebarProps {
   tenant: Tenant;
-  username?: string;
+  email?: string;
 }
 
 import { useSidebar } from "./sidebar-provider";
 
-export function Sidebar({ tenant, username }: SidebarProps) {
+export function Sidebar({ tenant, email }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { isCollapsed } = useSidebar();
@@ -140,13 +141,13 @@ export function Sidebar({ tenant, username }: SidebarProps) {
           <Avatar className="h-9 w-9 border-2 border-primary/10 shrink-0">
             <AvatarImage src="" />
             <AvatarFallback className="bg-primary/15 text-primary font-bold">
-              {username?.charAt(0).toUpperCase() || "U"}
+              {email?.charAt(0).toUpperCase() || "U"}
             </AvatarFallback>
           </Avatar>
           {!isCollapsed && (
             <div className="flex flex-col text-left overflow-hidden animate-in fade-in slide-in-from-left-1 duration-300">
               <span className="text-sm font-semibold truncate">
-                {username || "Usuário"}
+                {email || "Usuário"}
               </span>
               <span className="text-2xs text-muted-foreground uppercase tracking-widest leading-tight">
                 Administrador
@@ -157,8 +158,10 @@ export function Sidebar({ tenant, username }: SidebarProps) {
 
           <button
             onClick={async () => {
-              await fetch("/api/auth/logout", { method: "POST" });
+              const supabase = createSupabaseBrowserClient();
+              await supabase.auth.signOut();
               router.push("/login");
+              router.refresh();
             }}
             className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive-muted rounded-lg transition-all"
             title="Sair"

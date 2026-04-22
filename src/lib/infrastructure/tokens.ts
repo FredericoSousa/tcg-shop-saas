@@ -5,7 +5,6 @@ export const TOKENS = {
   OrderRepository: Symbol("OrderRepository"),
   ProductRepository: Symbol("ProductRepository"),
   TenantRepository: Symbol("TenantRepository"),
-  UserRepository: Symbol("UserRepository"),
   ReportsRepository: Symbol("ReportsRepository"),
   CustomerCreditLedgerRepository: Symbol("CustomerCreditLedgerRepository"),
   BuylistRepository: Symbol("BuylistRepository"),

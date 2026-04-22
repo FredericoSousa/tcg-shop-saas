@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { container } from "@/lib/infrastructure/container";
 import { GetCustomerUseCase } from "@/lib/application/use-cases/get-customer.use-case";
+import { ensureTenantContext } from "@/lib/tenant-server";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { formatPhone, formatCurrency } from "@/lib/utils";
 import { CustomerOrdersTable } from "@/components/admin/customer-orders-table";
@@ -22,6 +23,7 @@ export default async function CustomerDetailsPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  await ensureTenantContext();
   const { id } = await params;
 
   const getCustomer = container.resolve(GetCustomerUseCase);

@@ -1,11 +1,13 @@
 import "reflect-metadata";
 import { container } from "@/lib/infrastructure/container";
 import { ListCustomersUseCase } from "@/lib/application/use-cases/list-customers.use-case";
+import { ensureTenantContext } from "@/lib/tenant-server";
 import { CustomersClient } from "./customers-client";
 
 export default async function CustomersPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
+  await ensureTenantContext();
   const searchParams = await props.searchParams;
   const page = Number(searchParams?.page) || 1;
   const limit = Number(searchParams?.limit) || 10;

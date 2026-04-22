@@ -1,50 +1,58 @@
-import { injectable, inject } from "tsyringe";
-import { TOKENS } from "../../infrastructure/container";
-import type { IUserRepository } from "@/lib/domain/repositories/user.repository";
-import { User, UserRole } from "@/lib/domain/entities/tenant";
-import { hashPassword } from "@/lib/auth";
+import { injectable } from "tsyringe";
+import { supabaseAdmin } from "@/lib/supabase/admin";
 import { getTenantId } from "../../tenant-context";
 import { IUseCase } from "./use-case.interface";
 import { saveUserSchema } from "@/lib/validation/schemas";
 
+export type UserRole = "ADMIN" | "USER";
+
 export interface SaveUserRequest {
   id?: string;
-  username: string;
+  email: string;
   password?: string;
   role?: UserRole;
 }
 
-@injectable()
-export class SaveUserUseCase implements IUseCase<SaveUserRequest, Partial<User>> {
-  constructor(@inject(TOKENS.UserRepository) private userRepo: IUserRepository) {}
+export interface SaveUserResponse {
+  id: string;
+  email: string;
+  role: UserRole;
+}
 
-  async execute(request: SaveUserRequest): Promise<Partial<User>> {
-    const { id, username, password, role } = saveUserSchema.parse(request);
+@injectable()
+export class SaveUserUseCase implements IUseCase<SaveUserRequest, SaveUserResponse> {
+  async execute(request: SaveUserRequest): Promise<SaveUserResponse> {
+    const { id, email, password, role } = saveUserSchema.parse(request);
+    const tenantId = getTenantId()!;
 
     if (id) {
-      const updateData: Partial<User> = { username, role };
-      if (password) {
-        updateData.passwordHash = await hashPassword(password);
-      }
-      const updated = await this.userRepo.update(id, updateData);
-      return { id: updated.id, username: updated.username, role: updated.role };
+      const { data, error } = await supabaseAdmin.auth.admin.updateUserById(id, {
+        email,
+        ...(password ? { password } : {}),
+        app_metadata: { tenantId, role: role ?? "USER" },
+      });
+      if (error || !data.user) throw new Error(error?.message ?? "Falha ao atualizar usuário.");
+      return {
+        id: data.user.id,
+        email: data.user.email!,
+        role: (data.user.app_metadata?.role ?? "USER") as UserRole,
+      };
     }
 
     if (!password) throw new Error("Senha é obrigatória para novos usuários.");
 
-    const existing = await this.userRepo.findByUsername(username);
-    if (existing) throw new Error("Usuário já existe.");
-
-    const user = await this.userRepo.save({
-      id: "",
-      username,
-      passwordHash: await hashPassword(password),
-      role: role || "USER",
-      tenantId: getTenantId()!,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      app_metadata: { tenantId, role: role ?? "USER" },
     });
+    if (error || !data.user) throw new Error(error?.message ?? "Falha ao criar usuário.");
 
-    return { id: user.id, username: user.username, role: user.role };
+    return {
+      id: data.user.id,
+      email: data.user.email!,
+      role: (data.user.app_metadata?.role ?? "USER") as UserRole,
+    };
   }
 }
