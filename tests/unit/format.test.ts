@@ -66,6 +66,19 @@ describe('Formatting Utilities', () => {
       expect(parseCurrency('')).toBe(0)
       expect(parseCurrency('abc')).toBe(0)
     })
+
+    it('misinterprets a plain decimal string — dot is treated as thousands separator', () => {
+      // "99.99" → removes dot → "9999" → 9999 (NOT 99.99)
+      // This is why product-dialog uses Number() instead of parseCurrency() when
+      // the value comes from MaskedInput.onValueChange (which returns a plain number)
+      expect(parseCurrency('99.99')).toBe(9999)
+    })
+
+    it('Number() correctly parses a plain decimal string from MaskedInput', () => {
+      expect(Number('99.99')).toBe(99.99)
+      expect(Number('1234.56')).toBe(1234.56)
+      expect(Number('0')).toBe(0)
+    })
   })
 
   describe('formatDecimal', () => {

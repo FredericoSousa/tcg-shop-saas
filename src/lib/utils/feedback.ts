@@ -1,6 +1,26 @@
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api/client";
 
+function extractErrorDetails(data: unknown): string | undefined {
+  if (typeof data !== "object" || data === null) return undefined;
+  const err = (data as { error?: unknown }).error;
+  if (typeof err !== "object" || err === null) {
+    return typeof err === "string" ? err : undefined;
+  }
+  const details = (err as { details?: unknown }).details;
+  if (Array.isArray(details)) {
+    const lines = details.filter((d): d is string => typeof d === "string");
+    return lines.length ? lines.join("\n") : undefined;
+  }
+  if (details && typeof details === "object") {
+    const lines = Object.values(details as Record<string, unknown>)
+      .flat()
+      .filter((d): d is string => typeof d === "string");
+    return lines.length ? lines.join("\n") : undefined;
+  }
+  return undefined;
+}
+
 /**
  * Standardized feedback utility for the frontend.
  * Wraps sonner toast calls to ensure consistency.
@@ -37,9 +57,7 @@ export const feedback = {
 
     if (error instanceof ApiError) {
       message = error.message;
-      if (typeof error.data === "object" && error.data !== null && "error" in error.data) {
-        description = (error.data as { error: string }).error;
-      }
+      description = extractErrorDetails(error.data);
     } else if (error instanceof Error) {
       message = error.message;
     }

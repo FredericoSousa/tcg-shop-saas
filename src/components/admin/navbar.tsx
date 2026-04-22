@@ -36,7 +36,7 @@ const sidebarItems = [
 ];
 
 interface NavbarProps {
-  username?: string;
+  email?: string;
 }
 
 import { PanelLeft } from "lucide-react";

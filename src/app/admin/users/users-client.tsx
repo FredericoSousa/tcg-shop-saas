@@ -33,10 +33,12 @@ import { TableSearch } from "@/components/admin/table-search";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { UserService } from "@/lib/api/services/user.service";
 import { ConfirmModal } from "@/components/admin/confirm-modal";
+import { passwordSchema } from "@/lib/validation/schemas";
+import { PasswordStrength } from "@/components/ui/password-strength";
 
 interface User {
   id: string;
-  username: string;
+  email: string;
   role: "ADMIN" | "USER";
   createdAt: string | Date;
 }
@@ -47,10 +49,10 @@ interface UsersClientProps {
   initialPageCount: number;
 }
 
-export function UsersClient({ 
-  initialUsers, 
-  initialTotal, 
-  initialPageCount 
+export function UsersClient({
+  initialUsers,
+  initialTotal,
+  initialPageCount
 }: UsersClientProps) {
   const {
     page,
@@ -67,11 +69,11 @@ export function UsersClient({
   const [pageCount, setPageCount] = useState(initialPageCount);
   const [loading, setLoading] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newUsername, setNewUsername] = useState("");
+  const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newRole, setNewRole] = useState<"ADMIN" | "USER">("USER");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<{id: string, username: string} | null>(null);
+  const [userToDelete, setUserToDelete] = useState<{id: string, email: string} | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchUsers = useCallback(async () => {
@@ -100,22 +102,31 @@ export function UsersClient({
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newUsername || !newPassword) {
+    if (!newEmail || !newPassword) {
       feedback.error("Preencha todos os campos");
+      return;
+    }
+
+    const passwordResult = passwordSchema.safeParse(newPassword);
+    if (!passwordResult.success) {
+      feedback.error(
+        "Senha inválida",
+        passwordResult.error.issues.map((i) => i.message).join("\n"),
+      );
       return;
     }
 
     setIsSubmitting(true);
     try {
       await UserService.create({
-        username: newUsername,
+        email: newEmail,
         password: newPassword,
         role: newRole,
       });
 
       feedback.success("Usuário criado com sucesso");
       setIsCreateDialogOpen(false);
-      setNewUsername("");
+      setNewEmail("");
       setNewPassword("");
       setNewRole("USER");
       fetchUsers();
@@ -185,12 +196,13 @@ export function UsersClient({
             >
               <form id="user-form" onSubmit={handleCreateUser} className="grid gap-6 py-4">
                 <div className="grid gap-2">
-                  <label htmlFor="username" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Usuário</label>
+                  <label htmlFor="email" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Email</label>
                   <Input
-                    id="username"
-                    value={newUsername}
-                    onChange={(e) => setNewUsername(e.target.value)}
-                    placeholder="Nome de usuário"
+                    id="email"
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="voce@exemplo.com"
                     className="h-11 rounded-xl"
                     required
                   />
@@ -206,6 +218,7 @@ export function UsersClient({
                     className="h-11 rounded-xl"
                     required
                   />
+                  <PasswordStrength value={newPassword} className="mt-1" />
                 </div>
                 <div className="grid gap-2">
                   <label htmlFor="role" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Nível de Acesso</label>
@@ -234,7 +247,7 @@ export function UsersClient({
         <TableSearch
           value={search}
           onChange={setSearch}
-          placeholder="Buscar por usuário..."
+          placeholder="Buscar por email..."
           isLoading={loading || isPending}
         />
       </FilterSection>
@@ -250,7 +263,7 @@ export function UsersClient({
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
                   <TableHead className="w-[100px]">Status</TableHead>
-                  <TableHead>Usuário</TableHead>
+                  <TableHead>Email</TableHead>
                   <TableHead>Nível</TableHead>
                   <TableHead>Data de Criação</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
@@ -272,9 +285,9 @@ export function UsersClient({
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-bold text-xs uppercase">
-                            {user.username.substring(0, 2)}
+                            {user.email.substring(0, 2)}
                           </div>
-                          <span className="font-medium text-foreground">{user.username}</span>
+                          <span className="font-medium text-foreground">{user.email}</span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -288,7 +301,7 @@ export function UsersClient({
                           variant="ghost"
                           size="icon"
                           className="text-muted-foreground hover:text-destructive hover:bg-destructive-muted"
-                          onClick={() => setUserToDelete({ id: user.id, username: user.username })}
+                          onClick={() => setUserToDelete({ id: user.id, email: user.email })}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -317,7 +330,7 @@ export function UsersClient({
         onOpenChange={(open) => !open && setUserToDelete(null)}
         onConfirm={handleDeleteUser}
         title="Excluir Usuário"
-        description={`Tem certeza que deseja excluir o usuário ${userToDelete?.username}?`}
+        description={`Tem certeza que deseja excluir o usuário ${userToDelete?.email}?`}
         loading={isDeleting}
       />
     </div>

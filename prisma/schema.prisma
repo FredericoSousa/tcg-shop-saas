@@ -41,7 +41,6 @@ model Tenant {
 
   inventory         InventoryItem[]
   orders            Order[]
-  users             User[]
   customers         Customer[]
   products          Product[]
   productCategories ProductCategory[]
@@ -50,27 +49,6 @@ model Tenant {
   buylistProposals  BuylistProposal[]
 
   @@map("tenants")
-}
-
-enum UserRole {
-  ADMIN
-  USER
-}
-
-model User {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  username     String
-  passwordHash String   @map("password_hash")
-  role         UserRole @default(USER)
-  tenantId     String   @map("tenant_id") @db.Uuid
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-
-  @@unique([username, tenantId])
-  @@index([tenantId])
-  @@map("users")
 }
 
 model CardTemplate {
@@ -84,8 +62,8 @@ model CardTemplate {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  inventory InventoryItem[]
-  buylistItems BuylistItem[]
+  inventory            InventoryItem[]
+  buylistItems         BuylistItem[]
   buylistProposalItems BuylistProposalItem[]
 
   @@index([name])
@@ -239,7 +217,6 @@ model OrderItem {
   @@map("order_items")
 }
 
-
 model Customer {
   id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name          String
@@ -304,14 +281,14 @@ enum BuylistStatus {
 }
 
 model BuylistItem {
-  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId        String   @map("tenant_id") @db.Uuid
-  cardTemplateId  String   @map("card_template_id") @db.Uuid
-  priceCash       Decimal  @map("price_cash")
-  priceCredit     Decimal  @map("price_credit")
-  active          Boolean  @default(true)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  cardTemplateId String   @map("card_template_id") @db.Uuid
+  priceCash      Decimal  @map("price_cash")
+  priceCredit    Decimal  @map("price_credit")
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   cardTemplate CardTemplate @relation(fields: [cardTemplateId], references: [id], onDelete: Cascade)

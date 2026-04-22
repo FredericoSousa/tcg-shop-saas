@@ -1,6 +1,7 @@
 import "reflect-metadata";
 import { container } from "@/lib/infrastructure/container";
 import { ListOrdersUseCase } from "@/lib/application/use-cases/list-orders.use-case";
+import { ensureTenantContext } from "@/lib/tenant-server";
 import { PageHeader } from "@/components/admin/page-header";
 import { ShoppingCart } from "lucide-react";
 import { OrdersClient, OrderType } from "./orders-client";
@@ -18,6 +19,7 @@ export default async function OrdersPage({
     customerPhone?: string;
   }>;
 }) {
+  await ensureTenantContext();
   const params = await searchParams;
 
   const page = Number(params.page) || 1;

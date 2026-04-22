@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
+import { ZodError } from "zod";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
 import { ListUsersUseCase } from "@/lib/application/use-cases/list-users.use-case";
 import { SaveUserUseCase } from "@/lib/application/use-cases/save-user.use-case";
 import { logger } from "@/lib/logger";
+import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
 export async function GET(request: NextRequest) {
   return withAdminApi(async ({ tenant }) => {
@@ -26,13 +28,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   return withAdminApi(async ({ tenant }) => {
     try {
-      const { username, password, role } = await request.json();
+      const { email, password, role } = await request.json();
       const saveUserUseCase = container.resolve(SaveUserUseCase);
-      const user = await saveUserUseCase.execute({ username, password, role });
-      return Response.json(user);
+      const user = await saveUserUseCase.execute({ email, password, role });
+      return ApiResponse.success(user);
     } catch (error) {
+      if (error instanceof ZodError) {
+        return ApiResponse.badRequest("Erro de validação", "VALIDATION_ERROR", error.flatten().fieldErrors);
+      }
       logger.error("Error in save user API", error as Error, { tenantId: tenant.id });
-      return Response.json({ error: (error as Error).message || "Internal server error" }, { status: 400 });
+      return ApiResponse.badRequest((error as Error).message || "Erro ao salvar usuário");
     }
   });
 }

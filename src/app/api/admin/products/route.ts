@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     try {
       const body = await request.json();
       const product = await saveProductUseCase.execute({ ...body });
-      revalidateTag(`tenant-${tenant.id}-products`);
+      revalidateTag(`tenant-${tenant.id}-products`, "max");
       return ApiResponse.success(product);
     } catch (error) {
       if (error instanceof ZodError) {

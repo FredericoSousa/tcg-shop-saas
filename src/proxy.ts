@@ -1,21 +1,17 @@
 import "reflect-metadata";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { jwtVerify } from "jose";
 import { container } from "./lib/infrastructure/container";
 import { GetTenantUseCase } from "./lib/application/use-cases/get-tenant.use-case";
-import { config as appConfig } from "./lib/config";
 import { checkRateLimit } from "./lib/rate-limiter";
 import { TOKENS } from "./lib/infrastructure/tokens";
 import { ICacheService } from "./lib/infrastructure/cache/cache-service";
 import { generateNonce, buildCspHeader } from "./lib/security/csp";
 import { requiresCsrfCheck, isOriginAllowed } from "./lib/security/csrf";
 import { logger } from "./lib/logger";
-
-const JWT_SECRET = appConfig.jwtSecret;
+import { createSupabaseProxyClient } from "./lib/supabase/proxy-client";
 
 const PROTECTED_ROUTES = ["/admin"];
-
 const TENANT_CACHE_TTL = 60;
 
 async function resolveTenantId(slug: string): Promise<string | null> {
@@ -96,46 +92,52 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // ─── Proteção de rotas admin ───────────────────────────────────────────────
-  const token = request.cookies.get("session")?.value;
-  const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
-
-  if (isProtectedRoute) {
-    if (!token) return NextResponse.redirect(new URL("/login", request.url));
-    try {
-      await jwtVerify(token, JWT_SECRET);
-    } catch {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-  }
-
-  if (pathname === "/login" && token) {
-    try {
-      await jwtVerify(token, JWT_SECRET);
-      return NextResponse.redirect(new URL("/admin", request.url));
-    } catch {
-      // Token inválido — permite acesso ao login
-    }
-  }
-
   // ─── Multi-tenant: subdomain routing ──────────────────────────────────────
+  const subdomain = hostname.split(".")[0];
+  const hasTenantSubdomain =
+    subdomain && subdomain !== "www" && subdomain !== "localhost" && !subdomain.includes(":");
+
+  const tenantId = hasTenantSubdomain ? await resolveTenantId(subdomain) : null;
+
+  const isProtectedRoute = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
+  const isAuthRoute = pathname === "/login" || pathname.startsWith("/auth/");
+
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  if (tenantId) requestHeaders.set("x-tenant-id", tenantId);
 
-  const subdomain = hostname.split(".")[0];
+  // ─── Supabase session refresh + auth checks (only on auth-sensitive paths) ─
+  if (isProtectedRoute || isAuthRoute) {
+    const { supabase, applyCookiesTo } = createSupabaseProxyClient(request);
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  if (!subdomain || subdomain === "www" || subdomain === "localhost" || subdomain.includes(":")) {
-    return applySecurityHeaders(
+    if (isProtectedRoute) {
+      if (!user) {
+        return NextResponse.redirect(new URL("/login", request.url));
+      }
+      const userTenantId = (user.app_metadata as { tenantId?: string })?.tenantId;
+      if (tenantId && userTenantId !== tenantId) {
+        await supabase.auth.signOut();
+        return NextResponse.redirect(new URL("/login?error=tenant_mismatch", request.url));
+      }
+    }
+
+    if (pathname === "/login" && user) {
+      const userTenantId = (user.app_metadata as { tenantId?: string })?.tenantId;
+      if (!tenantId || userTenantId === tenantId) {
+        return NextResponse.redirect(new URL("/admin", request.url));
+      }
+    }
+
+    const response = applyCookiesTo(
       NextResponse.next({ request: { headers: requestHeaders } }),
-      nonce,
     );
+    return applySecurityHeaders(response, nonce);
   }
 
-  const tenantId = await resolveTenantId(subdomain);
-  if (tenantId) {
-    requestHeaders.set("x-tenant-id", tenantId);
-  }
-
+  // ─── Storefront / public paths: skip Supabase roundtrip ───────────────────
   return applySecurityHeaders(
     NextResponse.next({ request: { headers: requestHeaders } }),
     nonce,

@@ -15,15 +15,3 @@ export interface Tenant {
   active: boolean;
   brandColor: string | null;
 }
-
-export type UserRole = "ADMIN" | "USER";
-
-export interface User {
-  id: string;
-  username: string;
-  passwordHash: string;
-  role: UserRole;
-  tenantId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}

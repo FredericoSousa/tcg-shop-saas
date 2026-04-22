@@ -1,16 +1,45 @@
 import "reflect-metadata";
 import { container } from "./infrastructure/container";
 import { GetTenantUseCase } from "./application/use-cases/get-tenant.use-case";
-import { getSession, type SessionData } from "./auth";
 import { headers } from "next/headers";
 import { unstable_cache } from "next/cache";
 import { redirect } from "next/navigation";
-import { runWithTenant } from "./tenant-context";
+import { runWithTenant, enterTenantContext } from "./tenant-context";
 import type { Tenant } from "./domain/entities/tenant";
 import { DomainError, EntityNotFoundError, ValidationError, BusinessRuleViolationError } from "./domain/errors/domain.error";
 import { ApiResponse } from "./infrastructure/http/api-response";
 import { logger } from "./logger";
 import { ZodError } from "zod";
+import { createSupabaseServerClient } from "./supabase/server";
+
+export interface SessionData {
+  userId: string;
+  email: string;
+  tenantId: string;
+  role: "ADMIN" | "USER";
+}
+
+export async function getSession(): Promise<SessionData | null> {
+  try {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const meta = user.app_metadata as { tenantId?: string; role?: "ADMIN" | "USER" };
+    if (!meta?.tenantId || !meta?.role) return null;
+
+    return {
+      userId: user.id,
+      email: user.email ?? "",
+      tenantId: meta.tenantId,
+      role: meta.role,
+    };
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Cached wrapper for resolving tenant
@@ -39,12 +68,25 @@ export async function getTenant() {
       return null;
     }
 
-    return getCachedTenant(tenantId);
+    const tenant = await getCachedTenant(tenantId);
+    if (tenant) enterTenantContext(tenant.id);
+    return tenant;
   } catch {
-    // If headers() is called during static generation, it may throw or return empty
-    // We return null to allow the build to proceed with a default state if applicable
     return null;
   }
+}
+
+/**
+ * Reads x-tenant-id from the incoming request headers and enters the tenant
+ * AsyncLocalStorage context for the current async branch. Idempotent and cheap
+ * — call at the top of any Server Component that queries tenant-aware data
+ * when the layout's context doesn't propagate (RSC renders children in parallel).
+ */
+export async function ensureTenantContext(): Promise<string | null> {
+  const headersList = await headers();
+  const tenantId = headersList.get("x-tenant-id");
+  if (tenantId) enterTenantContext(tenantId);
+  return tenantId;
 }
 
 /**
@@ -54,7 +96,7 @@ export async function getTenant() {
  */
 export async function getAdminContext() {
   const session = await getSession();
-  
+
   if (!session) {
     redirect("/login");
   }
@@ -72,6 +114,7 @@ export async function getAdminContext() {
     redirect("/login");
   }
 
+  enterTenantContext(tenant.id);
   return { session, tenant };
 }
 
@@ -81,7 +124,7 @@ export async function getAdminContext() {
  */
 export async function validateAdminApi() {
   const session = await getSession();
-  
+
   if (!session || session.role !== "ADMIN") {
     return null;
   }
@@ -99,14 +142,12 @@ export async function validateAdminApi() {
     return null;
   }
 
+  enterTenantContext(tenant.id);
   return { session, tenant };
 }
 
 import { checkRateLimit } from "./rate-limiter";
 
-/**
- * Maps DomainError subclasses to appropriate HTTP responses.
- */
 function handleDomainError(error: DomainError): Response {
   if (error instanceof EntityNotFoundError) {
     return ApiResponse.notFound(error.message, error.code);
@@ -120,12 +161,9 @@ function handleDomainError(error: DomainError): Response {
   return ApiResponse.serverError(error.message, error.code);
 }
 
-/**
- * Applies rate limiting and returns a response if limited, or null if allowed.
- */
 async function applyRateLimit(key: string, limit = 60, window = 60) {
   const result = await checkRateLimit(key, { limit, windowSeconds: window });
-  
+
   if (!result.allowed) {
     return new Response(JSON.stringify({
       success: false,
@@ -141,15 +179,10 @@ async function applyRateLimit(key: string, limit = 60, window = 60) {
       }
     });
   }
-  
+
   return null;
 }
 
-/**
- * Wrapper for API routes and Server Actions to ensure tenant context is set.
- * Provides centralized error handling: DomainErrors are mapped to appropriate
- * HTTP status codes, unknown errors return 500.
- */
 export async function withAdminApi<T>(
   handler: (context: { session: SessionData, tenant: Tenant }) => Promise<T>
 ): Promise<T | Response> {
@@ -158,7 +191,6 @@ export async function withAdminApi<T>(
     return ApiResponse.unauthorized();
   }
 
-  // Rate Limiting
   const headersList = await headers();
   const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
   const rateLimitResponse = await applyRateLimit(`admin:${ip}:${context.tenant.id}`, 100, 60);
@@ -182,19 +214,15 @@ export async function withAdminApi<T>(
   }
 }
 
-/**
- * Wrapper for public/storefront API routes to ensure tenant context is set.
- */
 export async function withTenantApi<T>(
   handler: (context: { tenant: Tenant }) => Promise<T>
 ): Promise<T | Response> {
   const tenant = await getTenant();
-  
+
   if (!tenant) {
     return ApiResponse.unauthorized("Tenant ID não identificado");
   }
 
-  // Rate Limiting
   const headersList = await headers();
   const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
   const rateLimitResponse = await applyRateLimit(`tenant:${ip}:${tenant.id}`, 60, 60);

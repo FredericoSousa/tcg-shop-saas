@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { withAdminApi } from "@/lib/tenant-server";
-import { supabaseAdmin, STORAGE_BUCKET } from "@/lib/supabase";
+import { supabaseAdmin, STORAGE_BUCKET } from "@/lib/supabase/admin";
 import { logger } from "@/lib/logger";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 

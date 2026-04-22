@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { getTenantId } from './tenant-context'
+import { resolveTenantId } from './tenant-context'
 
 const connectionString = `${process.env.DATABASE_URL}`
 
@@ -12,7 +12,6 @@ const basePrisma = new PrismaClient({ adapter })
 
 // Models that have a tenant_id field and should be automatically filtered
 const tenantAwareModels = [
-  'user',
   'inventoryItem',
   'productCategory',
   'product',
@@ -25,11 +24,18 @@ export const prisma = basePrisma.$extends({
   query: {
     $allModels: {
       async $allOperations({ model, operation, args, query }) {
-        const tenantId = getTenantId();
+        const modelKey = model[0].toLowerCase() + model.slice(1);
+        const isTenantAware = tenantAwareModels.includes(modelKey);
+
+        if (!isTenantAware) {
+          return query(args);
+        }
+
+        const tenantId = await resolveTenantId();
 
         // If we don't have a tenant context, proceed normally
         // This allows internal/initial tasks to skip filtering
-        if (!tenantId || !tenantAwareModels.includes(model[0].toLowerCase() + model.slice(1))) {
+        if (!tenantId) {
           return query(args);
         }
 

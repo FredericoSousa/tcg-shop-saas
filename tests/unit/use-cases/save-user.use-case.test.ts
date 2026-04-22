@@ -1,10 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { mock, MockProxy } from 'vitest-mock-extended';
 import { SaveUserUseCase } from '@/lib/application/use-cases/save-user.use-case';
-import type { IUserRepository } from '@/lib/domain/repositories/user.repository';
 
-vi.mock('@/lib/auth', () => ({
-  hashPassword: vi.fn(() => Promise.resolve('hashed-password')),
+const createUser = vi.fn();
+const updateUserById = vi.fn();
+
+vi.mock('@/lib/supabase/admin', () => ({
+  supabaseAdmin: {
+    auth: { admin: { createUser: (...a: unknown[]) => createUser(...a), updateUserById: (...a: unknown[]) => updateUserById(...a) } },
+  },
 }));
 
 vi.mock('@/lib/tenant-context', () => ({
@@ -14,86 +17,100 @@ vi.mock('@/lib/tenant-context', () => ({
 const VALID_USER_ID = '11111111-1111-4111-8111-111111111111';
 const VALID_PASSWORD = 'StrongP@ss1';
 const VALID_NEW_PASSWORD = 'NewValidP@ss2';
+const VALID_EMAIL = 'user1@example.com';
 
 describe('SaveUserUseCase', () => {
-  let userRepo: MockProxy<IUserRepository>;
-
   beforeEach(() => {
-    userRepo = mock<IUserRepository>();
     vi.clearAllMocks();
   });
 
   describe('Creation', () => {
-    it('should create new user with hashed password', async () => {
-      const useCase = new SaveUserUseCase(userRepo);
-      userRepo.findByUsername.mockResolvedValue(null);
-      userRepo.save.mockResolvedValue({ id: 'u1', username: 'user1', role: 'ADMIN' } as any);
+    it('should create new user with app_metadata tenantId and role', async () => {
+      createUser.mockResolvedValue({
+        data: { user: { id: 'u1', email: VALID_EMAIL, app_metadata: { role: 'ADMIN', tenantId: 'test-tenant-id' } } },
+        error: null,
+      });
 
-      const result = await useCase.execute({ username: 'user1', password: VALID_PASSWORD, role: 'ADMIN' });
+      const useCase = new SaveUserUseCase();
+      const result = await useCase.execute({ email: VALID_EMAIL, password: VALID_PASSWORD, role: 'ADMIN' });
 
-      expect(userRepo.save).toHaveBeenCalledWith(expect.objectContaining({
-        username: 'user1',
-        passwordHash: 'hashed-password',
-        role: 'ADMIN',
-        tenantId: 'test-tenant-id'
+      expect(createUser).toHaveBeenCalledWith(expect.objectContaining({
+        email: VALID_EMAIL,
+        password: VALID_PASSWORD,
+        email_confirm: true,
+        app_metadata: { tenantId: 'test-tenant-id', role: 'ADMIN' },
       }));
-      expect(result.username).toBe('user1');
+      expect(result).toEqual({ id: 'u1', email: VALID_EMAIL, role: 'ADMIN' });
     });
 
     it('should throw error if password is missing for new user', async () => {
-      const useCase = new SaveUserUseCase(userRepo);
-      await expect(useCase.execute({ username: 'user1' }))
+      const useCase = new SaveUserUseCase();
+      await expect(useCase.execute({ email: VALID_EMAIL }))
         .rejects.toThrow('Senha é obrigatória para novos usuários.');
     });
 
-    it('should throw error if user already exists', async () => {
-      const useCase = new SaveUserUseCase(userRepo);
-      userRepo.findByUsername.mockResolvedValue({ id: 'old' } as any);
-
-      await expect(useCase.execute({ username: 'user1', password: VALID_PASSWORD }))
-        .rejects.toThrow('Usuário já existe.');
+    it('should propagate supabase errors', async () => {
+      createUser.mockResolvedValue({ data: { user: null }, error: { message: 'already registered' } });
+      const useCase = new SaveUserUseCase();
+      await expect(useCase.execute({ email: VALID_EMAIL, password: VALID_PASSWORD }))
+        .rejects.toThrow('already registered');
     });
 
-    it('should use USER role by default if not provided', async () => {
-      const useCase = new SaveUserUseCase(userRepo);
-      userRepo.findByUsername.mockResolvedValue(null);
-      userRepo.save.mockResolvedValue({ id: 'u1', username: 'user1', role: 'USER' } as any);
+    it('should default role to USER when not provided', async () => {
+      createUser.mockResolvedValue({
+        data: { user: { id: 'u1', email: VALID_EMAIL, app_metadata: { role: 'USER', tenantId: 'test-tenant-id' } } },
+        error: null,
+      });
 
-      await useCase.execute({ username: 'user1', password: VALID_PASSWORD });
+      const useCase = new SaveUserUseCase();
+      await useCase.execute({ email: VALID_EMAIL, password: VALID_PASSWORD });
 
-      expect(userRepo.save).toHaveBeenCalledWith(expect.objectContaining({
-        role: 'USER'
+      expect(createUser).toHaveBeenCalledWith(expect.objectContaining({
+        app_metadata: { tenantId: 'test-tenant-id', role: 'USER' },
       }));
     });
 
     it('should reject weak passwords', async () => {
-      const useCase = new SaveUserUseCase(userRepo);
-      await expect(useCase.execute({ username: 'user1', password: '123' }))
+      const useCase = new SaveUserUseCase();
+      await expect(useCase.execute({ email: VALID_EMAIL, password: '123' }))
+        .rejects.toThrow();
+    });
+
+    it('should reject invalid emails', async () => {
+      const useCase = new SaveUserUseCase();
+      await expect(useCase.execute({ email: 'not-an-email', password: VALID_PASSWORD }))
         .rejects.toThrow();
     });
   });
 
   describe('Update', () => {
     it('should update existing user without changing password', async () => {
-      const useCase = new SaveUserUseCase(userRepo);
-      userRepo.update.mockResolvedValue({ id: VALID_USER_ID, username: 'new-name', role: 'ADMIN' } as any);
-
-      await useCase.execute({ id: VALID_USER_ID, username: 'new-name', role: 'ADMIN' });
-
-      expect(userRepo.update).toHaveBeenCalledWith(VALID_USER_ID, {
-        username: 'new-name',
-        role: 'ADMIN'
+      updateUserById.mockResolvedValue({
+        data: { user: { id: VALID_USER_ID, email: VALID_EMAIL, app_metadata: { role: 'ADMIN', tenantId: 'test-tenant-id' } } },
+        error: null,
       });
+
+      const useCase = new SaveUserUseCase();
+      await useCase.execute({ id: VALID_USER_ID, email: VALID_EMAIL, role: 'ADMIN' });
+
+      expect(updateUserById).toHaveBeenCalledWith(VALID_USER_ID, expect.objectContaining({
+        email: VALID_EMAIL,
+        app_metadata: { tenantId: 'test-tenant-id', role: 'ADMIN' },
+      }));
+      expect(updateUserById.mock.calls[0][1]).not.toHaveProperty('password');
     });
 
-    it('should update existing user and hash new password if provided', async () => {
-      const useCase = new SaveUserUseCase(userRepo);
-      userRepo.update.mockResolvedValue({ id: VALID_USER_ID, username: 'user1' } as any);
+    it('should update existing user and set new password if provided', async () => {
+      updateUserById.mockResolvedValue({
+        data: { user: { id: VALID_USER_ID, email: VALID_EMAIL, app_metadata: { role: 'USER', tenantId: 'test-tenant-id' } } },
+        error: null,
+      });
 
-      await useCase.execute({ id: VALID_USER_ID, username: 'user1', password: VALID_NEW_PASSWORD });
+      const useCase = new SaveUserUseCase();
+      await useCase.execute({ id: VALID_USER_ID, email: VALID_EMAIL, password: VALID_NEW_PASSWORD });
 
-      expect(userRepo.update).toHaveBeenCalledWith(VALID_USER_ID, expect.objectContaining({
-        passwordHash: 'hashed-password'
+      expect(updateUserById).toHaveBeenCalledWith(VALID_USER_ID, expect.objectContaining({
+        password: VALID_NEW_PASSWORD,
       }));
     });
   });

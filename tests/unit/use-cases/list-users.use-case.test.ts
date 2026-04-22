@@ -1,51 +1,95 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { mock, MockProxy } from 'vitest-mock-extended';
 import { ListUsersUseCase } from '@/lib/application/use-cases/list-users.use-case';
-import type { IUserRepository } from '@/lib/domain/repositories/user.repository';
+
+const listUsers = vi.fn();
+
+vi.mock('@/lib/supabase/admin', () => ({
+  supabaseAdmin: {
+    auth: { admin: { listUsers: (...a: unknown[]) => listUsers(...a) } },
+  },
+}));
+
+vi.mock('@/lib/tenant-context', () => ({
+  getTenantId: vi.fn(() => 'test-tenant-id'),
+  resolveTenantId: vi.fn(async () => 'test-tenant-id'),
+}));
 
 describe('ListUsersUseCase', () => {
-  let userRepo: MockProxy<IUserRepository>;
-
   beforeEach(() => {
-    userRepo = mock<IUserRepository>();
     vi.clearAllMocks();
   });
 
-  it('should list users with pagination and search', async () => {
-    const useCase = new ListUsersUseCase(userRepo);
-    const mockUsers = [
-      { id: '1', username: 'user1', role: 'ADMIN', createdAt: new Date() },
-      { id: '2', username: 'user2', role: 'USER', createdAt: new Date() },
-    ];
-    userRepo.findPaginated.mockResolvedValue({ 
-      items: mockUsers as any, 
-      total: 2 
+  it('should filter users by tenantId from app_metadata', async () => {
+    listUsers.mockResolvedValue({
+      data: {
+        users: [
+          { id: '1', email: 'a@test.com', created_at: new Date().toISOString(), app_metadata: { tenantId: 'test-tenant-id', role: 'ADMIN' } },
+          { id: '2', email: 'b@test.com', created_at: new Date().toISOString(), app_metadata: { tenantId: 'other-tenant', role: 'USER' } },
+          { id: '3', email: 'c@test.com', created_at: new Date().toISOString(), app_metadata: { tenantId: 'test-tenant-id', role: 'USER' } },
+        ],
+      },
+      error: null,
     });
 
-    const result = await useCase.execute({ page: 1, limit: 10, search: 'user' });
+    const useCase = new ListUsersUseCase();
+    const result = await useCase.execute({ page: 1, limit: 10 });
 
-    expect(userRepo.findPaginated).toHaveBeenCalledWith(1, 10, 'user');
     expect(result.items).toHaveLength(2);
+    expect(result.items.every((u) => u.id !== '2')).toBe(true);
     expect(result.total).toBe(2);
-    expect(result.pageCount).toBe(1);
-    expect(result.items[0]).not.toHaveProperty('passwordHash');
+  });
+
+  it('should filter by search term against email', async () => {
+    listUsers.mockResolvedValue({
+      data: {
+        users: [
+          { id: '1', email: 'admin@test.com', created_at: new Date().toISOString(), app_metadata: { tenantId: 'test-tenant-id', role: 'ADMIN' } },
+          { id: '2', email: 'user@test.com', created_at: new Date().toISOString(), app_metadata: { tenantId: 'test-tenant-id', role: 'USER' } },
+        ],
+      },
+      error: null,
+    });
+
+    const useCase = new ListUsersUseCase();
+    const result = await useCase.execute({ page: 1, limit: 10, search: 'admin' });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].email).toBe('admin@test.com');
   });
 
   it('should calculate pageCount correctly', async () => {
-    const useCase = new ListUsersUseCase(userRepo);
-    userRepo.findPaginated.mockResolvedValue({ items: [], total: 25 });
+    listUsers.mockResolvedValue({
+      data: {
+        users: Array.from({ length: 25 }, (_, i) => ({
+          id: String(i),
+          email: `user${i}@test.com`,
+          created_at: new Date().toISOString(),
+          app_metadata: { tenantId: 'test-tenant-id', role: 'USER' },
+        })),
+      },
+      error: null,
+    });
 
+    const useCase = new ListUsersUseCase();
     const result = await useCase.execute({ page: 1, limit: 10 });
     expect(result.pageCount).toBe(3);
+    expect(result.total).toBe(25);
+    expect(result.items).toHaveLength(10);
   });
 
   it('should handle empty results', async () => {
-    const useCase = new ListUsersUseCase(userRepo);
-    userRepo.findPaginated.mockResolvedValue({ items: [], total: 0 });
+    listUsers.mockResolvedValue({ data: { users: [] }, error: null });
 
+    const useCase = new ListUsersUseCase();
     const result = await useCase.execute({ page: 1, limit: 10 });
     expect(result.items).toEqual([]);
     expect(result.total).toBe(0);
     expect(result.pageCount).toBe(1);
+  });
+
+  it('should throw when supabase returns error', async () => {
+    listUsers.mockResolvedValue({ data: null, error: { message: 'boom' } });
+    const useCase = new ListUsersUseCase();
+    await expect(useCase.execute({ page: 1, limit: 10 })).rejects.toThrow('boom');
   });
 });

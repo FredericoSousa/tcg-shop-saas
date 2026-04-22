@@ -1,4 +1,3 @@
-import { Sparkles } from "lucide-react";
 import { getTenant } from "@/lib/tenant-server";
 import { unstable_cache } from "next/cache";
 import { GetStorefrontProductsUseCase } from "@/lib/application/use-cases/get-storefront-products.use-case";
