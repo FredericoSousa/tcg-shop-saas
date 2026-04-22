@@ -35,7 +35,7 @@ export async function PUT(
       const body = await request.json();
       const saveProductUseCase = container.resolve(SaveProductUseCase);
       const product = await saveProductUseCase.execute({ ...body, id });
-      revalidateTag(`tenant-${tenant.id}-products`);
+      revalidateTag(`tenant-${tenant.id}-products`, "max");
       return Response.json(product);
     } catch (error) {
       logger.error("Error updating product", error as Error, { tenantId: tenant.id });
@@ -53,7 +53,7 @@ export async function DELETE(
       const { id } = await params;
       const productRepo = container.resolve<IProductRepository>(TOKENS.ProductRepository);
       await productRepo.update(id, { deletedAt: new Date(), active: false });
-      revalidateTag(`tenant-${tenant.id}-products`);
+      revalidateTag(`tenant-${tenant.id}-products`, "max");
       return Response.json({ success: true });
     } catch (error) {
       logger.error("Error deleting product", error as Error, { tenantId: tenant.id });
