@@ -12,7 +12,8 @@ import { domainEvents, DOMAIN_EVENTS } from "../../domain/events/domain-events";
 
 export interface PlaceOrderRequest {
   items: {
-    inventoryId: string;
+    inventoryId?: string;
+    productId?: string;
     quantity: number;
     price: number;
   }[];
@@ -62,6 +63,7 @@ export class PlaceOrderUseCase implements IUseCase<PlaceOrderRequest, PlaceOrder
 
       const newOrder = await this.orderRepo.save(orderEntity, items.map(item => ({
         inventoryItemId: item.inventoryId,
+        productId: item.productId,
         quantity: item.quantity,
         priceAtPurchase: item.price,
       })));
@@ -75,7 +77,12 @@ export class PlaceOrderUseCase implements IUseCase<PlaceOrderRequest, PlaceOrder
       orderId,
       tenantId,
       customerId: (await this.customerRepo.findByPhoneNumber(request.customerData.phoneNumber))?.id || "",
-      items: request.items
+      items: request.items.map(item => ({
+        inventoryId: item.inventoryId,
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+      }))
     }).catch(err => {
       console.error("Error publishing ORDER_PLACED event:", err);
     });

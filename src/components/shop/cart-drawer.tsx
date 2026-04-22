@@ -57,7 +57,8 @@ export function CartDrawer() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           items: items.map(item => ({
-            inventoryId: item.inventoryId,
+            inventoryId: item.type === 'inventory' ? item.id : undefined,
+            productId: item.type === 'product' ? item.id : undefined,
             quantity: item.quantity,
             price: item.price
           })),
@@ -99,8 +100,7 @@ export function CartDrawer() {
         <ShoppingCart className="h-6 w-6 text-primary-foreground" />
             {items.length > 0 && (
           <span className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground text-2xs font-bold h-6 w-6 rounded-full flex items-center justify-center shadow-md animate-in zoom-in">
-            {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-            {items.reduce((acc, item) => acc + (item as any).quantity, 0)}
+            {items.reduce((acc, item) => acc + item.quantity, 0)}
           </span>
         )}
       </Button>
@@ -150,9 +150,8 @@ export function CartDrawer() {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                {items.map((item: any) => (
-                  <div key={item.inventoryId} className="flex gap-4 border-b pb-4 last:border-0 items-center hover:bg-muted/10 p-2 rounded-lg transition-colors">
+                {items.map((item) => (
+                  <div key={item.id} className="flex gap-4 border-b pb-4 last:border-0 items-center hover:bg-muted/10 p-2 rounded-lg transition-colors">
                     <div className="h-20 w-14 bg-muted/30 rounded overflow-hidden shrink-0 border border-muted flex items-center justify-center relative">
                       {item.imageUrl ? (
                         <Image
@@ -168,14 +167,14 @@ export function CartDrawer() {
                     <div className="flex-1 flex flex-col justify-between">
                       <div>
                         <h4 className="font-semibold text-sm leading-tight text-foreground line-clamp-2" title={item.name}>{item.name}</h4>
-                        <p className="text-2xs text-muted-foreground uppercase mt-0.5">{item.set}</p>
+                        {item.set && <p className="text-2xs text-muted-foreground uppercase mt-0.5">{item.set}</p>}
                       </div>
                       <div className="flex items-end justify-between mt-2">
                         <div className="flex items-center gap-1.5 bg-muted/50 rounded-md p-1 border">
                           <button
                             type="button"
                             className="h-6 w-6 flex items-center justify-center bg-background rounded shadow-sm disabled:opacity-40 hover:bg-muted transition-colors"
-                            onClick={() => updateQuantity(item.inventoryId, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
                             disabled={item.quantity <= 1}
                           >
                             <Minus className="h-3 w-3" />
@@ -185,7 +184,7 @@ export function CartDrawer() {
                             <button
                               type="button"
                               className="h-6 w-6 flex items-center justify-center bg-background rounded shadow-sm disabled:opacity-40 hover:bg-muted transition-colors"
-                              onClick={() => updateQuantity(item.inventoryId, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.id, item.quantity + 1)}
                               disabled={item.quantity >= item.maxStock}
                             >
                               <Plus className="h-3 w-3" />
@@ -198,7 +197,7 @@ export function CartDrawer() {
                           </div>
                           <button
                             type="button"
-                            onClick={() => removeItem(item.inventoryId)}
+                            onClick={() => removeItem(item.id)}
                             className="text-2xs text-destructive hover:underline font-medium hover:text-destructive/80 transition-colors"
                           >
                             Remover

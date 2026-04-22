@@ -48,7 +48,8 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
     e?.stopPropagation();
 
     addItem({
-      inventoryId: item.id,
+      id: item.id,
+      type: 'inventory',
       name: item.cardTemplate?.name || "Card",
       set: item.cardTemplate?.set || "N/A",
       imageUrl: item.cardTemplate?.imageUrl || null,
@@ -101,7 +102,8 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
             {isStore && (
               <QuickAddButton
                 item={{
-                  inventoryId: item.id,
+                  id: item.id,
+                  type: 'inventory',
                   name: item.cardTemplate.name,
                   set: item.cardTemplate.set,
                   imageUrl: item.cardTemplate.imageUrl,

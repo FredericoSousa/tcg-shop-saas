@@ -1,6 +1,6 @@
 "use client";
 
-import { useCart } from "@/store/use-cart";
+import { useCart, CartItemType } from "@/store/use-cart";
 import { Plus, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -8,9 +8,10 @@ import { useState } from "react";
 
 interface QuickAddButtonProps {
   item: {
-    inventoryId: string;
+    id: string;
+    type: CartItemType;
     name: string;
-    set: string;
+    set?: string;
     imageUrl: string | null;
     price: number;
     maxStock: number;
@@ -28,7 +29,8 @@ export function QuickAddButton({ item }: QuickAddButtonProps) {
     setIsAdding(true);
 
     addItem({
-      inventoryId: item.inventoryId,
+      id: item.id,
+      type: item.type,
       name: item.name,
       set: item.set,
       imageUrl: item.imageUrl,

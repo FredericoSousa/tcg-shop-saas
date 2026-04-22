@@ -17,7 +17,6 @@ import { feedback } from "@/lib/utils/feedback";
 import { Loader2 } from "lucide-react";
 import { ProductService } from "@/lib/api/services/product.service";
 import { MaskedInput } from "@/components/ui/masked-input";
-import { parseCurrency } from "@/lib/utils/format";
 import { ModalLayout } from "@/components/ui/modal-layout";
 import { ImageUpload } from "@/components/ui/image-upload";
 
@@ -94,7 +93,7 @@ export function ProductDialog({
     try {
       const body = {
         ...formData,
-        price: parseCurrency(formData.price),
+        price: Number(formData.price),
         stock: parseInt(formData.stock) || 0,
       };
 

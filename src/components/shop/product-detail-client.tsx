@@ -39,7 +39,8 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
 
   const handleAddToCart = () => {
     addItem({
-      inventoryId: item.id,
+      id: item.id,
+      type: 'inventory',
       name: item.cardTemplate?.name || "Card",
       set: item.cardTemplate?.set || "N/A",
       imageUrl: item.cardTemplate?.imageUrl || null,

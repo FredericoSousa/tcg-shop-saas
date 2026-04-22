@@ -1,21 +1,24 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
+export type CartItemType = 'inventory' | 'product'
+
 export type CartItem = {
-  inventoryId: string
+  id: string           // inventoryId for TCG cards, productId for products
+  type: CartItemType
   name: string
-  set: string
+  set?: string         // Card set code or product category name
   imageUrl: string | null
   price: number
-  quantity: number // requested quantity
-  maxStock: number // absolute limit available right now
+  quantity: number
+  maxStock: number
 }
 
 interface CartStore {
   items: CartItem[]
   addItem: (item: CartItem) => void
-  removeItem: (inventoryId: string) => void
-  updateQuantity: (inventoryId: string, qty: number) => void
+  removeItem: (id: string) => void
+  updateQuantity: (id: string, qty: number) => void
   clearCart: () => void
   getTotal: () => number
 }
@@ -26,14 +29,13 @@ export const useCart = create<CartStore>()(
       items: [],
       addItem: (newItem) => {
         set((state) => {
-          const existing = state.items.find(i => i.inventoryId === newItem.inventoryId)
+          const existing = state.items.find(i => i.id === newItem.id)
           if (existing) {
-            // Cannot exceed max stock
             const newQty = Math.min(existing.quantity + newItem.quantity, existing.maxStock)
             return {
-              items: state.items.map(i => 
-                i.inventoryId === newItem.inventoryId 
-                  ? { ...i, quantity: newQty } 
+              items: state.items.map(i =>
+                i.id === newItem.id
+                  ? { ...i, quantity: newQty }
                   : i
               )
             }
@@ -42,12 +44,12 @@ export const useCart = create<CartStore>()(
         })
       },
       removeItem: (id) => {
-        set((state) => ({ items: state.items.filter(i => i.inventoryId !== id) }))
+        set((state) => ({ items: state.items.filter(i => i.id !== id) }))
       },
       updateQuantity: (id, qty) => {
         set((state) => ({
           items: state.items.map((i) => {
-            if (i.inventoryId === id) {
+            if (i.id === id) {
               const boundedQty = Math.max(1, Math.min(qty, i.maxStock))
               return { ...i, quantity: boundedQty }
             }

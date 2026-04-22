@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import { revalidateTag } from "next/cache";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container, TOKENS } from "@/lib/infrastructure/container";
 import { GetProductUseCase } from "@/lib/application/use-cases/get-product.use-case";
@@ -34,6 +35,7 @@ export async function PUT(
       const body = await request.json();
       const saveProductUseCase = container.resolve(SaveProductUseCase);
       const product = await saveProductUseCase.execute({ ...body, id });
+      revalidateTag(`tenant-${tenant.id}-products`);
       return Response.json(product);
     } catch (error) {
       logger.error("Error updating product", error as Error, { tenantId: tenant.id });
@@ -51,6 +53,7 @@ export async function DELETE(
       const { id } = await params;
       const productRepo = container.resolve<IProductRepository>(TOKENS.ProductRepository);
       await productRepo.update(id, { deletedAt: new Date(), active: false });
+      revalidateTag(`tenant-${tenant.id}-products`);
       return Response.json({ success: true });
     } catch (error) {
       logger.error("Error deleting product", error as Error, { tenantId: tenant.id });

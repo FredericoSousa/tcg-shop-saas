@@ -15,7 +15,8 @@ const customerRepo = new PrismaCustomerRepository();
 const placeOrderUseCase = new PlaceOrderUseCase(orderRepo, inventoryRepo, customerRepo);
 
 export type CheckoutItem = {
-  inventoryId: string;
+  inventoryId?: string;
+  productId?: string;
   quantity: number;
   price: number;
 };
@@ -43,16 +44,16 @@ export async function POST(request: NextRequest) {
       return ApiResponse.badRequest("O carrinho está vazio");
     }
 
-    const { orderId } = await runWithTenant(tenant.id, () => 
+    const { orderId } = await runWithTenant(tenant.id, () =>
       placeOrderUseCase.execute({
         items,
         customerData,
       })
     );
 
-    // Revalidar rotas críticas de estoque e pedidos
     revalidatePath("/");
     revalidatePath("/singles");
+    revalidatePath("/products");
     revalidatePath("/admin/orders");
     revalidatePath("/admin/inventory");
 
@@ -60,7 +61,7 @@ export async function POST(request: NextRequest) {
   } catch (error: unknown) {
     const err = error as Error;
     logger.error("Checkout Error", err, { tenantId: tenant.id });
-    
+
     return ApiResponse.serverError(err.message || "Erro catastrófico no processamento do checkout.");
   }
 }

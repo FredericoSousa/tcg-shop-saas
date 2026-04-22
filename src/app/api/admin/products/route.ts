@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { ZodError } from "zod";
+import { revalidateTag } from "next/cache";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
 import { ListProductsUseCase } from "@/lib/application/use-cases/list-products.use-case";
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
     try {
       const body = await request.json();
       const product = await saveProductUseCase.execute({ ...body });
+      revalidateTag(`tenant-${tenant.id}-products`);
       return ApiResponse.success(product);
     } catch (error) {
       if (error instanceof ZodError) {
