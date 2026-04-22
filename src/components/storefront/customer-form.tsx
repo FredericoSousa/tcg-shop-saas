@@ -9,10 +9,11 @@ import { cn } from "@/lib/utils";
 import { Loader2, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect } from "react";
 
 export const customerSchema = z.object({
-  phoneNumber: z.string().min(8, 'Telefone inválido'),
-  name: z.string().min(3, 'O nome deve ter pelo menos 3 caracteres'),
+  phoneNumber: z.string().min(10, 'Telefone inválido'),
+  name: z.string().optional(),
 });
 
 export type CustomerFormValues = z.infer<typeof customerSchema>;
@@ -20,9 +21,10 @@ export type CustomerFormValues = z.infer<typeof customerSchema>;
 interface CustomerFormProps {
   form: UseFormReturn<CustomerFormValues>;
   disabled?: boolean;
+  onLookupChange?: (isExisting: boolean) => void;
 }
 
-export function CustomerForm({ form, disabled }: CustomerFormProps) {
+export function CustomerForm({ form, disabled, onLookupChange }: CustomerFormProps) {
   const phoneNumber = form.watch('phoneNumber');
   const cleanPhone = phoneNumber?.replace(/\D/g, '') || "";
   const { errors } = form.formState;
@@ -34,20 +36,30 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
       const res = await response.json();
       return res.data;
     },
-    enabled: cleanPhone.length === 11,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    enabled: cleanPhone.length >= 10,
+    staleTime: 1000 * 60 * 5,
   });
 
   const customerExists = !!customerLookup?.exists;
 
-  // Sync name field when customer is found
-  if (customerExists && form.getValues('name') === '') {
-    form.setValue('name', 'CLIENTE_EXISTENTE');
-  }
+  useEffect(() => {
+    if (cleanPhone.length >= 10 && !isCheckingPhone) {
+      onLookupChange?.(customerExists);
+    }
+  }, [customerExists, isCheckingPhone, cleanPhone, onLookupChange]);
+
+  useEffect(() => {
+    if (customerExists) {
+      form.setValue('name', '');
+      form.clearErrors('name');
+    }
+  }, [customerExists, form]);
 
   const handleReset = () => {
     form.setValue('phoneNumber', '');
     form.setValue('name', '');
+    form.clearErrors();
+    onLookupChange?.(false);
   };
 
   return (
@@ -126,7 +138,7 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
                 Trocar
               </button>
             </motion.div>
-          ) : cleanPhone.length === 11 ? (
+          ) : cleanPhone.length >= 10 ? (
             <motion.div
               key="new"
               initial={{ opacity: 0, y: 10 }}
@@ -134,6 +146,9 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
               exit={{ opacity: 0, y: -10 }}
               className="space-y-3"
             >
+              <p className="text-2xs text-zinc-400 font-medium pl-1">
+                Primeira vez aqui? Informe seu nome para continuar.
+              </p>
               <div className="space-y-1">
                 <Input
                   id="name"
@@ -159,8 +174,6 @@ export function CustomerForm({ form, disabled }: CustomerFormProps) {
           ) : null}
         </AnimatePresence>
       </div>
-
-      <input type="hidden" value={customerExists ? "true" : "false"} name="customerExists" />
     </div>
   );
 }

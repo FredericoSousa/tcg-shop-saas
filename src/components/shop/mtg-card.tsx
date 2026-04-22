@@ -12,6 +12,7 @@ import { QuickAddButton } from "@/components/shop/quick-add-button";
 import { useCart } from "@/store/use-cart";
 import { formatCurrency } from "@/lib/utils/format";
 import { MTGCardTitle } from "@/components/ui/mtg-card-title";
+import { CardCondition } from "@/components/ui/card-condition";
 
 export type MTGCardItem = {
   id: string;
@@ -166,16 +167,7 @@ export function MTGCard({ item, variant = "store" }: MTGCardProps) {
             iconClassName="h-3 w-3"
             textClassName="text-2xs font-bold text-zinc-400"
           />
-          <span
-            className={`text-2xs font-bold px-1.5 py-0.5 rounded border uppercase tracking-wider ${item.condition === "NM"
-                ? "bg-success-muted text-success border-success/20"
-                : item.condition === "SP"
-                  ? "bg-info-muted text-info border-info/20"
-                  : "bg-muted text-muted-foreground border-border"
-              }`}
-          >
-            {item.condition}
-          </span>
+          <CardCondition condition={item.condition} size="sm" />
         </div>
 
         <div className="pt-3 border-t border-zinc-50 flex flex-col gap-3">

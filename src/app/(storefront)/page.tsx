@@ -1,11 +1,17 @@
-import { getTenant } from '@/lib/tenant-server'
-import { prisma } from '@/lib/prisma'
-import Link from 'next/link'
-import { ShoppingBag, Sparkles, Shield, Truck, ChevronRight } from 'lucide-react'
-import { MTGCard, MTGCardItem } from '@/components/shop/mtg-card'
-import Image from 'next/image'
+import { getTenant } from "@/lib/tenant-server";
+import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+import {
+  ShoppingBag,
+  Sparkles,
+  Shield,
+  Truck,
+  ChevronRight,
+} from "lucide-react";
+import { MTGCard, MTGCardItem } from "@/components/shop/mtg-card";
+import Image from "next/image";
 
-import { LandingPage } from '@/components/landing/landing-page';
+import { LandingPage } from "@/components/landing/landing-page";
 
 export default async function HomePage() {
   const tenant = await getTenant();
@@ -22,13 +28,13 @@ export default async function HomePage() {
     prisma.inventoryItem.findMany({
       where: { tenantId, active: true, quantity: { gt: 0 } },
       include: { cardTemplate: true },
-      orderBy: { price: 'desc' },
+      orderBy: { price: "desc" },
       take: 8,
     }),
     prisma.inventoryItem.findMany({
       where: { tenantId, active: true, quantity: { gt: 0 } },
       include: { cardTemplate: true },
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], // Using actual date added for most recent
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       take: 4,
     }),
   ]);
@@ -43,37 +49,48 @@ export default async function HomePage() {
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_center,_theme(colors.primary)_0%,_transparent_70%)]" />
 
         <div className="relative container mx-auto px-6 z-10">
-          <div className="max-w-4xl mx-auto text-center space-y-12">
-            {/* Brand Mark */}
-            <div className="inline-block">
-              {tenant?.logoUrl ? (
-                <Image src={tenant.logoUrl} alt={shopName} width={200} height={80} className="h-20 w-auto object-contain mx-auto drop-shadow-2xl" />
-              ) : (
-                <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mx-auto shadow-2xl">
-                  <span className="text-4xl font-black text-white">{shopName.charAt(0)}</span>
-                </div>
-              )}
-            </div>
+          <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+            {/* Text content */}
+            <div className="flex-1 text-center lg:text-left space-y-8">
+              <div className="inline-block">
+                {tenant?.logoUrl ? (
+                  <Image
+                    src={tenant.logoUrl}
+                    alt={shopName}
+                    width={200}
+                    height={80}
+                    className="h-20 w-auto object-contain mx-auto lg:mx-0 drop-shadow-2xl"
+                  />
+                ) : (
+                  <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center mx-auto lg:mx-0 shadow-2xl">
+                    <span className="text-4xl font-black text-white">
+                      {shopName.charAt(0)}
+                    </span>
+                  </div>
+                )}
+              </div>
 
-            <div className="space-y-6">
-              {!tenant?.logoUrl && (
-                <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase italic">
-                  {shopName}
-                </h1>
-              )}
-              <p className="text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto font-medium leading-relaxed">
-                {tenant?.description || "Encontre os melhores singles de Magic: The Gathering com o melhor preço e segurança."}
-              </p>
-            </div>
+              <div className="space-y-4">
+                {!tenant?.logoUrl && (
+                  <h1 className="text-5xl md:text-6xl font-black tracking-tighter uppercase italic">
+                    {shopName}
+                  </h1>
+                )}
+                <p className="text-lg text-zinc-400 max-w-xl font-medium leading-relaxed">
+                  {tenant?.description ||
+                    "Encontre os melhores singles de Magic: The Gathering com o melhor preço e segurança."}
+                </p>
+              </div>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                href="/singles"
-                className="inline-flex items-center justify-center gap-3 bg-white text-zinc-950 font-black px-8 py-4 rounded-xl transition-all hover:bg-primary hover:text-white active:scale-95 shadow-xl text-lg uppercase tracking-tighter"
-              >
-                <ShoppingBag className="w-5 h-5" />
-                Explorar Catálogo
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                <Link
+                  href="/singles"
+                  className="inline-flex items-center justify-center gap-3 bg-white text-zinc-950 font-black px-8 py-4 rounded-xl transition-all hover:bg-primary hover:text-white active:scale-95 shadow-xl text-base uppercase tracking-tighter"
+                >
+                  <ShoppingBag className="w-5 h-5" />
+                  Explorar Catálogo
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -143,8 +160,12 @@ export default async function HomePage() {
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-xs uppercase tracking-widest text-zinc-900">Originalidade</h3>
-              <p className="text-zinc-500 text-2xs uppercase font-bold mt-0.5 tracking-tight">Cards verificados 100%</p>
+              <h3 className="font-bold text-xs uppercase tracking-widest text-zinc-900">
+                Originalidade
+              </h3>
+              <p className="text-zinc-500 text-2xs uppercase font-bold mt-0.5 tracking-tight">
+                Cards verificados 100%
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -152,8 +173,12 @@ export default async function HomePage() {
               <Shield className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-xs uppercase tracking-widest text-zinc-900">Segurança</h3>
-              <p className="text-zinc-500 text-2xs uppercase font-bold mt-0.5 tracking-tight">Checkout criptografado</p>
+              <h3 className="font-bold text-xs uppercase tracking-widest text-zinc-900">
+                Segurança
+              </h3>
+              <p className="text-zinc-500 text-2xs uppercase font-bold mt-0.5 tracking-tight">
+                Checkout criptografado
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -161,8 +186,12 @@ export default async function HomePage() {
               <Truck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-bold text-xs uppercase tracking-widest text-zinc-900">Agilidade</h3>
-              <p className="text-zinc-500 text-2xs uppercase font-bold mt-0.5 tracking-tight">Envio no próximo dia útil</p>
+              <h3 className="font-bold text-xs uppercase tracking-widest text-zinc-900">
+                Agilidade
+              </h3>
+              <p className="text-zinc-500 text-2xs uppercase font-bold mt-0.5 tracking-tight">
+                Envio no próximo dia útil
+              </p>
             </div>
           </div>
         </div>

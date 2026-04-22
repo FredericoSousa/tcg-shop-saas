@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { ProductSearch } from "./product-search";
 import { CartPanel } from "./cart-panel";
@@ -9,7 +9,15 @@ import { ProductSearchHandle } from "./product-search";
 import { feedback } from "@/lib/utils/feedback";
 import { PaymentDialog } from "../orders/payment-dialog";
 import { POSBuylistDialog } from "./pos-buylist-dialog";
-import { Loader2, UserPlus, ShoppingBag, CreditCard, Search as SearchIcon, Maximize2, Minimize2 } from "lucide-react";
+import {
+  Loader2,
+  UserPlus,
+  ShoppingBag,
+  CreditCard,
+  Search as SearchIcon,
+  Maximize2,
+  Minimize2,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export type CartItem = {
@@ -23,7 +31,8 @@ export type CartItem = {
 };
 
 export function POSClient() {
-  const [containerElement, setContainerElement] = useState<HTMLDivElement | null>(null);
+  const [containerElement, setContainerElement] =
+    useState<HTMLDivElement | null>(null);
   const containerRef = useCallback((node: HTMLDivElement | null) => {
     if (node !== null) {
       setContainerElement(node);
@@ -34,7 +43,9 @@ export function POSClient() {
   const queryClient = useQueryClient();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<CustomerType | null>(
+    null,
+  );
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const draftRestoredRef = useRef(false);
 
@@ -54,23 +65,40 @@ export function POSClient() {
     queryKey: ["order-in-progress", selectedCustomer?.id],
     queryFn: async () => {
       if (!selectedCustomer?.id) return null;
-      const response = await fetch(`/api/admin/pos/order-in-progress?customerId=${selectedCustomer.id}`);
+      const response = await fetch(
+        `/api/admin/pos/order-in-progress?customerId=${selectedCustomer.id}`,
+      );
       const result = await response.json();
       return result.success ? result.data : null;
     },
     enabled: !!selectedCustomer?.id,
   });
 
-  const existingItems = orderInProgress?.items || [];
+  const existingItems = useMemo(
+    () => orderInProgress?.items || [],
+    [orderInProgress?.items],
+  );
   const activeOrderId = orderInProgress?.id || null;
   const activeOrderFriendlyId = orderInProgress?.friendlyId || null;
 
-  const cartTotal = cart.reduce((acc: number, item: CartItem) => acc + item.price * item.quantity, 0);
-  const existingTotal = existingItems.reduce((acc: number, item: CartItem) => acc + item.price * item.quantity, 0);
+  const cartTotal = cart.reduce(
+    (acc: number, item: CartItem) => acc + item.price * item.quantity,
+    0,
+  );
+  const existingTotal = existingItems.reduce(
+    (acc: number, item: CartItem) => acc + item.price * item.quantity,
+    0,
+  );
   const subtotal = cartTotal + existingTotal;
 
   const checkoutMutation = useMutation({
-    mutationFn: async ({ items, customerId }: { items: CartItem[], customerId: string }) => {
+    mutationFn: async ({
+      items,
+      customerId,
+    }: {
+      items: CartItem[];
+      customerId: string;
+    }) => {
       const response = await fetch("/api/admin/pos/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -85,24 +113,33 @@ export function POSClient() {
       });
 
       const result = await response.json();
-      if (!result.success) throw new Error(result.message || "Erro ao processar venda");
+      if (!result.success)
+        throw new Error(result.message || "Erro ao processar venda");
       return result.data;
     },
     onMutate: async ({ items, customerId }) => {
       // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["order-in-progress", customerId] });
+      await queryClient.cancelQueries({
+        queryKey: ["order-in-progress", customerId],
+      });
 
       // Snapshot the previous value
-      const previousOrder = queryClient.getQueryData<{ items: CartItem[] }>(["order-in-progress", customerId]);
+      const previousOrder = queryClient.getQueryData<{ items: CartItem[] }>([
+        "order-in-progress",
+        customerId,
+      ]);
 
       // Optimistically update to the new value
-      queryClient.setQueryData(["order-in-progress", customerId], (old: { items: CartItem[] } | undefined) => {
-        const existingItems = old?.items || [];
-        return {
-          ...old,
-          items: [...existingItems, ...items],
-        };
-      });
+      queryClient.setQueryData(
+        ["order-in-progress", customerId],
+        (old: { items: CartItem[] } | undefined) => {
+          const existingItems = old?.items || [];
+          return {
+            ...old,
+            items: [...existingItems, ...items],
+          };
+        },
+      );
 
       // Clear local cart optimistically
       const snapshot = { previousOrder, localCart: [...cart] };
@@ -112,21 +149,32 @@ export function POSClient() {
     },
     onError: (err, variables, context) => {
       // Rollback
-      const snapshot = context?.snapshot as { previousOrder: { items: CartItem[] } | undefined, localCart: CartItem[] } | undefined;
+      const snapshot = context?.snapshot as
+        | {
+            previousOrder: { items: CartItem[] } | undefined;
+            localCart: CartItem[];
+          }
+        | undefined;
       if (snapshot) {
-        queryClient.setQueryData(["order-in-progress", variables.customerId], snapshot.previousOrder);
+        queryClient.setQueryData(
+          ["order-in-progress", variables.customerId],
+          snapshot.previousOrder,
+        );
         setCart(snapshot.localCart);
       }
-      feedback.error(err instanceof Error ? err.message : "Erro ao finalizar venda");
+      feedback.error(
+        err instanceof Error ? err.message : "Erro ao finalizar venda",
+      );
     },
     onSuccess: () => {
       feedback.success(`Itens adicionados à comanda!`);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["order-in-progress", variables.customerId] });
+      queryClient.invalidateQueries({
+        queryKey: ["order-in-progress", variables.customerId],
+      });
     },
   });
-
 
   const toggleFullscreen = useCallback(() => {
     if (!containerElement) return;
@@ -140,9 +188,11 @@ export function POSClient() {
   }, [containerElement]);
 
   useEffect(() => {
-    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+    const handleFullscreenChange = () =>
+      setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    return () =>
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
   }, []);
 
   // Draft persistence: restore on mount (deferred via microtask so setState runs outside effect body)
@@ -153,14 +203,21 @@ export function POSClient() {
       try {
         const raw = window.localStorage.getItem("admin:pos-draft");
         if (!raw) return;
-        const parsed = JSON.parse(raw) as { cart?: CartItem[]; customer?: CustomerType | null; ts?: number };
-        const stale = !parsed.ts || Date.now() - parsed.ts > 24 * 60 * 60 * 1000;
+        const parsed = JSON.parse(raw) as {
+          cart?: CartItem[];
+          customer?: CustomerType | null;
+          ts?: number;
+        };
+        const stale =
+          !parsed.ts || Date.now() - parsed.ts > 24 * 60 * 60 * 1000;
         if (stale) {
           window.localStorage.removeItem("admin:pos-draft");
           return;
         }
         if (parsed.cart && parsed.cart.length > 0) {
-          const label = parsed.customer?.name ? `para ${parsed.customer.name}` : "anterior";
+          const label = parsed.customer?.name
+            ? `para ${parsed.customer.name}`
+            : "anterior";
           feedback.success(
             "Rascunho retomado",
             `Carrinho ${label} restaurado (${parsed.cart.length} ${parsed.cart.length === 1 ? "item" : "itens"})`,
@@ -171,7 +228,7 @@ export function POSClient() {
                 setCart([]);
                 setSelectedCustomer(null);
               },
-            }
+            },
           );
           setCart(parsed.cart);
           if (parsed.customer) setSelectedCustomer(parsed.customer);
@@ -192,7 +249,7 @@ export function POSClient() {
       try {
         window.localStorage.setItem(
           "admin:pos-draft",
-          JSON.stringify({ cart, customer: selectedCustomer, ts: Date.now() })
+          JSON.stringify({ cart, customer: selectedCustomer, ts: Date.now() }),
         );
       } catch {
         // quota exceeded — ignore
@@ -201,98 +258,128 @@ export function POSClient() {
     return () => clearTimeout(timeout);
   }, [cart, selectedCustomer]);
 
-  const handleSelectCustomer = useCallback((customer: CustomerType | null) => {
-    setSelectedCustomer(customer);
-    setCart([]);
-    if (customer) {
-      queryClient.invalidateQueries({ queryKey: ["order-in-progress", customer.id] });
-    }
-  }, [queryClient]);
-
-  const addToCart = useCallback((product: Omit<CartItem, "quantity">) => {
-    const existingOnOrder = (existingItems as CartItem[]).find((i) => i.id === product.id)?.quantity ?? 0;
-    const existingInCart = cart.find((i) => i.id === product.id)?.quantity ?? 0;
-    const projected = existingOnOrder + existingInCart + 1;
-    const stockCap = product.maxStock ?? Infinity;
-    const allowNegative = product.allowNegativeStock ?? false;
-
-    if (!allowNegative && projected > stockCap) {
-      feedback.error(`Estoque esgotado`, `${product.name}: apenas ${stockCap} em estoque.`);
-      return;
-    }
-
-    setCart((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
-      if (existing) {
-        return prev.map((item) =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prev, { ...product, quantity: 1 }];
-    });
-
-    feedback.success(`${product.name} adicionado`, undefined, {
-      label: "Desfazer",
-      onClick: () => {
-        setCart(prev => {
-          const item = prev.find(i => i.id === product.id);
-          if (item && item.quantity > 1) {
-            return prev.map(i => i.id === product.id ? { ...i, quantity: i.quantity - 1 } : i);
-          }
-          return prev.filter(i => i.id !== product.id);
+  const handleSelectCustomer = useCallback(
+    (customer: CustomerType | null) => {
+      setSelectedCustomer(customer);
+      setCart([]);
+      if (customer) {
+        queryClient.invalidateQueries({
+          queryKey: ["order-in-progress", customer.id],
         });
       }
-    });
-  }, [cart, existingItems]);
+    },
+    [queryClient],
+  );
 
-  const removeFromCart = useCallback((id: string) => {
-    if (id === "ALL") {
-      const itemsToClear = [...cart];
-      setCart([]);
-      feedback.success("Carrinho limpo", undefined, {
-        label: "Desfazer",
-        onClick: () => setCart(itemsToClear)
+  const addToCart = useCallback(
+    (product: Omit<CartItem, "quantity">) => {
+      const existingOnOrder =
+        (existingItems as CartItem[]).find((i) => i.id === product.id)
+          ?.quantity ?? 0;
+      const existingInCart =
+        cart.find((i) => i.id === product.id)?.quantity ?? 0;
+      const projected = existingOnOrder + existingInCart + 1;
+      const stockCap = product.maxStock ?? Infinity;
+      const allowNegative = product.allowNegativeStock ?? false;
+
+      if (!allowNegative && projected > stockCap) {
+        feedback.error(
+          `Estoque esgotado`,
+          `${product.name}: apenas ${stockCap} em estoque.`,
+        );
+        return;
+      }
+
+      setCart((prev) => {
+        const existing = prev.find((item) => item.id === product.id);
+        if (existing) {
+          return prev.map((item) =>
+            item.id === product.id
+              ? { ...item, quantity: item.quantity + 1 }
+              : item,
+          );
+        }
+        return [...prev, { ...product, quantity: 1 }];
       });
-      return;
-    }
 
-    let removedItem: CartItem | undefined;
-
-    setCart((prev) => {
-      removedItem = prev.find(item => item.id === id);
-      return prev.filter((item) => item.id !== id);
-    });
-
-    if (removedItem) {
-      feedback.success(`${removedItem.name} removido`, undefined, {
+      feedback.success(`${product.name} adicionado`, undefined, {
         label: "Desfazer",
         onClick: () => {
-          if (removedItem) {
-            setCart(prev => [...prev, removedItem!]);
-          }
-        }
+          setCart((prev) => {
+            const item = prev.find((i) => i.id === product.id);
+            if (item && item.quantity > 1) {
+              return prev.map((i) =>
+                i.id === product.id ? { ...i, quantity: i.quantity - 1 } : i,
+              );
+            }
+            return prev.filter((i) => i.id !== product.id);
+          });
+        },
       });
-    }
-  }, [cart]);
+    },
+    [cart, existingItems],
+  );
 
+  const removeFromCart = useCallback(
+    (id: string) => {
+      if (id === "ALL") {
+        const itemsToClear = [...cart];
+        setCart([]);
+        feedback.success("Carrinho limpo", undefined, {
+          label: "Desfazer",
+          onClick: () => setCart(itemsToClear),
+        });
+        return;
+      }
 
-  const updateQuantity = useCallback((id: string, delta: number) => {
-    setCart((prev) =>
-      prev.map((item) => {
-        if (item.id !== id) return item;
-        const onOrder = (existingItems as CartItem[]).find((i) => i.id === id)?.quantity ?? 0;
-        const stockCap = item.maxStock ?? Infinity;
-        const allowNegative = item.allowNegativeStock ?? false;
-        const proposed = item.quantity + delta;
-        const maxInCart = allowNegative ? Infinity : Math.max(1, stockCap - onOrder);
-        const newQty = Math.min(maxInCart, Math.max(1, proposed));
-        if (delta > 0 && newQty === item.quantity) {
-          feedback.error(`Estoque esgotado`, `${item.name}: apenas ${stockCap} em estoque.`);
-        }
-        return { ...item, quantity: newQty };
-      })
-    );
-  }, [existingItems]);
+      let removedItem: CartItem | undefined;
+
+      setCart((prev) => {
+        removedItem = prev.find((item) => item.id === id);
+        return prev.filter((item) => item.id !== id);
+      });
+
+      if (removedItem) {
+        feedback.success(`${removedItem.name} removido`, undefined, {
+          label: "Desfazer",
+          onClick: () => {
+            if (removedItem) {
+              setCart((prev) => [...prev, removedItem!]);
+            }
+          },
+        });
+      }
+    },
+    [cart],
+  );
+
+  const updateQuantity = useCallback(
+    (id: string, delta: number) => {
+      setCart((prev) =>
+        prev.map((item) => {
+          if (item.id !== id) return item;
+          const onOrder =
+            (existingItems as CartItem[]).find((i) => i.id === id)?.quantity ??
+            0;
+          const stockCap = item.maxStock ?? Infinity;
+          const allowNegative = item.allowNegativeStock ?? false;
+          const proposed = item.quantity + delta;
+          const maxInCart = allowNegative
+            ? Infinity
+            : Math.max(1, stockCap - onOrder);
+          const newQty = Math.min(maxInCart, Math.max(1, proposed));
+          if (delta > 0 && newQty === item.quantity) {
+            feedback.error(
+              `Estoque esgotado`,
+              `${item.name}: apenas ${stockCap} em estoque.`,
+            );
+          }
+          return { ...item, quantity: newQty };
+        }),
+      );
+    },
+    [existingItems],
+  );
 
   const handleCheckout = useCallback(async () => {
     if (cart.length === 0) return true;
@@ -302,10 +389,9 @@ export function POSClient() {
     }
     await checkoutMutation.mutateAsync({
       items: cart,
-      customerId: selectedCustomer.id
+      customerId: selectedCustomer.id,
     });
     return true;
-
   }, [cart, selectedCustomer, checkoutMutation]);
 
   const handleOpenFinalize = useCallback(async () => {
@@ -328,25 +414,48 @@ export function POSClient() {
         e.preventDefault();
         searchRef.current?.focusSearch();
       }
-      if (e.key === "F9" && selectedCustomer && subtotal > 0 && !checkoutMutation.isPending) {
+      if (
+        e.key === "F9" &&
+        selectedCustomer &&
+        subtotal > 0 &&
+        !checkoutMutation.isPending
+      ) {
         e.preventDefault();
         handleOpenFinalize();
       }
-      if (e.key === "F2" && selectedCustomer && cart.length > 0 && !checkoutMutation.isPending) {
+      if (
+        e.key === "F2" &&
+        selectedCustomer &&
+        cart.length > 0 &&
+        !checkoutMutation.isPending
+      ) {
         e.preventDefault();
         handleCheckout();
       }
       if (e.key === "Escape") {
         if (isPaymentDialogOpen) {
           setIsPaymentDialogOpen(false);
-        } else if (selectedCustomer && cart.length === 0 && existingItems.length === 0) {
+        } else if (
+          selectedCustomer &&
+          cart.length === 0 &&
+          existingItems.length === 0
+        ) {
           setSelectedCustomer(null);
         }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedCustomer, subtotal, checkoutMutation.isPending, cart.length, handleOpenFinalize, handleCheckout, existingItems.length, isPaymentDialogOpen]);
+  }, [
+    selectedCustomer,
+    subtotal,
+    checkoutMutation.isPending,
+    cart.length,
+    handleOpenFinalize,
+    handleCheckout,
+    existingItems.length,
+    isPaymentDialogOpen,
+  ]);
 
   const handleFinalizeSuccess = useCallback(() => {
     setCart([]);
@@ -362,16 +471,19 @@ export function POSClient() {
   return (
     <div
       ref={containerRef}
-      className={`flex flex-col lg:flex-row relative overflow-hidden bg-background border shadow-2xl transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-[100] rounded-none h-screen w-screen' : 'rounded-2xl min-h-[500px] h-[calc(100vh-10rem)] md:h-[calc(100vh-13rem)]'}`}
+      className={`flex flex-col lg:flex-row relative overflow-hidden bg-background border shadow-2xl transition-all duration-300 ${isFullscreen ? "fixed inset-0 z-[100] rounded-none h-screen w-screen" : "rounded-2xl min-h-[500px] h-[calc(100vh-10rem)] md:h-[calc(100vh-13rem)]"}`}
     >
-
       {/* Fullscreen Toggle */}
       <button
         onClick={toggleFullscreen}
         className="absolute top-4 right-4 z-50 p-2 rounded-full bg-background border border-white/10 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all active:scale-95 shadow-lg group"
         title={isFullscreen ? "Sair da Tela Cheia" : "Tela Cheia"}
       >
-        {isFullscreen ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+        {isFullscreen ? (
+          <Minimize2 className="h-5 w-5" />
+        ) : (
+          <Maximize2 className="h-5 w-5" />
+        )}
         <span className="absolute right-full mr-2 py-1 px-2 rounded bg-black text-white text-2xs whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
           {isFullscreen ? "Sair (Esc)" : "Tela Cheia (F11)"}
         </span>
@@ -396,8 +508,13 @@ export function POSClient() {
               </div>
 
               <div className="space-y-2">
-                <h1 className="text-3xl font-extrabold tracking-tight">Terminal de Vendas</h1>
-                <p className="text-muted-foreground text-lg">Selecione um cliente para iniciar uma nova venda ou continuar uma comanda.</p>
+                <h1 className="text-3xl font-extrabold tracking-tight">
+                  Terminal de Vendas
+                </h1>
+                <p className="text-muted-foreground text-lg">
+                  Selecione um cliente para iniciar uma nova venda ou continuar
+                  uma comanda.
+                </p>
               </div>
 
               <div className="p-6 rounded-2xl border bg-card/80 shadow-lg border-white/10">
@@ -409,13 +526,26 @@ export function POSClient() {
 
               <div className="grid grid-cols-3 gap-4 pt-4">
                 {[
-                  { icon: ShoppingBag, label: "Produtos", desc: "Catálogo completo" },
-                  { icon: CreditCard, label: "Checkout", desc: "Pagamento ágil" },
-                  { icon: SearchIcon, label: "Busca", desc: "Filtros rápidos" }
+                  {
+                    icon: ShoppingBag,
+                    label: "Produtos",
+                    desc: "Catálogo completo",
+                  },
+                  {
+                    icon: CreditCard,
+                    label: "Checkout",
+                    desc: "Pagamento ágil",
+                  },
+                  { icon: SearchIcon, label: "Busca", desc: "Filtros rápidos" },
                 ].map((item, i) => (
-                  <div key={i} className="p-3 rounded-xl border bg-muted/30 text-center space-y-1">
+                  <div
+                    key={i}
+                    className="p-3 rounded-xl border bg-muted/30 text-center space-y-1"
+                  >
                     <item.icon className="h-5 w-5 mx-auto text-primary/60" />
-                    <p className="text-2xs font-bold uppercase tracking-wider text-primary/80">{item.label}</p>
+                    <p className="text-2xs font-bold uppercase tracking-wider text-primary/80">
+                      {item.label}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -447,12 +577,15 @@ export function POSClient() {
           >
             {/* Left Column: Product Search */}
             <div className="flex-1 lg:border-r flex flex-col p-4 md:p-6 bg-muted/5 min-h-0">
-
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-4">
                   <div>
-                    <h2 className="text-2xl font-bold tracking-tight">Catálogo</h2>
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Selecione os produtos para o carrinho</p>
+                    <h2 className="text-2xl font-bold tracking-tight">
+                      Catálogo
+                    </h2>
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                      Selecione os produtos para o carrinho
+                    </p>
                   </div>
                   {activeOrderFriendlyId && (
                     <div className="px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 flex items-center gap-2">
@@ -460,7 +593,9 @@ export function POSClient() {
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                       </span>
-                      <span className="text-xs font-black text-primary uppercase tracking-tighter">Comanda #{activeOrderFriendlyId}</span>
+                      <span className="text-xs font-black text-primary uppercase tracking-tighter">
+                        Comanda #{activeOrderFriendlyId}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -469,12 +604,20 @@ export function POSClient() {
                     <POSBuylistDialog />
                     <div className="h-8 w-px bg-border mx-2" />
                     <div className="text-right border-r pr-4">
-                      <p className="text-2xs font-bold text-muted-foreground uppercase tracking-widest">Vendas Hoje</p>
-                      <p className="text-sm font-black">{dailySummary.orderCount}</p>
+                      <p className="text-2xs font-bold text-muted-foreground uppercase tracking-widest">
+                        Vendas Hoje
+                      </p>
+                      <p className="text-sm font-black">
+                        {dailySummary.orderCount}
+                      </p>
                     </div>
                     <div>
-                      <p className="text-2xs font-bold text-muted-foreground uppercase tracking-widest">Receita Hoje</p>
-                      <p className="text-sm font-black text-primary">R$ {Number(dailySummary.revenue).toFixed(2)}</p>
+                      <p className="text-2xs font-bold text-muted-foreground uppercase tracking-widest">
+                        Receita Hoje
+                      </p>
+                      <p className="text-sm font-black text-primary">
+                        R$ {Number(dailySummary.revenue).toFixed(2)}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -484,15 +627,15 @@ export function POSClient() {
               </div>
             </div>
 
-
             {/* Right Column: Cart & Checkout */}
             <div className="w-full lg:w-[480px] flex flex-col min-h-0 bg-background lg:border-l overflow-hidden border-t lg:border-t-0">
               <div className="p-4 md:p-6 flex flex-col h-full overflow-hidden">
-
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-bold tracking-tight">Resumo</h2>
                   <div className="bg-primary/5 px-3 py-1 rounded-lg border border-primary/10">
-                    <span className="text-xs font-bold text-primary">{cart.length} ITENS</span>
+                    <span className="text-xs font-bold text-primary">
+                      {cart.length} ITENS
+                    </span>
                   </div>
                 </div>
                 <div className="flex-1 min-h-0">
@@ -508,7 +651,6 @@ export function POSClient() {
                     onFinalize={handleOpenFinalize}
                     isSubmitting={checkoutMutation.isPending}
                     activeOrderId={activeOrderId}
-
                     activeOrderFriendlyId={activeOrderFriendlyId}
                   />
                 </div>
@@ -529,9 +671,6 @@ export function POSClient() {
           friendlyId={activeOrderFriendlyId}
           container={containerElement}
         />
-
-
-
       )}
     </div>
   );

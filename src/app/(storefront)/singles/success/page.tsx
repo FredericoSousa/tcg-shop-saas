@@ -5,6 +5,11 @@ import Link from 'next/link'
 import { formatCurrency } from '@/lib/utils/format'
 import { SuccessActions } from './success-actions'
 
+function buildWhatsAppUrl(phone: string, message: string) {
+  const clean = phone.replace(/\D/g, '');
+  return `https://wa.me/${clean}?text=${encodeURIComponent(message)}`;
+}
+
 export default async function SuccessPage({
   searchParams,
 }: {
@@ -140,13 +145,26 @@ export default async function SuccessPage({
             </ul>
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <div className="flex flex-col sm:flex-row gap-3 justify-center flex-wrap">
             <Link
               href="/singles"
               className="px-6 py-3 bg-primary text-primary-foreground font-bold rounded-xl hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 min-h-[44px]"
             >
               <ArrowLeft className="w-4 h-4" /> Continuar Comprando
             </Link>
+            {tenant?.whatsapp && (
+              <Link
+                href={buildWhatsAppUrl(
+                  tenant.whatsapp,
+                  `Olá! Acabei de fazer o pedido *${friendlyId}* na ${tenant.name}. Pode me confirmar?`
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-3 bg-[#25D366] text-white font-bold rounded-xl hover:bg-[#1ebe5d] transition-colors flex items-center justify-center gap-2 min-h-[44px]"
+              >
+                <MessageCircle className="w-4 h-4" /> Falar no WhatsApp
+              </Link>
+            )}
             <SuccessActions friendlyId={friendlyId} />
           </div>
         </div>

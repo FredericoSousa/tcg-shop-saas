@@ -24,6 +24,7 @@ export function SellCartDrawer() {
   const { items, removeItem, updateQuantity, getTotalCash, getTotalCredit, clearCart } = useBuylistStore();
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isExistingCustomer, setIsExistingCustomer] = useState(false);
   const router = useRouter();
 
   const form = useForm<CustomerFormValues>({
@@ -46,6 +47,14 @@ export function SellCartDrawer() {
   const onSubmit = async (data: CustomerFormValues) => {
     if (items.length === 0) return;
 
+    if (!isExistingCustomer) {
+      const name = data.name?.trim() ?? '';
+      if (name.length < 3) {
+        form.setError('name', { type: 'manual', message: 'O nome deve ter pelo menos 3 caracteres' });
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const response = await fetch('/api/buylist/proposals', {
@@ -61,8 +70,8 @@ export function SellCartDrawer() {
             priceCredit: i.priceCredit
           })),
           customerData: {
-            name: data.name === 'CLIENTE_EXISTENTE' ? undefined : data.name,
             phoneNumber: data.phoneNumber.replace(/\D/g, ''),
+            name: data.name?.trim() || undefined,
           }
         })
       });
@@ -178,7 +187,11 @@ export function SellCartDrawer() {
                 </div>
 
                 <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-3 bg-white p-4 rounded-2xl border shadow-sm">
-                  <CustomerForm form={form} disabled={loading} />
+                  <CustomerForm
+                    form={form}
+                    disabled={loading}
+                    onLookupChange={setIsExistingCustomer}
+                  />
 
                   <Button
                     type="submit"

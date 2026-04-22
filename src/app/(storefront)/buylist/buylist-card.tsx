@@ -64,7 +64,7 @@ export function BuylistCard({ item }: BuylistCardProps) {
       transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 20 }}
       className="group relative flex flex-col bg-white rounded-2xl shadow-sm border border-zinc-100 overflow-hidden hover:border-primary/30 transition-shadow duration-300 hover:shadow-lg h-full"
     >
-      <div className="aspect-[7/10] w-full bg-zinc-50 relative overflow-hidden flex items-center justify-center">
+      <div className="aspect-[2/3] w-full bg-zinc-50 relative overflow-hidden flex items-center justify-center">
         {item.cardTemplate?.imageUrl ? (
           <div className="relative h-full w-full overflow-hidden">
             {!isImageLoaded && (
@@ -181,14 +181,14 @@ export function BuylistCard({ item }: BuylistCardProps) {
         </div>
 
         <div className="mt-auto pt-3 border-t border-zinc-50 space-y-2">
-          <div className="flex flex-col gap-1">
-            <div className="flex justify-between items-center">
-              <span className="text-2xs text-zinc-400 uppercase font-black tracking-wider">Em Crédito</span>
-              <span className="text-sm font-black text-primary tracking-tight">{formatCurrency(item.priceCredit)}</span>
+          <div className="flex flex-col gap-1.5">
+            <div className="flex justify-between items-center bg-primary/5 rounded-lg px-2 py-1.5 border border-primary/10">
+              <span className="text-2xs text-primary font-black uppercase tracking-wider">Crédito</span>
+              <span className="text-base font-black text-primary tracking-tight">{formatCurrency(item.priceCredit)}</span>
             </div>
-            <div className="flex justify-between items-center opacity-70">
-              <span className="text-2xs text-zinc-400 uppercase font-black tracking-wider">Em Dinheiro</span>
-              <span className="text-xs font-bold text-zinc-600">{formatCurrency(item.priceCash)}</span>
+            <div className="flex justify-between items-center px-2 py-0.5">
+              <span className="text-2xs text-zinc-400 uppercase font-bold tracking-wider">Dinheiro</span>
+              <span className="text-xs font-bold text-zinc-500">{formatCurrency(item.priceCash)}</span>
             </div>
           </div>
 

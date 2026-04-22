@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { formatCurrency } from "@/lib/utils/format";
 import { SetBadge } from "@/components/ui/set-badge";
 import { LanguageBadge } from "@/components/ui/language-badge";
+import { CardCondition } from "@/components/ui/card-condition";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ShoppingCart, Check, RotateCcw, ShieldCheck, Truck, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -143,14 +144,7 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
               className="bg-zinc-100 px-3 py-1.5 rounded-xl border border-zinc-200"
               textClassName="font-black text-zinc-500"
             />
-            <span className={cn(
-              "px-3 py-1.5 rounded-xl border font-black text-xs uppercase tracking-widest",
-              item.condition === 'NM' ? 'bg-success-muted text-success border-success/20' :
-              item.condition === 'SP' ? 'bg-info-muted text-info border-info/20' :
-              'bg-muted text-muted-foreground border-border'
-            )}>
-              {item.condition}
-            </span>
+            <CardCondition condition={item.condition} size="md" />
             <LanguageBadge 
               language={item.language || "EN"} 
               className="bg-zinc-100 border-zinc-200 text-zinc-500 h-8 rounded-xl px-3" 
@@ -239,7 +233,7 @@ export function ProductDetailClient({ item }: ProductDetailClientProps) {
           <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
             <div className="space-y-1 pb-4 border-b border-zinc-100">
               <span className="text-2xs font-black text-zinc-400 uppercase tracking-widest">Condição</span>
-              <p className="font-bold text-zinc-900">{item.condition === 'NM' ? 'Near Mint' : item.condition === 'SP' ? 'Slightly Played' : item.condition}</p>
+              <CardCondition condition={item.condition} showLabel />
             </div>
             <div className="space-y-1 pb-4 border-b border-zinc-100">
               <span className="text-2xs font-black text-zinc-400 uppercase tracking-widest">Idioma</span>

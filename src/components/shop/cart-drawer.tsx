@@ -12,9 +12,10 @@ import {
   SheetTitle
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { ShoppingCart, Plus, Minus, Image as ImageIcon } from 'lucide-react'
+import { ShoppingCart, Plus, Minus, Image as ImageIcon, Sparkles, ArrowRight } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { formatCurrency } from '@/lib/utils'
 import { CustomerForm, customerSchema, CustomerFormValues } from '@/components/storefront/customer-form'
 import { toastFromError } from '@/lib/ui/toast-from-error'
@@ -23,6 +24,7 @@ export function CartDrawer() {
   const { items, removeItem, updateQuantity, getTotal, clearCart } = useCart()
   const [isOpen, setIsOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [isExistingCustomer, setIsExistingCustomer] = useState(false)
   const router = useRouter()
 
   const form = useForm<CustomerFormValues>({
@@ -39,6 +41,14 @@ export function CartDrawer() {
       return
     }
 
+    if (!isExistingCustomer) {
+      const name = data.name?.trim() ?? ''
+      if (name.length < 3) {
+        form.setError('name', { type: 'manual', message: 'O nome deve ter pelo menos 3 caracteres' })
+        return
+      }
+    }
+
     setIsProcessing(true)
 
     try {
@@ -52,8 +62,8 @@ export function CartDrawer() {
             price: item.price
           })),
           customerData: {
-            name: data.name === 'CLIENTE_EXISTENTE' ? undefined : data.name,
             phoneNumber: data.phoneNumber.replace(/\D/g, ''),
+            name: data.name?.trim() || undefined,
           }
         }),
       })
@@ -105,15 +115,38 @@ export function CartDrawer() {
 
           <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
             {items.length === 0 ? (
-              <div className="text-center text-muted-foreground py-16 flex flex-col items-center justify-center h-full">
-                <div className="h-24 w-24 bg-muted/50 rounded-full flex items-center justify-center mb-6">
+              <div className="text-center text-muted-foreground flex flex-col items-center justify-center h-full gap-6 py-8">
+                <div className="h-24 w-24 bg-muted/50 rounded-full flex items-center justify-center">
                   <ShoppingCart className="h-10 w-10 opacity-40 text-primary" />
                 </div>
-                <h3 className="text-lg font-bold text-foreground mb-2">O carrinho está vazio</h3>
-                <p className="text-sm opacity-80 max-w-[200px]">Adicione produtos do catálogo para continuar a compra.</p>
-                <Button onClick={() => setIsOpen(false)} className="mt-6 text-primary" variant="outline">
-                  Explorar Catálogo
-                </Button>
+                <div>
+                  <h3 className="text-lg font-bold text-foreground mb-1">O carrinho está vazio</h3>
+                  <p className="text-sm opacity-80">Adicione produtos do catálogo para continuar.</p>
+                </div>
+                <div className="w-full space-y-2 px-2">
+                  <Link
+                    href="/singles"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-between w-full px-4 py-3 bg-primary text-primary-foreground font-bold rounded-xl text-sm hover:bg-primary/90 transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <ShoppingCart className="h-4 w-4" />
+                      Explorar Singles
+                    </span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                  <Link
+                    href="/buylist"
+                    onClick={() => setIsOpen(false)}
+                    className="flex items-center justify-between w-full px-4 py-3 bg-muted/60 text-foreground font-bold rounded-xl text-sm hover:bg-muted transition-colors border border-border"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4" />
+                      Vender seus Cards
+                    </span>
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                </div>
               </div>
             ) : (
               <div className="space-y-4">
@@ -188,7 +221,11 @@ export function CartDrawer() {
             </div>
 
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 bg-background p-4 rounded-xl border border-muted/50">
-              <CustomerForm form={form} disabled={isProcessing} />
+              <CustomerForm
+                form={form}
+                disabled={isProcessing}
+                onLookupChange={setIsExistingCustomer}
+              />
 
               <Button
                 type="submit"
