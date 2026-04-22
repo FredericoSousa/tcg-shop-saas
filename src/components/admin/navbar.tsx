@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu, UserCog, DollarSign, Cuboid, Settings } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -11,16 +11,27 @@ import {
 } from "@/components/ui/sheet";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { LayoutDashboard, Package, ShoppingCart, Users } from "lucide-react";
+import {
+  LayoutDashboard,
+  Package,
+  ShoppingCart,
+  Settings,
+  Users,
+  UserCog,
+  Monitor,
+  ShoppingBag,
+  HandCoins,
+} from "lucide-react";
 
 const sidebarItems = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "Singles", href: "/admin/inventory", icon: Cuboid },
-  { name: "Vendas", href: "/admin/orders", icon: DollarSign },
-  { name: "Usuários", href: "/admin/users", icon: UserCog },
-  { name: "Produtos", href: "/admin/products", icon: Package },
+  { name: "PDV", href: "/admin/pos", icon: Monitor },
+  { name: "Singles", href: "/admin/inventory", icon: Package },
+  { name: "Vendas", href: "/admin/orders", icon: ShoppingCart },
+  { name: "Produtos", href: "/admin/products", icon: ShoppingBag },
   { name: "Clientes", href: "/admin/customers", icon: Users },
-  { name: "PDV", href: "/admin/pos", icon: ShoppingCart },
+  { name: "Buylist", href: "/admin/buylist", icon: HandCoins },
+  { name: "Usuários", href: "/admin/users", icon: UserCog },
   { name: "Configurações", href: "/admin/settings", icon: Settings },
 ];
 
@@ -43,7 +54,7 @@ export function Navbar({ }: NavbarProps) {
   );
 
   return (
-    <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b border-border/50 bg-gradient-to-r from-background to-background/95 backdrop-blur-md px-4 lg:h-[70px] lg:px-6 shadow-sm">
+    <header className="sticky top-0 z-40 flex h-16 items-center justify-between gap-4 border-b border-border/50 bg-gradient-to-r from-background to-background/95 backdrop-blur-sm px-4 lg:h-[70px] lg:px-6 shadow-sm">
       <div className="flex items-center gap-4">
         <Sheet>
           <SheetTrigger
@@ -108,20 +119,9 @@ export function Navbar({ }: NavbarProps) {
       </div>
 
       <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <h1 className="text-lg font-bold tracking-tight text-foreground">
-            {currentItem?.name || "Painel de Controle"}
-          </h1>
-          {currentItem && (
-            <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-full">
-              <currentItem.icon className="h-3.5 w-3.5" />
-              {currentItem.name}
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1">
+        <h1 className="text-lg font-bold tracking-tight text-foreground">
+          {currentItem?.name || "Painel de Controle"}
+        </h1>
       </div>
     </header>
   );

@@ -13,46 +13,66 @@ export class CardTemplateService {
     private templateRepo: ICardTemplateRepository
   ) {}
 
+  private extractImageUrl(card: ScryfallCard): string | null {
+    const uris = card.image_uris;
+    return (
+      uris?.normal ||
+      uris?.large ||
+      uris?.png ||
+      uris?.border_crop ||
+      uris?.art_crop ||
+      uris?.small ||
+      card.card_faces?.[0]?.image_uris?.normal ||
+      card.card_faces?.[0]?.image_uris?.large ||
+      card.card_faces?.[0]?.image_uris?.png ||
+      null
+    );
+  }
+
+  private extractBackImageUrl(card: ScryfallCard): string | null {
+    return (
+      card.card_faces?.[1]?.image_uris?.normal ||
+      card.card_faces?.[1]?.image_uris?.large ||
+      null
+    );
+  }
+
   async resolveTemplates(scryfallIds: string[]): Promise<CardTemplate[]> {
     const uniqueIds = Array.from(new Set(scryfallIds));
     if (uniqueIds.length === 0) return [];
 
-    // 1. Fetch existing templates from DB
+    // 1. Find which IDs are already in DB with a valid imageUrl
     const existingTemplates = await this.templateRepo.findByIds(uniqueIds);
-    const existingTemplateIds = new Set(existingTemplates.map((t) => t.id));
+    const existingWithImage = new Map(
+      existingTemplates.filter((t) => t.imageUrl).map((t) => [t.id, t]),
+    );
 
-    const missingIds = uniqueIds.filter((id) => !existingTemplateIds.has(id));
-    if (missingIds.length === 0) return existingTemplates;
+    // Only fetch from Scryfall IDs that are new or lack an imageUrl
+    const idsToFetch = uniqueIds.filter((id) => !existingWithImage.has(id));
+    if (idsToFetch.length === 0) return existingTemplates;
 
-    // 2. Fetch missing templates from Scryfall
-    const scryfallIdentifiers = missingIds.map((id) => ({ id }));
+    // 2. Fetch from Scryfall
     const scryfallCards = (await scryfall.getCardsCollection(
-      scryfallIdentifiers
+      idsToFetch.map((id) => ({ id })),
     )) as ScryfallCard[];
 
-    const newTemplates: CardTemplate[] = scryfallCards.map((card) => {
-      const imageUris = card.image_uris;
-      return {
-        id: card.id,
-        name: card.name,
-        set: card.set.toUpperCase(),
-        imageUrl:
-          imageUris?.normal ||
-          imageUris?.large ||
-          imageUris?.png ||
-          card.card_faces?.[0]?.image_uris?.normal ||
-          null,
-        backImageUrl: card.card_faces?.[1]?.image_uris?.normal || null,
-        game: Game.MAGIC,
-        metadata: card as unknown as Record<string, unknown>,
-      };
-    });
+    const fetchedTemplates: CardTemplate[] = scryfallCards.map((card) => ({
+      id: card.id,
+      name: card.name,
+      set: card.set.toUpperCase(),
+      imageUrl: this.extractImageUrl(card),
+      backImageUrl: this.extractBackImageUrl(card),
+      game: Game.MAGIC,
+      metadata: card as unknown as Record<string, unknown>,
+    }));
 
-    // 3. Save new templates and return merged list
-    if (newTemplates.length > 0) {
-      await this.templateRepo.createMany(newTemplates);
-    }
+    // 3. Upsert all fetched templates — guarantees imageUrl is written even if
+    //    the record already exists with a null imageUrl (skipDuplicates would skip it)
+    await Promise.all(fetchedTemplates.map((t) => this.templateRepo.save(t)));
 
-    return [...existingTemplates, ...newTemplates];
+    const fetchedMap = new Map(fetchedTemplates.map((t) => [t.id, t]));
+    return uniqueIds.map(
+      (id) => existingWithImage.get(id) ?? fetchedMap.get(id)!,
+    ).filter(Boolean);
   }
 }

@@ -46,10 +46,10 @@ export default async function AdminBuylistPage() {
           <TabsTrigger value="proposals">Propostas ({proposals.length})</TabsTrigger>
           <TabsTrigger value="config">Lista de Compra ({items.length})</TabsTrigger>
         </TabsList>
-        <TabsContent value="proposals" className="mt-6 border rounded-xl bg-card/40 backdrop-blur-sm overflow-hidden p-0">
+        <TabsContent value="proposals" className="mt-6 rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden">
           <BuylistProposalsTable data={proposals} />
         </TabsContent>
-        <TabsContent value="config" className="mt-6 border rounded-xl bg-card/40 backdrop-blur-sm overflow-hidden p-0">
+        <TabsContent value="config" className="mt-6 rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden">
           <BuylistItemsTable data={items} />
         </TabsContent>
       </Tabs>

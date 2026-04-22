@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ShoppingBag, ChevronRight, Loader2 } from "lucide-react";
+import { ShoppingBag, ChevronRight } from "lucide-react";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import {
   Table,
@@ -59,7 +60,7 @@ export function CustomerOrdersTable({ customerId }: CustomerOrdersTableProps) {
   }, [fetchOrders]);
 
   return (
-    <div className="bg-card/40 backdrop-blur-md rounded-2xl border border-zinc-200/50 shadow-sm overflow-hidden flex flex-col h-full transition-all duration-300 hover:shadow-lg">
+    <div className="bg-card/40 backdrop-blur-sm rounded-xl border shadow-sm overflow-hidden flex flex-col h-full">
       <div className="p-6 border-b flex items-center justify-between">
         <h2 className="text-xl font-bold flex items-center gap-2">
           <ShoppingBag className="w-5 h-5 text-primary" />
@@ -68,8 +69,22 @@ export function CustomerOrdersTable({ customerId }: CustomerOrdersTableProps) {
       </div>
       <div className="flex-1">
         {loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div>
+            <div className="h-11 bg-muted/30 border-b flex items-center px-4 gap-6">
+              <Skeleton className="h-3 w-14" />
+              <Skeleton className="h-3 w-14" />
+              <Skeleton className="h-3 w-14" />
+              <Skeleton className="h-3 w-14" />
+            </div>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center px-4 py-3.5 gap-6 border-b last:border-0">
+                <Skeleton className="h-4 w-20 shrink-0" />
+                <Skeleton className="h-4 w-20 shrink-0" />
+                <Skeleton className="h-6 w-20 rounded-full shrink-0" />
+                <Skeleton className="h-4 w-20 shrink-0" />
+                <Skeleton className="h-8 w-24 rounded-lg ml-auto shrink-0" />
+              </div>
+            ))}
           </div>
         ) : orders.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center p-8">

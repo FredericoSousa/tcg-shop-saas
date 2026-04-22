@@ -35,31 +35,35 @@ export default async function AdminDashboardPage() {
   const { inventoryCount, totalInventoryValue, ordersCount, totalRevenue, weeklyRevenue } = summary;
   const recentOrders = ordersData.items;
 
-  const kpis: { title: string; value: string; icon: LucideIcon }[] = [
+  const kpis: { title: string; value: string; icon: LucideIcon; color: string }[] = [
     {
       title: "Cartas em Estoque",
       value: inventoryCount.toLocaleString("pt-BR"),
       icon: Package,
+      color: "bg-blue-50 text-blue-600",
     },
     {
       title: "Valor do Estoque",
       value: formatCurrency(totalInventoryValue),
       icon: TrendingUp,
+      color: "bg-emerald-50 text-emerald-600",
     },
     {
       title: "Vendas Realizadas",
       value: ordersCount.toLocaleString("pt-BR"),
       icon: ShoppingCart,
+      color: "bg-violet-50 text-violet-600",
     },
     {
       title: "Receita Total",
       value: formatCurrency(totalRevenue),
       icon: DollarSign,
+      color: "bg-amber-50 text-amber-600",
     },
   ];
 
   return (
-    <div className="flex flex-col gap-10 w-full animate-in fade-in duration-700">
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
       <PageHeader
         title="Painel de Controle"
         description="Monitoramento centralizado da sua operação TCG"
@@ -83,7 +87,7 @@ export default async function AdminDashboardPage() {
         {kpis.map((kpi) => (
           <div
             key={kpi.title}
-            className="rounded-xl bg-card border border-border p-5 flex items-start justify-between gap-4"
+            className="rounded-xl bg-card border border-border p-5 flex items-start justify-between gap-4 shadow-sm"
           >
             <div className="min-w-0 flex-1">
               <p className="text-2xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
@@ -93,14 +97,14 @@ export default async function AdminDashboardPage() {
                 {kpi.value}
               </p>
             </div>
-            <div className="p-2 rounded-lg bg-muted text-muted-foreground">
+            <div className={`p-2.5 rounded-xl ${kpi.color}`}>
               <kpi.icon className="h-5 w-5" aria-hidden="true" />
             </div>
           </div>
         ))}
       </div>
 
-      <Suspense fallback={<div className="h-96 rounded-2xl border bg-card/40 animate-pulse" />}>
+      <Suspense fallback={<div className="h-96 rounded-xl border bg-card/40 animate-pulse" />}>
         <section className="space-y-6">
           <div className="flex items-center justify-between px-1">
             <div className="space-y-1">
@@ -119,13 +123,13 @@ export default async function AdminDashboardPage() {
 
       <div className="grid gap-8 lg:grid-cols-4">
         <div className="lg:col-span-1">
-          <Suspense fallback={<div className="h-64 rounded-2xl border bg-card/40 animate-pulse" />}>
+          <Suspense fallback={<div className="h-64 rounded-xl border bg-card/40 animate-pulse" />}>
             <TopProductsTable />
           </Suspense>
         </div>
 
         <div className="lg:col-span-1">
-          <Suspense fallback={<div className="h-64 rounded-2xl border bg-card/40 animate-pulse" />}>
+          <Suspense fallback={<div className="h-64 rounded-xl border bg-card/40 animate-pulse" />}>
             <TopBuyersCard tenantId={tenant.id} />
           </Suspense>
         </div>
@@ -161,7 +165,7 @@ export default async function AdminDashboardPage() {
           </Link>
         </div>
 
-        <div className="rounded-2xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden border-zinc-200/50">
+        <div className="rounded-xl border bg-card/40 shadow-sm backdrop-blur-sm overflow-hidden">
           {!recentOrders || recentOrders.length === 0 ? (
             <div className="text-center py-20 px-4 text-muted-foreground">
               <div className="mb-4 flex justify-center">
@@ -188,15 +192,17 @@ export default async function AdminDashboardPage() {
                           return (
                             <div
                               key={item.id}
-                              className="h-12 w-9 rounded-lg border-2 border-background bg-card shadow-lg overflow-hidden shrink-0 ring-1 ring-border/30 transform hover:scale-110 hover:z-10 transition-transform duration-300"
+                              className="h-12 w-9 rounded-lg border-2 border-background bg-muted shadow-lg overflow-hidden shrink-0 ring-1 ring-border/30 transform hover:scale-110 hover:z-10 transition-transform duration-300 flex items-center justify-center"
                             >
-                              {imageUrl && (
+                              {imageUrl ? (
                                 // eslint-disable-next-line @next/next/no-img-element
                                 <img
                                   src={imageUrl}
                                   className="h-full w-full object-cover"
                                   alt=""
                                 />
+                              ) : (
+                                <Package className="h-4 w-4 text-muted-foreground/40" />
                               )}
                             </div>
                           );

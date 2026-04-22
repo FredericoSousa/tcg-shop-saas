@@ -23,22 +23,23 @@ export default async function OrdersPage({
   const page = Number(params.page) || 1;
   const limit = Number(params.limit) || 8;
   const search = params.search;
-  const source = (params.source?.toUpperCase() as "POS" | "ECOMMERCE" | "all") || "all";
+  const source =
+    (params.source?.toUpperCase() as "POS" | "ECOMMERCE" | "all") || "all";
   const status = (params.status?.toUpperCase() as OrderStatus | "all") || "all";
   const customerPhone = params.customerPhone;
 
   // Resolve use case from container
   const listOrders = container.resolve(ListOrdersUseCase);
-  
+
   const { items, total, pageCount } = await listOrders.execute({
     page,
     limit,
     filters: {
-      source: source === "all" ? undefined : source as OrderSource,
-      status: status === "all" ? undefined : status as OrderStatus,
+      source: source === "all" ? undefined : (source as OrderSource),
+      status: status === "all" ? undefined : (status as OrderStatus),
       search,
       customerPhone,
-    }
+    },
   });
 
   return (

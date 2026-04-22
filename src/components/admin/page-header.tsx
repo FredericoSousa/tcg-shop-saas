@@ -20,14 +20,14 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card/40 p-5 md:p-6 rounded-2xl border border-zinc-200/50 shadow-sm backdrop-blur-md bg-gradient-to-br from-card to-card/50 transition-all duration-300 hover:shadow-lg hover:border-primary/20",
+        "flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-card/40 p-5 md:p-6 rounded-2xl border shadow-sm backdrop-blur-sm bg-gradient-to-br from-card to-card/50",
         className
       )}
     >
       <div className="flex items-center gap-4">
         {Icon && (
-          <div className="p-3 bg-primary/10 rounded-xl shrink-0 transition-transform group-hover:scale-105">
-            <Icon className="w-8 h-8 text-primary" />
+          <div className="p-2.5 bg-primary/10 rounded-xl shrink-0">
+            <Icon className="w-6 h-6 text-primary" />
           </div>
         )}
         <div className="space-y-1">

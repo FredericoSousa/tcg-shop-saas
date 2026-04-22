@@ -12,6 +12,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   products: "Produtos",
   customers: "Clientes",
   buylist: "Buylist",
+  "buylist-proposal": "Proposta de Buylist",
   users: "Usuários",
   settings: "Configurações",
   pos: "PDV",

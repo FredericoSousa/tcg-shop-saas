@@ -9,6 +9,7 @@
     "lint": "eslint --fix",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
     "pretest": "prisma generate",
     "prebuild": "prisma generate"
   },

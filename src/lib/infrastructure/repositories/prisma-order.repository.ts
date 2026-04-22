@@ -1,24 +1,44 @@
 import { injectable } from "tsyringe";
 import { BasePrismaRepository } from "./base-prisma.repository";
 import { IOrderRepository } from "@/lib/domain/repositories/order.repository";
-import { Order as DomainOrder, OrderStatus, OrderSource, OrderItem as DomainOrderItem, PaymentMethodType } from "@/lib/domain/entities/order";
-import { Prisma, Order as PrismaOrder, OrderItem as PrismaOrderItem, Customer as PrismaCustomer } from "@prisma/client";
+import {
+  Order as DomainOrder,
+  OrderStatus,
+  OrderSource,
+  OrderItem as DomainOrderItem,
+  PaymentMethodType,
+} from "@/lib/domain/entities/order";
+import {
+  Prisma,
+  Order as PrismaOrder,
+  OrderItem as PrismaOrderItem,
+  Customer as PrismaCustomer,
+} from "@prisma/client";
 
 type PrismaOrderItemWithRelations = PrismaOrderItem & {
   product?: { name: string; imageUrl: string | null } | null;
-  inventoryItem?: { 
-    cardTemplate?: { imageUrl: string | null } | null 
+  inventoryItem?: {
+    cardTemplate?: { name: string; imageUrl: string | null } | null;
   } | null;
 };
 
 type PrismaOrderWithRelations = PrismaOrder & {
   items?: PrismaOrderItemWithRelations[];
-  payments?: { id: string; orderId: string; method: string; amount: Prisma.Decimal; createdAt: Date }[];
+  payments?: {
+    id: string;
+    orderId: string;
+    method: string;
+    amount: Prisma.Decimal;
+    createdAt: Date;
+  }[];
   customer?: PrismaCustomer | null;
 };
 
 @injectable()
-export class PrismaOrderRepository extends BasePrismaRepository implements IOrderRepository {
+export class PrismaOrderRepository
+  extends BasePrismaRepository
+  implements IOrderRepository
+{
   private mapToDomain(item: PrismaOrderWithRelations): DomainOrder {
     return {
       id: item.id,
@@ -30,19 +50,27 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
       friendlyId: item.friendlyId,
-      customer: item.customer ? {
-        name: item.customer.name,
-        phoneNumber: item.customer.phoneNumber,
-      } : undefined,
+      customer: item.customer
+        ? {
+            name: item.customer.name,
+            phoneNumber: item.customer.phoneNumber,
+          }
+        : undefined,
       items: item.items?.map((oi: PrismaOrderItemWithRelations) => ({
         id: oi.id,
         orderId: oi.orderId,
         inventoryItemId: oi.inventoryItemId || undefined,
         productId: oi.productId || undefined,
-        product: {
-          name: oi.product?.name || "Produto",
-          imageUrl: oi.product?.imageUrl || null,
-        },
+        inventoryItem: oi.inventoryItem ? {
+          name: oi.inventoryItem.cardTemplate?.name || "Carta",
+          cardTemplate: oi.inventoryItem.cardTemplate ? {
+            imageUrl: oi.inventoryItem.cardTemplate.imageUrl,
+          } : undefined,
+        } : undefined,
+        product: oi.product ? {
+          name: oi.product.name,
+          imageUrl: oi.product.imageUrl,
+        } : undefined,
         quantity: oi.quantity,
         priceAtPurchase: Number(oi.priceAtPurchase),
       })),
@@ -65,15 +93,19 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
         items: {
           include: {
             inventoryItem: { include: { cardTemplate: true } },
-            product: true
-          }
-        }
+            product: true,
+          },
+        },
       },
     });
     return item ? this.mapToDomain(item as PrismaOrderWithRelations) : null;
   }
 
-  async save(order: DomainOrder, items: Omit<DomainOrderItem, "id" | "orderId">[], tx?: unknown): Promise<DomainOrder> {
+  async save(
+    order: DomainOrder,
+    items: Omit<DomainOrderItem, "id" | "orderId">[],
+    tx?: unknown,
+  ): Promise<DomainOrder> {
     const client = (tx as Prisma.TransactionClient) || this.prisma;
     const saved = await client.order.create({
       data: {
@@ -98,7 +130,11 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
     return this.mapToDomain(saved as PrismaOrderWithRelations);
   }
 
-  async updateStatus(id: string, status: OrderStatus, tx?: unknown): Promise<void> {
+  async updateStatus(
+    id: string,
+    status: OrderStatus,
+    tx?: unknown,
+  ): Promise<void> {
     const prismaClient = (tx as Prisma.TransactionClient) || this.prisma;
     await prismaClient.order.update({
       where: { id },
@@ -115,28 +151,55 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
       search?: string;
       customerPhone?: string;
       customerId?: string;
-    }
+    },
   ): Promise<{ items: DomainOrder[]; total: number }> {
     const skip = (page - 1) * limit;
     const where: Prisma.OrderWhereInput = {
-      ...(filters?.status && filters.status !== "all" ? { status: filters.status as OrderStatus } : {}),
-      ...(filters?.source && filters.source !== "all" ? { source: filters.source as OrderSource } : {}),
-      ...(filters?.customerPhone ? { customer: { phoneNumber: filters.customerPhone } } : {}),
+      ...(filters?.status && filters.status !== "all"
+        ? { status: filters.status as OrderStatus }
+        : {}),
+      ...(filters?.source && filters.source !== "all"
+        ? { source: filters.source as OrderSource }
+        : {}),
+      ...(filters?.customerPhone
+        ? { customer: { phoneNumber: filters.customerPhone } }
+        : {}),
       ...(filters?.customerId ? { customerId: filters.customerId } : {}),
-      ...(filters?.search ? {
-        OR: [
-          { customer: { name: { contains: filters.search, mode: "insensitive" } } },
-          { customer: { phoneNumber: { contains: filters.search, mode: "insensitive" } } },
-          { friendlyId: { contains: filters.search, mode: "insensitive" } },
-        ],
-      } : {}),
+      ...(filters?.search
+        ? {
+            OR: [
+              {
+                customer: {
+                  name: { contains: filters.search, mode: "insensitive" },
+                },
+              },
+              {
+                customer: {
+                  phoneNumber: {
+                    contains: filters.search,
+                    mode: "insensitive",
+                  },
+                },
+              },
+              { friendlyId: { contains: filters.search, mode: "insensitive" } },
+            ],
+          }
+        : {}),
     };
 
     const [items, total] = await Promise.all([
       this.prisma.order.findMany({
         where,
         orderBy: { createdAt: "desc" },
-        include: { customer: true, items: true },
+        include: {
+          customer: true,
+          items: {
+            include: {
+              inventoryItem: { include: { cardTemplate: true } },
+              product: true,
+            },
+          },
+        },
         skip,
         take: limit,
       }),
@@ -144,12 +207,17 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
     ]);
 
     return {
-      items: (items as PrismaOrderWithRelations[]).map(this.mapToDomain.bind(this)),
+      items: (items as PrismaOrderWithRelations[]).map(
+        this.mapToDomain.bind(this),
+      ),
       total,
     };
   }
 
-  async findPendingPOSOrder(customerId: string, tx?: unknown): Promise<DomainOrder | null> {
+  async findPendingPOSOrder(
+    customerId: string,
+    tx?: unknown,
+  ): Promise<DomainOrder | null> {
     const client = (tx as Prisma.TransactionClient) || this.prisma;
     const item = await client.order.findFirst({
       where: {
@@ -162,13 +230,20 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
     return item ? this.mapToDomain(item as PrismaOrderWithRelations) : null;
   }
 
-  async appendToOrder(orderId: string, items: { productId: string; quantity: number; priceAtPurchase: number }[], totalAmountIncrement: number, tx?: unknown): Promise<void> {
+  async appendToOrder(
+    orderId: string,
+    items: { productId: string; quantity: number; priceAtPurchase: number }[],
+    totalAmountIncrement: number,
+    tx?: unknown,
+  ): Promise<void> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const execute = async (prismaClient: any) => {
       // 1. Update order total
       await prismaClient.order.update({
         where: { id: orderId },
-        data: { totalAmount: { increment: new Prisma.Decimal(totalAmountIncrement) } },
+        data: {
+          totalAmount: { increment: new Prisma.Decimal(totalAmountIncrement) },
+        },
       });
 
       // 2. Add/Update items
@@ -204,7 +279,11 @@ export class PrismaOrderRepository extends BasePrismaRepository implements IOrde
     }
   }
 
-  async savePayments(orderId: string, payments: { method: PaymentMethodType; amount: number }[], tx?: unknown): Promise<void> {
+  async savePayments(
+    orderId: string,
+    payments: { method: PaymentMethodType; amount: number }[],
+    tx?: unknown,
+  ): Promise<void> {
     const prismaClient = (tx as Prisma.TransactionClient) || this.prisma;
     await prismaClient.orderPayment.createMany({
       data: payments.map((p) => ({

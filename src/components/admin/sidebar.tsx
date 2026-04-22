@@ -18,16 +18,36 @@ import { Tenant } from "@/lib/domain/entities/tenant";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 
-const sidebarItems = [
-  { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { name: "PDV", href: "/admin/pos", icon: Monitor },
-  { name: "Singles", href: "/admin/inventory", icon: Package },
-  { name: "Vendas", href: "/admin/orders", icon: ShoppingCart },
-  { name: "Produtos", href: "/admin/products", icon: ShoppingBag },
-  { name: "Clientes", href: "/admin/customers", icon: Users },
-  { name: "Buylist", href: "/admin/buylist", icon: HandCoins },
-  { name: "Usuários", href: "/admin/users", icon: UserCog },
-  { name: "Configurações", href: "/admin/settings", icon: Settings },
+const sidebarGroups = [
+  {
+    label: "Geral",
+    items: [
+      { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
+      { name: "PDV", href: "/admin/pos", icon: Monitor },
+    ],
+  },
+  {
+    label: "Estoque",
+    items: [
+      { name: "Singles", href: "/admin/inventory", icon: Package },
+      { name: "Produtos", href: "/admin/products", icon: ShoppingBag },
+    ],
+  },
+  {
+    label: "Comercial",
+    items: [
+      { name: "Vendas", href: "/admin/orders", icon: ShoppingCart },
+      { name: "Clientes", href: "/admin/customers", icon: Users },
+      { name: "Buylist", href: "/admin/buylist", icon: HandCoins },
+    ],
+  },
+  {
+    label: "Administração",
+    items: [
+      { name: "Usuários", href: "/admin/users", icon: UserCog },
+      { name: "Configurações", href: "/admin/settings", icon: Settings },
+    ],
+  },
 ];
 
 
@@ -71,34 +91,46 @@ export function Sidebar({ tenant, username }: SidebarProps) {
         </Link>
       </div>
 
-      <nav className="flex-1 overflow-y-auto py-6 px-3">
-        <div className="space-y-1.5">
-          {sidebarItems.map((item) => {
-            const isActive =
-              pathname === item.href || pathname.startsWith(item.href + "/");
-            const isStrictActive =
-              item.href === "/admin" ? pathname === "/admin" : isActive;
+      <nav className="flex-1 overflow-y-auto py-4 px-3">
+        <div className="space-y-4">
+          {sidebarGroups.map((group) => (
+            <div key={group.label} className="space-y-0.5">
+              {!isCollapsed && (
+                <p className="px-3.5 mb-1.5 text-2xs font-bold uppercase tracking-widest text-muted-foreground/60 animate-in fade-in duration-300">
+                  {group.label}
+                </p>
+              )}
+              {isCollapsed && (
+                <div className="border-t border-border/30 mx-2 mb-2 first:hidden" />
+              )}
+              {group.items.map((item) => {
+                const isActive =
+                  pathname === item.href || pathname.startsWith(item.href + "/");
+                const isStrictActive =
+                  item.href === "/admin" ? pathname === "/admin" : isActive;
 
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                title={isCollapsed ? item.name : ""}
-                className={`group flex items-center rounded-lg transition-all duration-200 ${isCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3.5 py-2.5"
-                  } ${isStrictActive
-                    ? "bg-primary text-white shadow-md hover:shadow-lg hover:bg-primary/90"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                  }`}
-              >
-                <item.icon className={`${isCollapsed ? "h-5.5 w-5.5" : "h-4.5 w-4.5"} shrink-0`} />
-                {!isCollapsed && (
-                  <span className="text-sm font-medium whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
-                    {item.name}
-                  </span>
-                )}
-              </Link>
-            );
-          })}
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    title={isCollapsed ? item.name : ""}
+                    className={`group flex items-center rounded-lg transition-all duration-200 ${isCollapsed ? "justify-center px-0 py-2.5" : "gap-3 px-3.5 py-2.5"
+                      } ${isStrictActive
+                        ? "bg-primary text-white shadow-md hover:bg-primary/90"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                      }`}
+                  >
+                    <item.icon className={`${isCollapsed ? "h-5 w-5" : "h-4.5 w-4.5"} shrink-0`} />
+                    {!isCollapsed && (
+                      <span className="text-sm font-medium whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-300">
+                        {item.name}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+          ))}
         </div>
       </nav>
 

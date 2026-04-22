@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Wallet, Loader2, Landmark } from "lucide-react";
+import { Wallet, Landmark } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Table, 
   TableBody, 
@@ -59,7 +60,7 @@ export function CustomerCreditSection({ customerId, initialBalance }: CustomerCr
 
 
   return (
-    <div className="bg-card/40 backdrop-blur-md rounded-2xl border border-zinc-200/50 shadow-sm overflow-hidden flex flex-col transition-all duration-300 hover:shadow-lg mt-6">
+    <div className="bg-card/40 backdrop-blur-sm rounded-xl border shadow-sm overflow-hidden flex flex-col mt-6">
       <div className="p-6 border-b flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-primary/10 rounded-xl">
@@ -80,8 +81,24 @@ export function CustomerCreditSection({ customerId, initialBalance }: CustomerCr
 
       <div className="flex-1 min-h-[300px]">
         {loading ? (
-          <div className="flex h-64 items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div>
+            <div className="h-11 bg-muted/30 border-b flex items-center px-4 gap-6">
+              <Skeleton className="h-3 w-14" />
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-3 flex-1 max-w-[160px]" />
+              <Skeleton className="h-3 w-14 ml-auto" />
+            </div>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center px-4 py-3.5 gap-6 border-b last:border-0">
+                <Skeleton className="h-4 w-24 shrink-0" />
+                <Skeleton className="h-6 w-20 rounded-full shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-4 w-20 shrink-0 ml-auto" />
+              </div>
+            ))}
           </div>
         ) : history.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64 text-center p-8">
