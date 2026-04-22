@@ -33,6 +33,8 @@ import { TableSearch } from "@/components/admin/table-search";
 import { DataTablePagination } from "@/components/admin/data-table-pagination";
 import { UserService } from "@/lib/api/services/user.service";
 import { ConfirmModal } from "@/components/admin/confirm-modal";
+import { passwordSchema } from "@/lib/validation/schemas";
+import { PasswordStrength } from "@/components/ui/password-strength";
 
 interface User {
   id: string;
@@ -102,6 +104,15 @@ export function UsersClient({
     e.preventDefault();
     if (!newEmail || !newPassword) {
       feedback.error("Preencha todos os campos");
+      return;
+    }
+
+    const passwordResult = passwordSchema.safeParse(newPassword);
+    if (!passwordResult.success) {
+      feedback.error(
+        "Senha inválida",
+        passwordResult.error.issues.map((i) => i.message).join("\n"),
+      );
       return;
     }
 
@@ -207,6 +218,7 @@ export function UsersClient({
                     className="h-11 rounded-xl"
                     required
                   />
+                  <PasswordStrength value={newPassword} className="mt-1" />
                 </div>
                 <div className="grid gap-2">
                   <label htmlFor="role" className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Nível de Acesso</label>

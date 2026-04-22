@@ -5,6 +5,14 @@ import { z } from "zod";
  */
 
 // Password policy: min 10 chars, at least one uppercase, one lowercase, one digit, one symbol.
+export const passwordRules: ReadonlyArray<{ label: string; test: (value: string) => boolean }> = [
+  { label: "Mínimo de 10 caracteres", test: (v) => v.length >= 10 },
+  { label: "Uma letra maiúscula", test: (v) => /[A-Z]/.test(v) },
+  { label: "Uma letra minúscula", test: (v) => /[a-z]/.test(v) },
+  { label: "Um número", test: (v) => /\d/.test(v) },
+  { label: "Um símbolo", test: (v) => /[^A-Za-z0-9]/.test(v) },
+];
+
 export const passwordSchema = z
   .string()
   .min(10, "Senha deve ter no mínimo 10 caracteres")
