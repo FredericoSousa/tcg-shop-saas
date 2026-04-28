@@ -1,6 +1,6 @@
 import { container } from "@/lib/infrastructure/container";
-import { ListBuylistItemsUseCase } from "@/lib/application/use-cases/list-buylist-items.use-case";
-import { ListBuylistProposalsUseCase } from "@/lib/application/use-cases/list-buylist-proposals.use-case";
+import { ListBuylistItemsUseCase } from "@/lib/application/use-cases/buylist/list-buylist-items.use-case";
+import { ListBuylistProposalsUseCase } from "@/lib/application/use-cases/buylist/list-buylist-proposals.use-case";
 import { getAdminContext } from "@/lib/tenant-server";
 import { PageHeader } from "@/components/admin/page-header";
 import { HandCoins } from "lucide-react";

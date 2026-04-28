@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container, TOKENS } from "@/lib/infrastructure/container";
-import { SaveCategoryUseCase } from "@/lib/application/use-cases/save-category.use-case";
+import { SaveCategoryUseCase } from "@/lib/application/use-cases/products/save-category.use-case";
 import type { IProductRepository } from "@/lib/domain/repositories/product.repository";
 import { logger } from "@/lib/logger";
 

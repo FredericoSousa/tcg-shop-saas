@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mock, MockProxy } from 'vitest-mock-extended';
-import { SaveBuylistItemUseCase } from '@/lib/application/use-cases/save-buylist-item.use-case';
-import { SubmitBuylistProposalUseCase } from '@/lib/application/use-cases/submit-buylist-proposal.use-case';
-import { ProcessBuylistProposalUseCase } from '@/lib/application/use-cases/process-buylist-proposal.use-case';
+import { SaveBuylistItemUseCase } from '@/lib/application/use-cases/buylist/save-buylist-item.use-case';
+import { SubmitBuylistProposalUseCase } from '@/lib/application/use-cases/buylist/submit-buylist-proposal.use-case';
+import { ProcessBuylistProposalUseCase } from '@/lib/application/use-cases/buylist/process-buylist-proposal.use-case';
 import type { IBuylistRepository } from '@/lib/domain/repositories/buylist.repository';
 import type { IInventoryRepository } from '@/lib/domain/repositories/inventory.repository';
 import type { ICustomerRepository } from '@/lib/domain/repositories/customer.repository';

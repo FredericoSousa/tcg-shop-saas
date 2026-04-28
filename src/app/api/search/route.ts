@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { container } from "@/lib/infrastructure/container";
-import { GetStorefrontInventoryUseCase } from "@/lib/application/use-cases/get-storefront-inventory.use-case";
+import { GetStorefrontInventoryUseCase } from "@/lib/application/use-cases/storefront/get-storefront-inventory.use-case";
 import { getTenant } from "@/lib/tenant-server";
 import { NextRequest, NextResponse } from "next/server";
 

@@ -3,6 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getUserTenantId } from "@/lib/supabase/user-metadata";
 import { logger } from "@/lib/logger";
 
 export interface LoginActionResult {
@@ -37,9 +38,7 @@ export async function loginWithPassword(formData: FormData): Promise<LoginAction
     return { success: false, message: "Email ou senha inválidos." };
   }
 
-  const meta = data.user.app_metadata as { tenantId?: string; role?: "ADMIN" | "USER" };
-
-  if (meta?.tenantId !== tenantId) {
+  if (getUserTenantId(data.user) !== tenantId) {
     await supabase.auth.signOut();
     return { success: false, message: "Usuário não pertence a esta loja." };
   }

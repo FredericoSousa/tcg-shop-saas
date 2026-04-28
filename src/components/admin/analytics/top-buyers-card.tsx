@@ -1,5 +1,5 @@
 import { container } from "@/lib/infrastructure/container";
-import { GetCustomerRankingUseCase } from "@/lib/application/use-cases/get-customer-ranking.use-case";
+import { GetCustomerRankingUseCase } from "@/lib/application/use-cases/customers/get-customer-ranking.use-case";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Users, Star, Trophy } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";

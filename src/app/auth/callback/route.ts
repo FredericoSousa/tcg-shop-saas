@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createSupabaseProxyClient } from "@/lib/supabase/proxy-client";
+import { getUserTenantId } from "@/lib/supabase/user-metadata";
 import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
@@ -23,9 +24,9 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/login?error=oauth_exchange", request.url));
   }
 
-  const meta = data.user.app_metadata as { tenantId?: string; role?: "ADMIN" | "USER" };
+  const userTenantId = getUserTenantId(data.user);
 
-  if (!meta?.tenantId || (tenantId && meta.tenantId !== tenantId)) {
+  if (!userTenantId || (tenantId && userTenantId !== tenantId)) {
     await supabase.auth.signOut();
     return NextResponse.redirect(new URL("/login?error=tenant_mismatch", request.url));
   }

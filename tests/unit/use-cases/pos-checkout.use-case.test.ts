@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mock, MockProxy } from 'vitest-mock-extended';
-import { POSCheckoutUseCase } from '@/lib/application/use-cases/pos-checkout.use-case';
+import { POSCheckoutUseCase } from '@/lib/application/use-cases/orders/pos-checkout.use-case';
 import type { IOrderRepository } from '@/lib/domain/repositories/order.repository';
 import type { IProductRepository } from '@/lib/domain/repositories/product.repository';
 import type { ICustomerRepository } from '@/lib/domain/repositories/customer.repository';

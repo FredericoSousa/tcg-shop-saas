@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
-import { ListOrdersUseCase } from "@/lib/application/use-cases/list-orders.use-case";
+import { ListOrdersUseCase } from "@/lib/application/use-cases/orders/list-orders.use-case";
 import { logger } from "@/lib/logger";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 

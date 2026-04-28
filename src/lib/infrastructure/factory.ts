@@ -6,7 +6,7 @@ import { PrismaProductRepository } from "./repositories/prisma-product.repositor
 import { PrismaTenantRepository } from "./repositories/prisma-tenant.repository";
 import { PrismaReportsRepository } from "./repositories/prisma-reports.repository";
 import { PrismaCustomerCreditLedgerRepository } from "./repositories/prisma-customer-credit-ledger.repository";
-import { POSCheckoutUseCase } from "../application/use-cases/pos-checkout.use-case";
+import { POSCheckoutUseCase } from "../application/use-cases/orders/pos-checkout.use-case";
 
 /**
  * Lightweight Factory for Manual Dependency Injection.

@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { container } from "@/lib/infrastructure/container";
-import { GetStorefrontInventoryUseCase } from "@/lib/application/use-cases/get-storefront-inventory.use-case";
-import { GetStorefrontFiltersUseCase } from "@/lib/application/use-cases/get-storefront-filters.use-case";
+import { GetStorefrontInventoryUseCase } from "@/lib/application/use-cases/storefront/get-storefront-inventory.use-case";
+import { GetStorefrontFiltersUseCase } from "@/lib/application/use-cases/storefront/get-storefront-filters.use-case";
 import { ShopClient } from "@/components/shop/shop-client";
 import { Sparkles } from "lucide-react";
 import { getTenant } from "@/lib/tenant-server";

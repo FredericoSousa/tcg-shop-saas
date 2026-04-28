@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { SaveUserUseCase } from '@/lib/application/use-cases/save-user.use-case';
+import { SaveUserUseCase } from '@/lib/application/use-cases/users/save-user.use-case';
 
 const createUser = vi.fn();
 const updateUserById = vi.fn();

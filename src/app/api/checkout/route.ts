@@ -5,7 +5,7 @@ import { runWithTenant } from "@/lib/tenant-context";
 import { PrismaOrderRepository } from "@/lib/infrastructure/repositories/prisma-order.repository";
 import { PrismaInventoryRepository } from "@/lib/infrastructure/repositories/prisma-inventory.repository";
 import { PrismaCustomerRepository } from "@/lib/infrastructure/repositories/prisma-customer.repository";
-import { PlaceOrderUseCase } from "@/lib/application/use-cases/place-order.use-case";
+import { PlaceOrderUseCase } from "@/lib/application/use-cases/orders/place-order.use-case";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 import { logger } from "@/lib/logger";
 

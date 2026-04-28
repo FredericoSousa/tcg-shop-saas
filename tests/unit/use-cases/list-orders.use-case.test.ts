@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mock, MockProxy } from 'vitest-mock-extended';
-import { ListOrdersUseCase } from '@/lib/application/use-cases/list-orders.use-case';
+import { ListOrdersUseCase } from '@/lib/application/use-cases/orders/list-orders.use-case';
 import type { IOrderRepository } from '@/lib/domain/repositories/order.repository';
 
 describe('ListOrdersUseCase', () => {

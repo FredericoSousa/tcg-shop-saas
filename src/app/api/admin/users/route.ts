@@ -2,8 +2,8 @@ import { NextRequest } from "next/server";
 import { ZodError } from "zod";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
-import { ListUsersUseCase } from "@/lib/application/use-cases/list-users.use-case";
-import { SaveUserUseCase } from "@/lib/application/use-cases/save-user.use-case";
+import { ListUsersUseCase } from "@/lib/application/use-cases/users/list-users.use-case";
+import { SaveUserUseCase } from "@/lib/application/use-cases/users/save-user.use-case";
 import { logger } from "@/lib/logger";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 

@@ -7,7 +7,7 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 import { prisma as prismaMock } from '@/lib/prisma';
-import { GetStorefrontProductsUseCase } from '@/lib/application/use-cases/get-storefront-products.use-case';
+import { GetStorefrontProductsUseCase } from '@/lib/application/use-cases/storefront/get-storefront-products.use-case';
 
 const TENANT_ID = 'tenant-1';
 

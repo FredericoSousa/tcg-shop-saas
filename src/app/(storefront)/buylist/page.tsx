@@ -1,8 +1,8 @@
 import "reflect-metadata";
 import { getTenant } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
-import { GetStorefrontBuylistUseCase } from "@/lib/application/use-cases/get-storefront-buylist.use-case";
-import { GetBuylistFiltersUseCase } from "@/lib/application/use-cases/get-buylist-filters.use-case";
+import { GetStorefrontBuylistUseCase } from "@/lib/application/use-cases/buylist/get-storefront-buylist.use-case";
+import { GetBuylistFiltersUseCase } from "@/lib/application/use-cases/buylist/get-buylist-filters.use-case";
 import { BuylistClient } from "./buylist-client";
 import { Sparkles } from "lucide-react";
 import { unstable_cache } from "next/cache";

@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { container } from "@/lib/infrastructure/container";
-import { GetCustomerUseCase } from "@/lib/application/use-cases/get-customer.use-case";
+import { GetCustomerUseCase } from "@/lib/application/use-cases/customers/get-customer.use-case";
 import { ensureTenantContext } from "@/lib/tenant-server";
 import { StatusBadge } from "@/components/admin/status-badge";
 import { formatPhone, formatCurrency } from "@/lib/utils";

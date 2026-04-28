@@ -3,10 +3,10 @@ import { revalidatePath } from "next/cache";
 import { validateAdminApi } from "@/lib/tenant-server";
 import { runWithTenant } from "@/lib/tenant-context";
 import { container } from "@/lib/infrastructure/container";
-import { AddInventoryUseCase } from "@/lib/application/use-cases/add-inventory.use-case";
-import { UpdateInventoryUseCase } from "@/lib/application/use-cases/update-inventory.use-case";
-import { BulkUpdateInventoryUseCase } from "@/lib/application/use-cases/bulk-update-inventory.use-case";
-import { DeleteInventoryUseCase } from "@/lib/application/use-cases/delete-inventory.use-case";
+import { AddInventoryUseCase } from "@/lib/application/use-cases/inventory/add-inventory.use-case";
+import { UpdateInventoryUseCase } from "@/lib/application/use-cases/inventory/update-inventory.use-case";
+import { BulkUpdateInventoryUseCase } from "@/lib/application/use-cases/inventory/bulk-update-inventory.use-case";
+import { DeleteInventoryUseCase } from "@/lib/application/use-cases/inventory/delete-inventory.use-case";
 import { logger } from "@/lib/logger";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 

@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mock, MockProxy } from 'vitest-mock-extended';
-import { SaveProductUseCase } from '@/lib/application/use-cases/save-product.use-case';
-import { GetProductUseCase } from '@/lib/application/use-cases/get-product.use-case';
-import { ListProductsUseCase } from '@/lib/application/use-cases/list-products.use-case';
-import { ListCategoriesUseCase } from '@/lib/application/use-cases/list-categories.use-case';
-import { SaveCategoryUseCase } from '@/lib/application/use-cases/save-category.use-case';
-import { DeleteProductUseCase } from '@/lib/application/use-cases/delete-product.use-case';
+import { SaveProductUseCase } from '@/lib/application/use-cases/products/save-product.use-case';
+import { GetProductUseCase } from '@/lib/application/use-cases/products/get-product.use-case';
+import { ListProductsUseCase } from '@/lib/application/use-cases/products/list-products.use-case';
+import { ListCategoriesUseCase } from '@/lib/application/use-cases/products/list-categories.use-case';
+import { SaveCategoryUseCase } from '@/lib/application/use-cases/products/save-category.use-case';
+import { DeleteProductUseCase } from '@/lib/application/use-cases/products/delete-product.use-case';
 import type { IProductRepository } from '@/lib/domain/repositories/product.repository';
 
 vi.mock('../../tenant-context', () => ({

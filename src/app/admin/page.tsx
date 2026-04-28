@@ -11,8 +11,8 @@ import { DashboardChart } from "@/components/admin/dashboard-chart";
 import { RevenueDashboard } from "@/components/admin/analytics/revenue-dashboard";
 import { TopProductsTable } from "@/components/admin/analytics/top-products-table";
 import { TopBuyersCard } from "@/components/admin/analytics/top-buyers-card";
-import { GetDashboardSummaryUseCase } from "@/lib/application/use-cases/get-dashboard-summary.use-case";
-import { ListOrdersUseCase } from "@/lib/application/use-cases/list-orders.use-case";
+import { GetDashboardSummaryUseCase } from "@/lib/application/use-cases/reports/get-dashboard-summary.use-case";
+import { ListOrdersUseCase } from "@/lib/application/use-cases/orders/list-orders.use-case";
 import { formatCurrency } from "@/lib/utils";
 
 

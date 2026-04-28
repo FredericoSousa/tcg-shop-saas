@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FinalizeOrderUseCase } from "@/lib/application/use-cases/finalize-order.use-case";
+import { FinalizeOrderUseCase } from "@/lib/application/use-cases/orders/finalize-order.use-case";
 import { PaymentMethodType } from "@/lib/domain/entities/order";
 
 vi.mock("@/lib/prisma", () => ({

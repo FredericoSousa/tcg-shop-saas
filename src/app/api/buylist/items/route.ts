@@ -1,6 +1,6 @@
 import { getTenant } from "@/lib/tenant-server"
 import { container } from "@/lib/infrastructure/container";
-import { ListBuylistItemsUseCase } from "@/lib/application/use-cases/list-buylist-items.use-case";
+import { ListBuylistItemsUseCase } from "@/lib/application/use-cases/buylist/list-buylist-items.use-case";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 import { logger } from "@/lib/logger";
 

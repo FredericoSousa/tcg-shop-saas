@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { container } from "@/lib/infrastructure/container";
-import { FinalizeOrderUseCase } from "@/lib/application/use-cases/finalize-order.use-case";
+import { FinalizeOrderUseCase } from "@/lib/application/use-cases/orders/finalize-order.use-case";
 import { runWithTenant } from "@/lib/tenant-context";
 import { validateAdminApi } from "@/lib/tenant-server";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";

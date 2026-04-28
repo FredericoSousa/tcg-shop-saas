@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { withAdminApi } from "@/lib/tenant-server";
 import { supabaseAdmin } from "@/lib/supabase/admin";
+import { getUserTenantId } from "@/lib/supabase/user-metadata";
 import { logger } from "@/lib/logger";
 
 export async function DELETE(
@@ -19,7 +20,7 @@ export async function DELETE(
       if (findErr || !target.user) {
         return Response.json({ error: "User not found" }, { status: 404 });
       }
-      if (target.user.app_metadata?.tenantId !== tenant.id) {
+      if (getUserTenantId(target.user) !== tenant.id) {
         return Response.json({ error: "User not found" }, { status: 404 });
       }
 

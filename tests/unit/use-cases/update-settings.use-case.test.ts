@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mock, MockProxy } from 'vitest-mock-extended';
-import { UpdateSettingsUseCase } from '@/lib/application/use-cases/update-settings.use-case';
+import { UpdateSettingsUseCase } from '@/lib/application/use-cases/tenant/update-settings.use-case';
 import type { ITenantRepository } from '@/lib/domain/repositories/tenant.repository';
 
 describe('UpdateSettingsUseCase', () => {

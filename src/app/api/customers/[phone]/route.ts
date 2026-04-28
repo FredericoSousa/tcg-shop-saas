@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { withTenantApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
-import { LookupCustomerUseCase } from "@/lib/application/use-cases/lookup-customer.use-case";
+import { LookupCustomerUseCase } from "@/lib/application/use-cases/customers/lookup-customer.use-case";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
 const lookupCustomerUseCase = container.resolve(LookupCustomerUseCase);

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { container } from "@/lib/infrastructure/container";
-import { GetInventoryValuationUseCase } from "@/lib/application/use-cases/get-inventory-valuation.use-case";
+import { GetInventoryValuationUseCase } from "@/lib/application/use-cases/inventory/get-inventory-valuation.use-case";
 import { validateAdminApi } from "@/lib/tenant-server";
 
 export async function GET() {

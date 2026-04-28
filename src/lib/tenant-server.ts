@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { container } from "./infrastructure/container";
-import { GetTenantUseCase } from "./application/use-cases/get-tenant.use-case";
+import { GetTenantUseCase } from "./application/use-cases/tenant/get-tenant.use-case";
 import { headers } from "next/headers";
 import { unstable_cache } from "next/cache";
 import { redirect } from "next/navigation";
@@ -11,6 +11,7 @@ import { ApiResponse } from "./infrastructure/http/api-response";
 import { logger } from "./logger";
 import { ZodError } from "zod";
 import { createSupabaseServerClient } from "./supabase/server";
+import { getAppMetadata } from "./supabase/user-metadata";
 
 export interface SessionData {
   userId: string;
@@ -27,8 +28,8 @@ export async function getSession(): Promise<SessionData | null> {
     } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const meta = user.app_metadata as { tenantId?: string; role?: "ADMIN" | "USER" };
-    if (!meta?.tenantId || !meta?.role) return null;
+    const meta = getAppMetadata(user);
+    if (!meta.tenantId || !meta.role) return null;
 
     return {
       userId: user.id,

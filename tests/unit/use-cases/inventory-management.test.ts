@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mock, MockProxy } from 'vitest-mock-extended';
-import { AddInventoryUseCase } from '@/lib/application/use-cases/add-inventory.use-case';
-import { UpdateInventoryUseCase } from '@/lib/application/use-cases/update-inventory.use-case';
-import { BulkUpdateInventoryUseCase } from '@/lib/application/use-cases/bulk-update-inventory.use-case';
-import { DeleteInventoryUseCase } from '@/lib/application/use-cases/delete-inventory.use-case';
-import { GetInventoryItemUseCase } from '@/lib/application/use-cases/get-inventory-item.use-case';
-import { ListInventoryUseCase } from '@/lib/application/use-cases/list-inventory.use-case';
+import { AddInventoryUseCase } from '@/lib/application/use-cases/inventory/add-inventory.use-case';
+import { UpdateInventoryUseCase } from '@/lib/application/use-cases/inventory/update-inventory.use-case';
+import { BulkUpdateInventoryUseCase } from '@/lib/application/use-cases/inventory/bulk-update-inventory.use-case';
+import { DeleteInventoryUseCase } from '@/lib/application/use-cases/inventory/delete-inventory.use-case';
+import { GetInventoryItemUseCase } from '@/lib/application/use-cases/inventory/get-inventory-item.use-case';
+import { ListInventoryUseCase } from '@/lib/application/use-cases/inventory/list-inventory.use-case';
 import type { IInventoryRepository, ICardTemplateRepository } from '@/lib/domain/repositories/inventory.repository';
 import { domainEvents, DOMAIN_EVENTS } from '@/lib/domain/events/domain-events';
 

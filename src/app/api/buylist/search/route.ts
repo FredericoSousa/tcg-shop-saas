@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getTenant } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
-import { GetStorefrontBuylistUseCase } from "@/lib/application/use-cases/get-storefront-buylist.use-case";
+import { GetStorefrontBuylistUseCase } from "@/lib/application/use-cases/buylist/get-storefront-buylist.use-case";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);

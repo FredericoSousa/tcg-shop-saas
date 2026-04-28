@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { container } from "@/lib/infrastructure/container";
-import { ListInventoryUseCase } from "@/lib/application/use-cases/list-inventory.use-case";
+import { ListInventoryUseCase } from "@/lib/application/use-cases/inventory/list-inventory.use-case";
 import { getAdminContext } from "@/lib/tenant-server";
 import { PageHeader } from "@/components/admin/page-header";
 import { Package, Upload } from "lucide-react";

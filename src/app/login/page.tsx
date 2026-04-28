@@ -4,7 +4,7 @@ import { getTenant } from "@/lib/tenant-server";
 import { LoginForm } from "./login-form";
 import { Suspense } from "react";
 import { container } from "@/lib/infrastructure/container";
-import { GetTenantUseCase } from "@/lib/application/use-cases/get-tenant.use-case";
+import { GetTenantUseCase } from "@/lib/application/use-cases/tenant/get-tenant.use-case";
 import { headers } from "next/headers";
 
 export default function LoginPage() {

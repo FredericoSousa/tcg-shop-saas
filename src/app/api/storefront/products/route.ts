@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTenant } from "@/lib/tenant-server";
-import { GetStorefrontProductsUseCase } from "@/lib/application/use-cases/get-storefront-products.use-case";
+import { GetStorefrontProductsUseCase } from "@/lib/application/use-cases/storefront/get-storefront-products.use-case";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 
 const useCase = new GetStorefrontProductsUseCase();

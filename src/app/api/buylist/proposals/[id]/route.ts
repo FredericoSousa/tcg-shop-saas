@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { getTenant } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
 import { runWithTenant } from "@/lib/tenant-context";
-import { GetBuylistProposalUseCase } from "@/lib/application/use-cases/get-buylist-proposal.use-case";
+import { GetBuylistProposalUseCase } from "@/lib/application/use-cases/buylist/get-buylist-proposal.use-case";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 import { logger } from "@/lib/logger";
 

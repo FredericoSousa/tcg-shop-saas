@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { mock, MockProxy } from 'vitest-mock-extended';
-import { AddBulkInventoryUseCase } from '@/lib/application/use-cases/add-bulk-inventory.use-case';
+import { AddBulkInventoryUseCase } from '@/lib/application/use-cases/inventory/add-bulk-inventory.use-case';
 import type { IInventoryRepository } from '@/lib/domain/repositories/inventory.repository';
 import { CardTemplateService } from '@/lib/domain/services/card-template.service';
 import { domainEvents, DOMAIN_EVENTS } from '@/lib/domain/events/domain-events';

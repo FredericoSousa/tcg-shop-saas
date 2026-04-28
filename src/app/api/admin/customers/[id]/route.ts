@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
-import { GetCustomerUseCase } from "@/lib/application/use-cases/get-customer.use-case";
-import { UpdateCustomerUseCase } from "@/lib/application/use-cases/update-customer.use-case";
+import { GetCustomerUseCase } from "@/lib/application/use-cases/customers/get-customer.use-case";
+import { UpdateCustomerUseCase } from "@/lib/application/use-cases/customers/update-customer.use-case";
 import { logger } from "@/lib/logger";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 

@@ -7,12 +7,16 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint --fix",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "db:seed": "prisma db seed",
     "pretest": "prisma generate",
     "prebuild": "prisma generate"
+  },
+  "engines": {
+    "node": ">=20.0.0"
   },
   "dependencies": {
     "@base-ui/react": "^1.3.0",

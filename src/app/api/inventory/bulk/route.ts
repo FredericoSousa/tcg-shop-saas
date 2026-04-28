@@ -5,7 +5,7 @@ import { validateAdminApi } from "@/lib/tenant-server";
 import { runWithTenant } from "@/lib/tenant-context";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 import { container } from "@/lib/infrastructure/container";
-import { AddBulkInventoryUseCase, AddBulkInventoryRequest, BulkInventoryResult } from "@/lib/application/use-cases/add-bulk-inventory.use-case";
+import { AddBulkInventoryUseCase, AddBulkInventoryRequest, BulkInventoryResult } from "@/lib/application/use-cases/inventory/add-bulk-inventory.use-case";
 
 /**
  * @openapi

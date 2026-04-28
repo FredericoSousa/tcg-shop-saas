@@ -16,7 +16,7 @@ import { BuylistItem } from "@/lib/domain/entities/buylist";
 import { BuylistCard } from "./buylist-card";
 import { SellCartDrawer } from "./sell-cart-drawer";
 import { LiveSearch } from "@/components/storefront/live-search";
-import { GetStorefrontFiltersResponse } from "@/lib/application/use-cases/get-storefront-filters.use-case";
+import { GetStorefrontFiltersResponse } from "@/lib/application/use-cases/storefront/get-storefront-filters.use-case";
 import { BuylistFilters } from "./buylist-filters";
 
 interface BuylistClientProps {

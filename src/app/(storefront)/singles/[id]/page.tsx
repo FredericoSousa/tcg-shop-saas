@@ -1,7 +1,7 @@
 import "reflect-metadata";
 import { container } from "@/lib/infrastructure/container";
-import { GetInventoryItemUseCase } from "@/lib/application/use-cases/get-inventory-item.use-case";
-import { GetStorefrontInventoryUseCase } from "@/lib/application/use-cases/get-storefront-inventory.use-case";
+import { GetInventoryItemUseCase } from "@/lib/application/use-cases/inventory/get-inventory-item.use-case";
+import { GetStorefrontInventoryUseCase } from "@/lib/application/use-cases/storefront/get-storefront-inventory.use-case";
 import { getTenant } from "@/lib/tenant-server";
 import { ProductDetailClient } from "@/components/shop/product-detail-client";
 import { notFound } from "next/navigation";

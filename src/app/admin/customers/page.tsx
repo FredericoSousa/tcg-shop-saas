@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { container } from "@/lib/infrastructure/container";
-import { ListCustomersUseCase } from "@/lib/application/use-cases/list-customers.use-case";
+import { ListCustomersUseCase } from "@/lib/application/use-cases/customers/list-customers.use-case";
 import { ensureTenantContext } from "@/lib/tenant-server";
 import { CustomersClient } from "./customers-client";
 

@@ -1,6 +1,6 @@
 import { withAdminApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
-import { ListBuylistProposalsUseCase } from "@/lib/application/use-cases/list-buylist-proposals.use-case";
+import { ListBuylistProposalsUseCase } from "@/lib/application/use-cases/buylist/list-buylist-proposals.use-case";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 import { logger } from "@/lib/logger";
 

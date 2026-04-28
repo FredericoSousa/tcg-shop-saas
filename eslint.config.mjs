@@ -13,6 +13,21 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  // Regras com type-info no código de produção.
+  // Mantidas como `warn` pois há violações legadas; novos PRs devem
+  // corrigir antes de promover para `error`.
+  {
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    rules: {
+      "@typescript-eslint/no-floating-promises": "warn",
+      "@typescript-eslint/no-misused-promises": "warn",
+    },
+    languageOptions: {
+      parserOptions: {
+        projectService: true,
+      },
+    },
+  },
   // Relaxar regras nos arquivos de testes para facilitar mocking
   {
     files: ["tests/**/*.ts", "tests/**/*.tsx"],

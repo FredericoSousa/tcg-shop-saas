@@ -1,6 +1,6 @@
 import "reflect-metadata";
 import { container } from "@/lib/infrastructure/container";
-import { ListOrdersUseCase } from "@/lib/application/use-cases/list-orders.use-case";
+import { ListOrdersUseCase } from "@/lib/application/use-cases/orders/list-orders.use-case";
 import { ensureTenantContext } from "@/lib/tenant-server";
 import { PageHeader } from "@/components/admin/page-header";
 import { ShoppingCart } from "lucide-react";

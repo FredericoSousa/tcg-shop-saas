@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { container } from "@/lib/infrastructure/container";
-import { GetRevenueReportUseCase } from "@/lib/application/use-cases/get-revenue-report.use-case";
+import { GetRevenueReportUseCase } from "@/lib/application/use-cases/reports/get-revenue-report.use-case";
 import { validateAdminApi } from "@/lib/tenant-server";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 

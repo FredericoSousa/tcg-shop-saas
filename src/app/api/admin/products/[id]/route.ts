@@ -2,8 +2,8 @@ import { NextRequest } from "next/server";
 import { revalidateTag } from "next/cache";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container, TOKENS } from "@/lib/infrastructure/container";
-import { GetProductUseCase } from "@/lib/application/use-cases/get-product.use-case";
-import { SaveProductUseCase } from "@/lib/application/use-cases/save-product.use-case";
+import { GetProductUseCase } from "@/lib/application/use-cases/products/get-product.use-case";
+import { SaveProductUseCase } from "@/lib/application/use-cases/products/save-product.use-case";
 import type { IProductRepository } from "@/lib/domain/repositories/product.repository";
 import { logger } from "@/lib/logger";
 

@@ -1,5 +1,5 @@
 import { container } from "@/lib/infrastructure/container";
-import { GetMonthlyRevenueTrendUseCase } from "@/lib/application/use-cases/get-monthly-revenue-trend.use-case";
+import { GetMonthlyRevenueTrendUseCase } from "@/lib/application/use-cases/reports/get-monthly-revenue-trend.use-case";
 import { validateAdminApi } from "@/lib/tenant-server";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 

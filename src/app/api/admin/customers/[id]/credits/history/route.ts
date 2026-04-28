@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { container } from "@/lib/infrastructure/container";
-import { GetCustomerCreditHistoryUseCase } from "@/lib/application/use-cases/get-customer-credit-history.use-case";
+import { GetCustomerCreditHistoryUseCase } from "@/lib/application/use-cases/customers/get-customer-credit-history.use-case";
 import { withAdminApi } from "@/lib/tenant-server";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 

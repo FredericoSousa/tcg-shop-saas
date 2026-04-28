@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
-import { ProcessBuylistProposalUseCase } from "@/lib/application/use-cases/process-buylist-proposal.use-case";
+import { ProcessBuylistProposalUseCase } from "@/lib/application/use-cases/buylist/process-buylist-proposal.use-case";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 import { logger } from "@/lib/logger";
 

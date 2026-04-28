@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ListUsersUseCase } from '@/lib/application/use-cases/list-users.use-case';
+import { ListUsersUseCase } from '@/lib/application/use-cases/users/list-users.use-case';
 
 const listUsers = vi.fn();
 

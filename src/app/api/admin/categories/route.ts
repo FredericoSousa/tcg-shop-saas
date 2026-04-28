@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
 import { withAdminApi } from "@/lib/tenant-server";
 import { container } from "@/lib/infrastructure/container";
-import { ListCategoriesUseCase } from "@/lib/application/use-cases/list-categories.use-case";
-import { SaveCategoryUseCase } from "@/lib/application/use-cases/save-category.use-case";
+import { ListCategoriesUseCase } from "@/lib/application/use-cases/products/list-categories.use-case";
+import { SaveCategoryUseCase } from "@/lib/application/use-cases/products/save-category.use-case";
 import { logger } from "@/lib/logger";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 

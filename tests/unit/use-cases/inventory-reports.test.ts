@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mock, MockProxy } from 'vitest-mock-extended';
-import { GetInventoryReportUseCase } from '@/lib/application/use-cases/get-inventory-report.use-case';
-import { GetInventoryValuationUseCase } from '@/lib/application/use-cases/get-inventory-valuation.use-case';
+import { GetInventoryReportUseCase } from '@/lib/application/use-cases/inventory/get-inventory-report.use-case';
+import { GetInventoryValuationUseCase } from '@/lib/application/use-cases/inventory/get-inventory-valuation.use-case';
 import type { IReportsRepository } from '@/lib/domain/repositories/report.repository';
 
 describe('Inventory Reporting Use Cases', () => {

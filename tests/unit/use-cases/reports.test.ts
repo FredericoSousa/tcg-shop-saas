@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mock, MockProxy } from 'vitest-mock-extended';
-import { GetMonthlyRevenueTrendUseCase } from '@/lib/application/use-cases/get-monthly-revenue-trend.use-case';
-import { GetRevenueReportUseCase } from '@/lib/application/use-cases/get-revenue-report.use-case';
-import { GetSalesSourceReportUseCase } from '@/lib/application/use-cases/get-sales-source-report.use-case';
-import { GetTopSellingProductsUseCase } from '@/lib/application/use-cases/get-top-selling-products.use-case';
-import { GetInventoryValuationUseCase } from '@/lib/application/use-cases/get-inventory-valuation.use-case';
-import { GetInventoryReportUseCase } from '@/lib/application/use-cases/get-inventory-report.use-case';
+import { GetMonthlyRevenueTrendUseCase } from '@/lib/application/use-cases/reports/get-monthly-revenue-trend.use-case';
+import { GetRevenueReportUseCase } from '@/lib/application/use-cases/reports/get-revenue-report.use-case';
+import { GetSalesSourceReportUseCase } from '@/lib/application/use-cases/reports/get-sales-source-report.use-case';
+import { GetTopSellingProductsUseCase } from '@/lib/application/use-cases/reports/get-top-selling-products.use-case';
+import { GetInventoryValuationUseCase } from '@/lib/application/use-cases/inventory/get-inventory-valuation.use-case';
+import { GetInventoryReportUseCase } from '@/lib/application/use-cases/inventory/get-inventory-report.use-case';
 import type { IReportsRepository } from '@/lib/domain/repositories/report.repository';
 
 describe('Analytics & Reports Use Cases', () => {

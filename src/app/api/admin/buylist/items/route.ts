@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { container } from "@/lib/infrastructure/container";
-import { SaveBuylistItemUseCase } from "@/lib/application/use-cases/save-buylist-item.use-case";
+import { SaveBuylistItemUseCase } from "@/lib/application/use-cases/buylist/save-buylist-item.use-case";
 import { getAdminContext } from "@/lib/tenant-server";
 import type { IBuylistRepository } from "@/lib/domain/repositories/buylist.repository";
 import type { ICardTemplateRepository } from "@/lib/domain/repositories/inventory.repository";

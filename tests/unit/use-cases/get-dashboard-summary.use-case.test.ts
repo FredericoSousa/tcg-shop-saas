@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { mock, MockProxy } from 'vitest-mock-extended';
-import { GetDashboardSummaryUseCase } from '@/lib/application/use-cases/get-dashboard-summary.use-case';
+import { GetDashboardSummaryUseCase } from '@/lib/application/use-cases/reports/get-dashboard-summary.use-case';
 import type { IReportsRepository } from '@/lib/domain/repositories/report.repository';
 import type { IInventoryRepository } from '@/lib/domain/repositories/inventory.repository';
 
