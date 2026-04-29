@@ -50,7 +50,7 @@ export default function AdminBuylistProposalDetailsPage() {
       }
     }
 
-    if (id) fetchProposal()
+    if (id) void fetchProposal()
   }, [id])
 
   const handleProcess = async (action: 'APPROVE' | 'CANCEL', paymentMethod: 'CASH' | 'STORE_CREDIT') => {

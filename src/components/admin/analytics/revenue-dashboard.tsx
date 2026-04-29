@@ -49,7 +49,7 @@ export function RevenueDashboard() {
       }
     }
 
-    fetchData();
+    void fetchData();
   }, []);
 
   if (loading) {

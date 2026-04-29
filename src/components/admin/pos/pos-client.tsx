@@ -170,7 +170,7 @@ export function POSClient() {
       feedback.success(`Itens adicionados à comanda!`);
     },
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({
+      void queryClient.invalidateQueries({
         queryKey: ["order-in-progress", variables.customerId],
       });
     },
@@ -183,7 +183,7 @@ export function POSClient() {
         feedback.error(`Erro ao ativar tela cheia: ${err.message}`);
       });
     } else {
-      document.exitFullscreen();
+      void document.exitFullscreen();
     }
   }, [containerElement]);
 
@@ -263,7 +263,7 @@ export function POSClient() {
       setSelectedCustomer(customer);
       setCart([]);
       if (customer) {
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
           queryKey: ["order-in-progress", customer.id],
         });
       }
@@ -421,7 +421,7 @@ export function POSClient() {
         !checkoutMutation.isPending
       ) {
         e.preventDefault();
-        handleOpenFinalize();
+        void handleOpenFinalize();
       }
       if (
         e.key === "F2" &&
@@ -430,7 +430,7 @@ export function POSClient() {
         !checkoutMutation.isPending
       ) {
         e.preventDefault();
-        handleCheckout();
+        void handleCheckout();
       }
       if (e.key === "Escape") {
         if (isPaymentDialogOpen) {

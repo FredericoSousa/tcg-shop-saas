@@ -2,9 +2,10 @@ import "reflect-metadata";
 import { container } from "./infrastructure/container";
 import { GetTenantUseCase } from "./application/use-cases/tenant/get-tenant.use-case";
 import { headers } from "next/headers";
-import { unstable_cache } from "next/cache";
+import { cacheLife, cacheTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { runWithTenant, enterTenantContext } from "./tenant-context";
+import { runWithCorrelationId } from "./correlation-context";
 import type { Tenant } from "./domain/entities/tenant";
 import { DomainError, EntityNotFoundError, ValidationError, BusinessRuleViolationError } from "./domain/errors/domain.error";
 import { ApiResponse } from "./infrastructure/http/api-response";
@@ -43,18 +44,17 @@ export async function getSession(): Promise<SessionData | null> {
 }
 
 /**
- * Cached wrapper for resolving tenant
+ * Cached wrapper for resolving tenant. Uses Next 16's `'use cache'`
+ * directive (Cache Components). Tagged so an admin updating their
+ * tenant settings can `revalidateTag(`tenant-${id}`)` to bust this.
  */
-const getCachedTenant = (id: string) => {
-  return unstable_cache(
-    async () => {
-      const getTenantUseCase = container.resolve(GetTenantUseCase);
-      return getTenantUseCase.execute({ id });
-    },
-    [`tenant-${id}`],
-    { revalidate: 3600, tags: ["tenant", `tenant-${id}`] }
-  )();
-};
+async function getCachedTenant(id: string) {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("tenant", `tenant-${id}`);
+  const getTenantUseCase = container.resolve(GetTenantUseCase);
+  return getTenantUseCase.execute({ id });
+}
 
 /**
  * Gets the current tenant from the x-tenant-id header.
@@ -147,8 +147,6 @@ export async function validateAdminApi() {
   return { session, tenant };
 }
 
-import { checkRateLimit } from "./rate-limiter";
-
 function handleDomainError(error: DomainError): Response {
   if (error instanceof EntityNotFoundError) {
     return ApiResponse.notFound(error.message, error.code);
@@ -162,27 +160,9 @@ function handleDomainError(error: DomainError): Response {
   return ApiResponse.serverError(error.message, error.code);
 }
 
-async function applyRateLimit(key: string, limit = 60, window = 60) {
-  const result = await checkRateLimit(key, { limit, windowSeconds: window });
-
-  if (!result.allowed) {
-    return new Response(JSON.stringify({
-      success: false,
-      message: "Muitas requisições. Tente novamente mais tarde.",
-      error: { code: "TOO_MANY_REQUESTS" }
-    }), {
-      status: 429,
-      headers: {
-        "Content-Type": "application/json",
-        "X-RateLimit-Limit": limit.toString(),
-        "X-RateLimit-Remaining": result.remaining.toString(),
-        "X-RateLimit-Reset": result.resetAt.toString(),
-      }
-    });
-  }
-
-  return null;
-}
+// Rate limiting is enforced at the proxy/middleware layer (see
+// `src/lib/proxy/rate-limit-policy.ts`). Don't redo it here — would
+// double the Redis ops per request.
 
 export async function withAdminApi<T>(
   handler: (context: { session: SessionData, tenant: Tenant }) => Promise<T>
@@ -193,12 +173,13 @@ export async function withAdminApi<T>(
   }
 
   const headersList = await headers();
-  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
-  const rateLimitResponse = await applyRateLimit(`admin:${ip}:${context.tenant.id}`, 100, 60);
-  if (rateLimitResponse) return rateLimitResponse;
+  const correlationId = headersList.get("x-correlation-id") ?? undefined;
 
   try {
-    return await runWithTenant(context.tenant.id, () => handler(context));
+    return await runWithCorrelationId(
+      () => runWithTenant(context.tenant.id, () => handler(context)),
+      correlationId,
+    );
   } catch (error) {
     if (error instanceof DomainError) {
       logger.warn(`Domain error: ${error.message}`, { action: error.code, tenantId: context.tenant.id });
@@ -225,12 +206,13 @@ export async function withTenantApi<T>(
   }
 
   const headersList = await headers();
-  const ip = headersList.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
-  const rateLimitResponse = await applyRateLimit(`tenant:${ip}:${tenant.id}`, 60, 60);
-  if (rateLimitResponse) return rateLimitResponse;
+  const correlationId = headersList.get("x-correlation-id") ?? undefined;
 
   try {
-    return await runWithTenant(tenant.id, () => handler({ tenant }));
+    return await runWithCorrelationId(
+      () => runWithTenant(tenant.id, () => handler({ tenant })),
+      correlationId,
+    );
   } catch (error) {
     if (error instanceof DomainError) {
       logger.warn(`Domain error: ${error.message}`, { action: error.code, tenantId: tenant.id });

@@ -1,17 +1,24 @@
 import { getTenant } from "@/lib/tenant-server";
-import { unstable_cache } from "next/cache";
+import { cacheTag, cacheLife } from "next/cache";
 import { GetStorefrontProductsUseCase } from "@/lib/application/use-cases/storefront/get-storefront-products.use-case";
 import { ProductsShopClient } from "@/components/shop/products-shop-client";
 
 const useCase = new GetStorefrontProductsUseCase();
 
+async function getCachedProducts(tenantId: string) {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(`tenant-${tenantId}-products`);
+  return useCase.execute(tenantId);
+}
+
 export default async function ProductsPage() {
   const tenant = await getTenant();
-  const { items, categories } = await unstable_cache(
-    () => useCase.execute(tenant!.id),
-    [`storefront-products-${tenant!.id}`],
-    { revalidate: 3600, tags: [`tenant-${tenant!.id}-products`] },
-  )();
+  if (!tenant) {
+    return null;
+  }
+
+  const { items, categories } = await getCachedProducts(tenant.id);
 
   return (
     <main className="flex-1">

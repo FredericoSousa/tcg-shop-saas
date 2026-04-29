@@ -119,7 +119,7 @@ export function CustomersClient({
     // But for simplicity, we let useTableState handle the URL synchronization
     // and we re-fetch when useTableState's values change.
     // To truely optimize, we could compare with initial props.
-    fetchCustomers();
+    void fetchCustomers();
   }, [fetchCustomers]);
 
   const handleOpenCreate = () => {
@@ -156,7 +156,7 @@ export function CustomersClient({
 
       feedback.success(editingCustomer ? "Cliente atualizado" : "Cliente criado");
       setIsDialogOpen(false);
-      fetchCustomers();
+      void fetchCustomers();
     } catch (error) {
       feedback.apiError(error);
     } finally {
@@ -173,7 +173,7 @@ export function CustomersClient({
 
       feedback.success("Cliente excluído com sucesso");
       setCustomerToDelete(null);
-      fetchCustomers();
+      void fetchCustomers();
     } catch (error) {
       feedback.apiError(error, "Erro ao excluir cliente");
     } finally {
@@ -187,7 +187,7 @@ export function CustomersClient({
       await CustomerService.restore(id);
 
       feedback.success("Cliente restaurado com sucesso");
-      fetchCustomers();
+      void fetchCustomers();
     } catch (error) {
       feedback.apiError(error, "Erro ao restaurar cliente");
     }

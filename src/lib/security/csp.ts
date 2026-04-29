@@ -11,10 +11,17 @@ export function buildCspHeader(nonce: string, isDev: boolean): string {
     ? `'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`
     : `'self' 'nonce-${nonce}' 'strict-dynamic'`;
 
+  // 'unsafe-inline' is kept in dev only; production locks to nonce.
+  // Tailwind v4 + Next inject styles via <style> tags Next tags with
+  // the same nonce we expose via x-nonce, so nonce-only works.
+  const styleSrc = isDev
+    ? `'self' 'nonce-${nonce}' 'unsafe-inline'`
+    : `'self' 'nonce-${nonce}'`;
+
   const directives: Record<string, string> = {
     "default-src": "'self'",
     "script-src": scriptSrc,
-    "style-src": "'self' 'unsafe-inline'",
+    "style-src": styleSrc,
     "img-src":
       "'self' blob: data: https://cards.scryfall.io https://c1.scryfall.com https://svgs.scryfall.io https://*.supabase.co",
     "font-src": "'self' data:",

@@ -5,14 +5,45 @@ import { GetStorefrontFiltersUseCase } from "@/lib/application/use-cases/storefr
 import { ShopClient } from "@/components/shop/shop-client";
 import { Sparkles } from "lucide-react";
 import { getTenant } from "@/lib/tenant-server";
-import { unstable_cache } from "next/cache";
+import { cacheTag, cacheLife } from "next/cache";
+
+type InventoryFilters = {
+  color?: string;
+  type?: string;
+  subtype?: string;
+  set?: string;
+  extras?: string;
+  language?: string;
+  search?: string;
+  sort?: string;
+};
+
+async function getCachedInventory(
+  tenantId: string,
+  page: number,
+  filters: InventoryFilters,
+) {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(`tenant-${tenantId}-inventory`);
+  const useCase = container.resolve(GetStorefrontInventoryUseCase);
+  return useCase.execute({ tenantId, page, filters });
+}
+
+async function getCachedFilters(tenantId: string) {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(`tenant-${tenantId}-inventory`);
+  const useCase = container.resolve(GetStorefrontFiltersUseCase);
+  return useCase.execute({ tenantId });
+}
 
 export default async function ShopPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const searchParams = await props.searchParams;
   const page = Number(searchParams?.page) || 1;
-  const filters = {
+  const filters: InventoryFilters = {
     color: typeof searchParams?.color === "string" ? searchParams.color : undefined,
     type: typeof searchParams?.type === "string" ? searchParams.type : undefined,
     subtype: typeof searchParams?.subtype === "string" ? searchParams.subtype : undefined,
@@ -41,21 +72,10 @@ export default async function ShopPage(props: {
     );
   }
 
-  // Use cases are wrapped in unstable_cache to maintain performance
-  const getInventory = container.resolve(GetStorefrontInventoryUseCase);
-  const getFilters = container.resolve(GetStorefrontFiltersUseCase);
-
-  const inventoryResponse = await unstable_cache(
-    () => getInventory.execute({ tenantId: tenant.id, page, filters }),
-    [`inventory-${tenant.id}-${page}-${JSON.stringify(filters)}`],
-    { revalidate: 3600, tags: [`tenant-${tenant.id}-inventory`] }
-  )();
-
-  const storefrontFilters = await unstable_cache(
-    () => getFilters.execute({ tenantId: tenant.id }),
-    [`filters-${tenant.id}`],
-    { revalidate: 3600, tags: [`tenant-${tenant.id}-inventory`] }
-  )();
+  const [inventoryResponse, storefrontFilters] = await Promise.all([
+    getCachedInventory(tenant.id, page, filters),
+    getCachedFilters(tenant.id),
+  ]);
 
   const { items: inventory, total, pageCount } = inventoryResponse;
 

@@ -80,7 +80,7 @@ export function PaymentDialog({
 
   useEffect(() => {
     if (isOpen) {
-      fetchBalance();
+      void fetchBalance();
     }
   }, [isOpen, fetchBalance]);
 

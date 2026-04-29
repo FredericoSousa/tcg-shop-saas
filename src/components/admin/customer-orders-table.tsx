@@ -56,7 +56,7 @@ export function CustomerOrdersTable({ customerId }: CustomerOrdersTableProps) {
   }, [customerId, page]);
 
   useEffect(() => {
-    fetchOrders();
+    void fetchOrders();
   }, [fetchOrders]);
 
   return (

@@ -9,7 +9,8 @@ import { getUserTenantId } from "./lib/supabase/user-metadata";
 import { extractSubdomain, resolveTenantId } from "./lib/proxy/tenant-resolver";
 import { selectRateLimitPolicy } from "./lib/proxy/rate-limit-policy";
 import { getClientIp } from "./lib/proxy/client-ip";
-import { applySecurityHeaders, jsonError } from "./lib/proxy/responses";
+import { applySecurityHeaders, generateCorrelationId, jsonError } from "./lib/proxy/responses";
+import { clearAuthCookies } from "./lib/proxy/clear-auth-cookies";
 
 const PROTECTED_ROUTES = ["/admin"];
 
@@ -34,9 +35,15 @@ async function enforceRateLimit(request: NextRequest): Promise<NextResponse | nu
   });
 }
 
-function buildForwardHeaders(request: NextRequest, nonce: string, tenantId: string | null): Headers {
+function buildForwardHeaders(
+  request: NextRequest,
+  nonce: string,
+  tenantId: string | null,
+  correlationId: string,
+): Headers {
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
+  headers.set("x-correlation-id", correlationId);
   if (tenantId) headers.set("x-tenant-id", tenantId);
   return headers;
 }
@@ -59,8 +66,10 @@ async function handleAuthSensitivePath(
     }
     const userTenantId = getUserTenantId(user);
     if (tenantId && userTenantId !== tenantId) {
-      await supabase.auth.signOut();
-      return NextResponse.redirect(new URL("/login?error=tenant_mismatch", request.url));
+      // Clear auth cookies locally instead of round-tripping to Supabase
+      // — cuts ~100-300ms off the cross-tenant redirect path.
+      const redirect = NextResponse.redirect(new URL("/login?error=tenant_mismatch", request.url));
+      return clearAuthCookies(request, redirect);
     }
   }
 
@@ -95,7 +104,10 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const isLogin = pathname === "/login";
   const isAuthRoute = isLogin || pathname.startsWith("/auth/");
 
-  const forwardHeaders = buildForwardHeaders(request, nonce, tenantId);
+  // Honor an inbound x-correlation-id (e.g. from API gateway / tracing
+  // upstream) so logs from the same request stitch together end-to-end.
+  const correlationId = request.headers.get("x-correlation-id") ?? generateCorrelationId();
+  const forwardHeaders = buildForwardHeaders(request, nonce, tenantId, correlationId);
 
   if (isProtected || isAuthRoute) {
     return handleAuthSensitivePath(request, tenantId, forwardHeaders, nonce, {

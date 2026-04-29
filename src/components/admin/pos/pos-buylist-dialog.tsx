@@ -38,7 +38,7 @@ export function POSBuylistDialog() {
   };
 
   useEffect(() => {
-    if (open) fetchProposals();
+    if (open) void fetchProposals();
   }, [open]);
 
   const filteredProposals = proposals.filter(p => 

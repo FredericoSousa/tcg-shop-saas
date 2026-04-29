@@ -50,12 +50,12 @@ export function CustomerCreditSection({ customerId, initialBalance }: CustomerCr
   }, [customerId]);
 
   useEffect(() => {
-    fetchHistory();
+    void fetchHistory();
   }, [fetchHistory]);
 
   const handleBalanceUpdate = (newBalance: number) => {
     setBalance(newBalance);
-    fetchHistory();
+    void fetchHistory();
   };
 
 

@@ -7,6 +7,7 @@ import { ListCategoriesUseCase } from '@/lib/application/use-cases/products/list
 import { SaveCategoryUseCase } from '@/lib/application/use-cases/products/save-category.use-case';
 import { DeleteProductUseCase } from '@/lib/application/use-cases/products/delete-product.use-case';
 import type { IProductRepository } from '@/lib/domain/repositories/product.repository';
+import type { IAuditLogRepository } from '@/lib/domain/repositories/audit-log.repository';
 
 vi.mock('../../tenant-context', () => ({
   getTenantId: vi.fn(() => 'test-tenant-id'),
@@ -143,10 +144,14 @@ describe('Product & Category Use Cases', () => {
   });
 
   describe('DeleteProductUseCase', () => {
-    it('should call repository delete', async () => {
-      const useCase = new DeleteProductUseCase(productRepo);
-      await useCase.execute({ id: 'p1' });
+    it('should call repository delete and write an audit entry', async () => {
+      const auditLog = mock<IAuditLogRepository>();
+      const useCase = new DeleteProductUseCase(productRepo, auditLog);
+      await useCase.execute({ id: 'p1', actorId: 'u1' });
       expect(productRepo.delete).toHaveBeenCalledWith('p1');
+      expect(auditLog.record).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'DELETE', entityType: 'product', entityId: 'p1' }),
+      );
     });
   });
 });

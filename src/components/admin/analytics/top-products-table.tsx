@@ -37,7 +37,7 @@ export function TopProductsTable() {
       }
     }
 
-    fetchTopProducts();
+    void fetchTopProducts();
   }, []);
 
   if (loading) {

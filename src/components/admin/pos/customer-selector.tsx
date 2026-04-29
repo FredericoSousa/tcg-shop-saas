@@ -44,13 +44,13 @@ export function CustomerSelector({
   useEffect(() => {
     if (!isOpen || query.length < 2) {
       if (query.length === 0 && isOpen) {
-          handleSearch("");
+          void handleSearch("");
       }
       return;
     }
 
     const handler = setTimeout(() => {
-      handleSearch(query);
+      void handleSearch(query);
     }, 300);
 
     return () => clearTimeout(handler);

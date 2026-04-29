@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { buildCspHeader } from "../security/csp";
 
+export function generateCorrelationId(): string {
+  // crypto.randomUUID is available in both Node and Edge runtimes.
+  return crypto.randomUUID();
+}
+
 export function jsonError(status: number, message: string, code: string, extraHeaders: Record<string, string> = {}): NextResponse {
   return new NextResponse(
     JSON.stringify({ success: false, message, error: { code } }),

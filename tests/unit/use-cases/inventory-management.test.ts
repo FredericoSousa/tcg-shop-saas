@@ -7,6 +7,7 @@ import { DeleteInventoryUseCase } from '@/lib/application/use-cases/inventory/de
 import { GetInventoryItemUseCase } from '@/lib/application/use-cases/inventory/get-inventory-item.use-case';
 import { ListInventoryUseCase } from '@/lib/application/use-cases/inventory/list-inventory.use-case';
 import type { IInventoryRepository, ICardTemplateRepository } from '@/lib/domain/repositories/inventory.repository';
+import type { IAuditLogRepository } from '@/lib/domain/repositories/audit-log.repository';
 import { domainEvents, DOMAIN_EVENTS } from '@/lib/domain/events/domain-events';
 
 vi.mock('@/lib/domain/events/domain-events', () => ({
@@ -148,10 +149,12 @@ describe('Inventory Management Use Cases', () => {
   });
 
   describe('DeleteInventoryUseCase', () => {
-    it('should delete multiple items', async () => {
-      const useCase = new DeleteInventoryUseCase(inventoryRepo);
-      await useCase.execute({ ids: ['1', '2'] });
+    it('should delete multiple items and audit each one', async () => {
+      const auditLog = mock<IAuditLogRepository>();
+      const useCase = new DeleteInventoryUseCase(inventoryRepo, auditLog);
+      await useCase.execute({ ids: ['1', '2'], actorId: 'u1' });
       expect(inventoryRepo.deactivateMany).toHaveBeenCalledWith(['1', '2']);
+      expect(auditLog.record).toHaveBeenCalledTimes(2);
       expect(domainEvents.publish).toHaveBeenCalledWith(DOMAIN_EVENTS.INVENTORY_DELETED, expect.objectContaining({
         inventoryIds: ['1', '2'],
         tenantId: 'test-tenant-id'

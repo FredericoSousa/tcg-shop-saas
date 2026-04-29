@@ -35,15 +35,15 @@ export const ProductSearch = forwardRef<ProductSearchHandle, ProductSearchProps>
     }));
 
   useEffect(() => {
-    const handler = setTimeout(async () => {
+    const handler = setTimeout(() => {
       if (query.length < 2) {
         // Fetch all products if query is empty or too short
         if (query.length === 0) {
-           handleSearch("");
+          void handleSearch("");
         }
         return;
       }
-      handleSearch(query);
+      void handleSearch(query);
     }, 300);
 
     return () => clearTimeout(handler);
@@ -51,7 +51,7 @@ export const ProductSearch = forwardRef<ProductSearchHandle, ProductSearchProps>
 
   // Initial load
   useEffect(() => {
-    handleSearch("");
+    void handleSearch("");
   }, []);
 
   const handleSearch = async (searchQuery: string) => {

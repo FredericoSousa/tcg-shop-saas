@@ -2,17 +2,12 @@ import { NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getTenant } from "@/lib/tenant-server";
 import { runWithTenant } from "@/lib/tenant-context";
-import { PrismaOrderRepository } from "@/lib/infrastructure/repositories/prisma-order.repository";
-import { PrismaInventoryRepository } from "@/lib/infrastructure/repositories/prisma-inventory.repository";
-import { PrismaCustomerRepository } from "@/lib/infrastructure/repositories/prisma-customer.repository";
+import { container } from "@/lib/infrastructure/container";
 import { PlaceOrderUseCase } from "@/lib/application/use-cases/orders/place-order.use-case";
 import { ApiResponse } from "@/lib/infrastructure/http/api-response";
 import { logger } from "@/lib/logger";
 
-const orderRepo = new PrismaOrderRepository();
-const inventoryRepo = new PrismaInventoryRepository();
-const customerRepo = new PrismaCustomerRepository();
-const placeOrderUseCase = new PlaceOrderUseCase(orderRepo, inventoryRepo, customerRepo);
+const placeOrderUseCase = container.resolve(PlaceOrderUseCase);
 
 export type CheckoutItem = {
   inventoryId?: string;

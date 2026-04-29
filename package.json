@@ -13,7 +13,9 @@
     "test:e2e": "playwright test",
     "db:seed": "prisma db seed",
     "pretest": "prisma generate",
-    "prebuild": "prisma generate"
+    "prebuild": "prisma generate",
+    "analyze": "ANALYZE=true next build",
+    "prepare": "husky"
   },
   "engines": {
     "node": ">=20.0.0"
@@ -55,6 +57,7 @@
   "devDependencies": {
     "@csstools/css-parser-algorithms": "^4.0.0",
     "@csstools/css-tokenizer": "^4.0.0",
+    "@next/bundle-analyzer": "^16.2.4",
     "@playwright/test": "^1.59.1",
     "@scryfall/api-types": "^1.0.0-alpha.4",
     "@tailwindcss/postcss": "^4",
@@ -68,7 +71,9 @@
     "@vitest/coverage-v8": "^4.1.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
+    "husky": "^9.1.7",
     "jsdom": "^29.0.2",
+    "lint-staged": "^16.4.0",
     "prisma": "^7.6.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
@@ -78,5 +83,10 @@
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix"
+    ]
   }
 }

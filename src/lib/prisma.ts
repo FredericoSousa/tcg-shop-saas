@@ -3,11 +3,24 @@ import { Pool } from 'pg'
 import { PrismaPg } from '@prisma/adapter-pg'
 import { resolveTenantId } from './tenant-context'
 
-const connectionString = `${process.env.DATABASE_URL}`
+const globalForPrisma = globalThis as unknown as {
+  prisma?: ReturnType<typeof buildExtendedClient>
+  pgPool?: Pool
+}
 
-const pool = new Pool({ connectionString })
+function buildPool(): Pool {
+  // Defaults tuned for Supabase/pgbouncer-style poolers: small per-instance
+  // pool, short idle timeout. Override via env when self-hosting Postgres.
+  return new Pool({
+    connectionString: process.env.DATABASE_URL,
+    max: Number(process.env.DB_POOL_MAX ?? 5),
+    idleTimeoutMillis: Number(process.env.DB_POOL_IDLE_MS ?? 10_000),
+    connectionTimeoutMillis: Number(process.env.DB_CONN_TIMEOUT_MS ?? 5_000),
+  })
+}
+
+const pool = globalForPrisma.pgPool ?? buildPool()
 const adapter = new PrismaPg(pool)
-
 const basePrisma = new PrismaClient({ adapter })
 
 // Models that have a tenant_id field and should be automatically filtered
@@ -20,7 +33,8 @@ const tenantAwareModels = [
   'customerCreditLedger'
 ];
 
-export const prisma = basePrisma.$extends({
+function buildExtendedClient() {
+  return basePrisma.$extends({
   query: {
     $allModels: {
       async $allOperations({ model, operation, args, query }) {
@@ -83,7 +97,13 @@ export const prisma = basePrisma.$extends({
     },
   },
 });
+}
 
-const globalForPrisma = globalThis as unknown as { prisma: typeof prisma }
+// Cache the extended client + the pg pool across HMR reloads in dev to
+// avoid leaking pool connections every time a file changes.
+export const prisma = globalForPrisma.prisma ?? buildExtendedClient()
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma
+  globalForPrisma.pgPool = pool
+}

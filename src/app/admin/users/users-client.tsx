@@ -97,7 +97,7 @@ export function UsersClient({
   }, [page, limit, search]);
 
   useEffect(() => {
-    fetchUsers();
+    void fetchUsers();
   }, [fetchUsers]);
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -129,7 +129,7 @@ export function UsersClient({
       setNewEmail("");
       setNewPassword("");
       setNewRole("USER");
-      fetchUsers();
+      void fetchUsers();
     } catch (error) {
       feedback.apiError(error);
     } finally {
@@ -145,7 +145,7 @@ export function UsersClient({
 
       feedback.success("Usuário excluído com sucesso");
       setUserToDelete(null);
-      fetchUsers();
+      void fetchUsers();
     } catch (error) {
       feedback.apiError(error);
     } finally {

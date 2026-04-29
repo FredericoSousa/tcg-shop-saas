@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -75,8 +76,18 @@ export function Sidebar({ tenant, email }: SidebarProps) {
         >
 
           <div className="flex items-center gap-3 shrink-0">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold shadow-sm">
-              {tenant.name?.charAt(0) || "T"}
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold shadow-sm overflow-hidden">
+              {tenant.logoUrl ? (
+                <Image
+                  src={tenant.logoUrl}
+                  alt={tenant.name || "Logo"}
+                  width={36}
+                  height={36}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span>{tenant.name?.charAt(0)?.toUpperCase() || "T"}</span>
+              )}
             </div>
             {!isCollapsed && (
               <div className="flex flex-col gap-0.5 whitespace-nowrap animate-in fade-in duration-500">

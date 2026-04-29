@@ -14,13 +14,16 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
   ]),
   // Regras com type-info no código de produção.
-  // Mantidas como `warn` pois há violações legadas; novos PRs devem
-  // corrigir antes de promover para `error`.
   {
     files: ["src/**/*.ts", "src/**/*.tsx"],
     rules: {
-      "@typescript-eslint/no-floating-promises": "warn",
-      "@typescript-eslint/no-misused-promises": "warn",
+      "@typescript-eslint/no-floating-promises": "error",
+      // Async handlers em atributos JSX são aceitos pelo React;
+      // checamos apenas usos perigosos (declarações, retornos).
+      "@typescript-eslint/no-misused-promises": [
+        "error",
+        { checksVoidReturn: { attributes: false } },
+      ],
     },
     languageOptions: {
       parserOptions: {

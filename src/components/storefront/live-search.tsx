@@ -60,23 +60,25 @@ export function LiveSearch({
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(async () => {
-      if (query.trim().length >= 2 && query.trim() !== defaultValue.trim()) {
-        setIsLoading(true);
-        try {
-          const res = await fetch(`${searchPath}?q=${encodeURIComponent(query.trim())}`);
-          const data = await res.json();
-          setResults(data.items || []);
-          setIsOpen(true);
-        } catch (error) {
-          console.error("Search failed:", error);
-        } finally {
-          setIsLoading(false);
+    const timer = setTimeout(() => {
+      void (async () => {
+        if (query.trim().length >= 2 && query.trim() !== defaultValue.trim()) {
+          setIsLoading(true);
+          try {
+            const res = await fetch(`${searchPath}?q=${encodeURIComponent(query.trim())}`);
+            const data = await res.json();
+            setResults(data.items || []);
+            setIsOpen(true);
+          } catch (error) {
+            console.error("Search failed:", error);
+          } finally {
+            setIsLoading(false);
+          }
+        } else {
+          setResults([]);
+          setIsOpen(false);
         }
-      } else {
-        setResults([]);
-        setIsOpen(false);
-      }
+      })();
     }, 300);
 
     return () => clearTimeout(timer);

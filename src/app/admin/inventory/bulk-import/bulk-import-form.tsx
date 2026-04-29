@@ -290,7 +290,7 @@ export function BulkImportForm() {
           if (progress.status === "completed" && !hasError) {
             eventSource.close();
             // After streaming is done, fetch the actual collection data
-            setTimeout(async () => {
+            setTimeout(() => { void (async () => {
               try {
                 const apiResponse = await InventoryService.importLigaMagic(ligamagicId);
                 if (!apiResponse.success) {
@@ -327,7 +327,7 @@ export function BulkImportForm() {
               } finally {
                 setIsStreamingProgress(false);
               }
-            }, 500);
+            })(); }, 500);
           } else if (progress.status === "error") {
             hasError = true;
             eventSource.close();

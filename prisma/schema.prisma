@@ -319,6 +319,31 @@ model BuylistProposal {
   @@map("buylist_proposals")
 }
 
+enum AuditAction {
+  DELETE
+  UPDATE
+  CREATE
+  RESTORE
+}
+
+/// Append-only audit trail for sensitive operations (deletes, role
+/// changes, credit adjustments). Never UPDATE or DELETE rows here —
+/// retention/aging is handled by infra cron.
+model AuditLog {
+  id         String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String      @map("tenant_id") @db.Uuid
+  actorId    String?     @map("actor_id") @db.Uuid
+  action     AuditAction
+  entityType String      @map("entity_type")
+  entityId   String      @map("entity_id")
+  metadata   Json?
+  createdAt  DateTime    @default(now()) @map("created_at")
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entityType, entityId])
+  @@map("audit_logs")
+}
+
 model BuylistProposalItem {
   id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   buylistProposalId String    @map("buylist_proposal_id") @db.Uuid

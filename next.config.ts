@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
+import withBundleAnalyzer from "@next/bundle-analyzer";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
+  devIndicators: false,
   turbopack: {},
   images: {
     remotePatterns: [
@@ -70,4 +73,23 @@ const nextConfig: NextConfig = {
 
 };
 
-export default nextConfig;
+// Enable with `ANALYZE=true npm run build` to generate the
+// .next/analyze report.
+const wrappedConfig = withBundleAnalyzer({ enabled: process.env.ANALYZE === "true" })(nextConfig);
+
+// Sentry must wrap last so source maps are uploaded for the final
+// emitted bundles. Disabled at build time when no auth token is
+// configured (CI without Sentry secrets).
+export default withSentryConfig(wrappedConfig, {
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  silent: !process.env.CI,
+  sourcemaps: {
+    // Strip the public-facing source maps after Sentry uploads them
+    // — keeps stack traces readable in Sentry without exposing source.
+    deleteSourcemapsAfterUpload: true,
+  },
+  widenClientFileUpload: true,
+  disableLogger: true,
+});

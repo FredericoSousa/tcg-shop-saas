@@ -77,7 +77,7 @@ export function ImageUpload({
       e.preventDefault();
       setDragOver(false);
       const file = e.dataTransfer.files[0];
-      if (file) uploadFile(file);
+      if (file) void uploadFile(file);
     },
     [uploadFile]
   );
@@ -85,7 +85,7 @@ export function ImageUpload({
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file) uploadFile(file);
+      if (file) void uploadFile(file);
       e.target.value = "";
     },
     [uploadFile]

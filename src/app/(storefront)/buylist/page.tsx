@@ -5,14 +5,41 @@ import { GetStorefrontBuylistUseCase } from "@/lib/application/use-cases/buylist
 import { GetBuylistFiltersUseCase } from "@/lib/application/use-cases/buylist/get-buylist-filters.use-case";
 import { BuylistClient } from "./buylist-client";
 import { Sparkles } from "lucide-react";
-import { unstable_cache } from "next/cache";
+import { cacheTag, cacheLife } from "next/cache";
+
+type BuylistFilters = {
+  color?: string;
+  type?: string;
+  set?: string;
+  search?: string;
+};
+
+async function getCachedBuylist(
+  tenantId: string,
+  page: number,
+  filters: BuylistFilters,
+) {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(`tenant-${tenantId}-buylist`);
+  const useCase = container.resolve(GetStorefrontBuylistUseCase);
+  return useCase.execute({ tenantId, page, filters });
+}
+
+async function getCachedBuylistFilters(tenantId: string) {
+  "use cache";
+  cacheLife("hours");
+  cacheTag(`tenant-${tenantId}-buylist`);
+  const useCase = container.resolve(GetBuylistFiltersUseCase);
+  return useCase.execute({ tenantId });
+}
 
 export default async function BuylistPage(props: {
   searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const searchParams = await props.searchParams;
   const page = Number(searchParams?.page) || 1;
-  const filters = {
+  const filters: BuylistFilters = {
     color: typeof searchParams?.color === "string" ? searchParams.color : undefined,
     type: typeof searchParams?.type === "string" ? searchParams.type : undefined,
     set: typeof searchParams?.set === "string" ? searchParams.set : undefined,
@@ -34,20 +61,10 @@ export default async function BuylistPage(props: {
     );
   }
 
-  const getBuylist = container.resolve(GetStorefrontBuylistUseCase);
-  const getFilters = container.resolve(GetBuylistFiltersUseCase);
-
-  const buylistResponse = await unstable_cache(
-    () => getBuylist.execute({ tenantId: tenant.id, page, filters }),
-    [`buylist-${tenant.id}-${page}-${JSON.stringify(filters)}`],
-    { revalidate: 3600, tags: [`tenant-${tenant.id}-buylist`] }
-  )();
-
-  const buylistFilters = await unstable_cache(
-    () => getFilters.execute({ tenantId: tenant.id }),
-    [`buylist-filters-${tenant.id}`],
-    { revalidate: 3600, tags: [`tenant-${tenant.id}-buylist`] }
-  )();
+  const [buylistResponse, buylistFilters] = await Promise.all([
+    getCachedBuylist(tenant.id, page, filters),
+    getCachedBuylistFilters(tenant.id),
+  ]);
 
   const { items, total, pageCount } = buylistResponse;
 
@@ -59,8 +76,8 @@ export default async function BuylistPage(props: {
           <p className="text-muted-foreground mt-2 text-lg">Vendemos as suas cartas. Veja o que estamos comprando hoje.</p>
         </header>
 
-        <BuylistClient 
-          initialItems={items} 
+        <BuylistClient
+          initialItems={items}
           availableFilters={buylistFilters}
           pageCount={pageCount}
           totalItems={total}

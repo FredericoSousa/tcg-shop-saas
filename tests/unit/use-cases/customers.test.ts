@@ -14,6 +14,7 @@ import { GetCustomerOrdersUseCase } from '@/lib/application/use-cases/customers/
 import type { ICustomerRepository } from '@/lib/domain/repositories/customer.repository';
 import type { IReportsRepository } from '@/lib/domain/repositories/report.repository';
 import type { ICustomerCreditLedgerRepository } from '@/lib/domain/repositories/customer-credit-ledger.repository';
+import type { IAuditLogRepository } from '@/lib/domain/repositories/audit-log.repository';
 import { domainEvents, DOMAIN_EVENTS } from '@/lib/domain/events/domain-events';
 
 vi.mock('@/lib/domain/events/domain-events', () => ({
@@ -157,10 +158,14 @@ describe('Customer Use Cases', () => {
   });
 
   describe('DeleteCustomerUseCase', () => {
-    it('should soft delete a customer', async () => {
-      const useCase = new DeleteCustomerUseCase(customerRepo);
-      await useCase.execute({ id: 'c1' });
+    it('should soft delete a customer and write an audit entry', async () => {
+      const auditLog = mock<IAuditLogRepository>();
+      const useCase = new DeleteCustomerUseCase(customerRepo, auditLog);
+      await useCase.execute({ id: 'c1', actorId: 'u1' });
       expect(customerRepo.delete).toHaveBeenCalledWith('c1');
+      expect(auditLog.record).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'DELETE', entityType: 'customer', entityId: 'c1', actorId: 'u1' }),
+      );
     });
   });
 
