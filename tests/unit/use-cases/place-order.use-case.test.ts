@@ -3,11 +3,14 @@ import { mock, MockProxy } from 'vitest-mock-extended';
 import { PlaceOrderUseCase } from '@/lib/application/use-cases/orders/place-order.use-case';
 import type { IOrderRepository } from '@/lib/domain/repositories/order.repository';
 import type { IInventoryRepository } from '@/lib/domain/repositories/inventory.repository';
+import type { IProductRepository } from '@/lib/domain/repositories/product.repository';
 import type { ICustomerRepository } from '@/lib/domain/repositories/customer.repository';
+
+const enqueueMock = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
-    $transaction: vi.fn((callback) => callback()),
+    $transaction: vi.fn((callback) => callback({})),
   },
 }));
 
@@ -15,43 +18,28 @@ vi.mock('@/lib/tenant-context', () => ({
   getTenantId: vi.fn(() => 'test-tenant-id'),
 }));
 
-vi.mock('@/lib/domain/events/domain-events', () => ({
-  domainEvents: {
-    publish: vi.fn().mockResolvedValue(undefined),
-    subscribe: vi.fn(),
-  },
-  DOMAIN_EVENTS: {
-    ORDER_PLACED: 'order.placed',
-    BUYLIST_PROPOSAL_APPROVED: 'buylist.proposal_approved',
-    BUYLIST_PROPOSAL_SUBMITTED: 'buylist.proposal_submitted',
-    BUYLIST_PROPOSAL_REJECTED: 'buylist.proposal_rejected',
-    ORDER_PAID: 'order.paid',
-    INVENTORY_UPDATED: 'inventory.updated',
-    INVENTORY_DELETED: 'inventory.deleted',
-    PRODUCT_SAVED: 'product.saved',
-    PRODUCT_DELETED: 'product.deleted',
-    CUSTOMER_CREDIT_ADJUSTED: 'customer.credit_adjusted',
-    CUSTOMER_DELETED: 'customer.deleted',
-  },
+vi.mock('@/lib/domain/events/outbox-publisher', () => ({
+  enqueueDomainEvent: (...args: unknown[]) => enqueueMock(...args),
 }));
 
 describe('PlaceOrderUseCase', () => {
   let useCase: PlaceOrderUseCase;
   let orderRepo: MockProxy<IOrderRepository>;
   let inventoryRepo: MockProxy<IInventoryRepository>;
+  let productRepo: MockProxy<IProductRepository>;
   let customerRepo: MockProxy<ICustomerRepository>;
 
   beforeEach(() => {
     orderRepo = mock<IOrderRepository>();
     inventoryRepo = mock<IInventoryRepository>();
+    productRepo = mock<IProductRepository>();
     customerRepo = mock<ICustomerRepository>();
-    useCase = new PlaceOrderUseCase(orderRepo, inventoryRepo, customerRepo);
+    useCase = new PlaceOrderUseCase(orderRepo, inventoryRepo, productRepo, customerRepo);
     vi.clearAllMocks();
   });
 
-  it('should place an order with inventory items', async () => {
+  it('places an order with inventory items and decrements stock atomically', async () => {
     customerRepo.upsert.mockResolvedValue({ id: 'c-1' } as any);
-    customerRepo.findByPhoneNumber.mockResolvedValue({ id: 'c-1' } as any);
     orderRepo.save.mockResolvedValue({ id: 'o-1' } as any);
 
     const result = await useCase.execute({
@@ -60,61 +48,37 @@ describe('PlaceOrderUseCase', () => {
     });
 
     expect(result.orderId).toBe('o-1');
-    expect(customerRepo.upsert).toHaveBeenCalledWith('11999999999', { name: 'João Silva', email: undefined });
+    expect(customerRepo.upsert).toHaveBeenCalledWith(
+      '11999999999',
+      { name: 'João Silva', email: undefined },
+      expect.any(Object),
+    );
     expect(orderRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({ totalAmount: 100, source: 'ECOMMERCE', status: 'PENDING' }),
       expect.arrayContaining([
         expect.objectContaining({ inventoryItemId: 'ii-1', quantity: 1, priceAtPurchase: 100 }),
-      ])
+      ]),
+      expect.any(Object),
     );
+    expect(inventoryRepo.decrementStock).toHaveBeenCalledWith('ii-1', 1, expect.any(Object));
   });
 
-  it('should place an order with product items', async () => {
+  it('places an order with product items and decrements product stock', async () => {
     customerRepo.upsert.mockResolvedValue({ id: 'c-2' } as any);
-    customerRepo.findByPhoneNumber.mockResolvedValue({ id: 'c-2' } as any);
     orderRepo.save.mockResolvedValue({ id: 'o-2' } as any);
 
     const result = await useCase.execute({
       items: [{ productId: 'prod-1', quantity: 2, price: 49.99 }],
-      customerData: { phoneNumber: '11888888888', name: 'Maria Santos' },
+      customerData: { phoneNumber: '11888888888' },
     });
 
     expect(result.orderId).toBe('o-2');
-    expect(orderRepo.save).toHaveBeenCalledWith(
-      expect.objectContaining({ totalAmount: 99.98 }),
-      expect.arrayContaining([
-        expect.objectContaining({ productId: 'prod-1', quantity: 2, priceAtPurchase: 49.99 }),
-      ])
-    );
+    expect(productRepo.decrementStock).toHaveBeenCalledWith('prod-1', 2, expect.any(Object));
   });
 
-  it('should place an order with mixed inventory and product items', async () => {
+  it('calculates total amount correctly across mixed item types', async () => {
     customerRepo.upsert.mockResolvedValue({ id: 'c-3' } as any);
-    customerRepo.findByPhoneNumber.mockResolvedValue({ id: 'c-3' } as any);
     orderRepo.save.mockResolvedValue({ id: 'o-3' } as any);
-
-    const result = await useCase.execute({
-      items: [
-        { inventoryId: 'ii-1', quantity: 1, price: 30 },
-        { productId: 'prod-1', quantity: 3, price: 10 },
-      ],
-      customerData: { phoneNumber: '11777777777' },
-    });
-
-    expect(result.orderId).toBe('o-3');
-    expect(orderRepo.save).toHaveBeenCalledWith(
-      expect.objectContaining({ totalAmount: 60 }),
-      expect.arrayContaining([
-        expect.objectContaining({ inventoryItemId: 'ii-1', productId: undefined }),
-        expect.objectContaining({ productId: 'prod-1', inventoryItemId: undefined }),
-      ])
-    );
-  });
-
-  it('should calculate total amount correctly across multiple items', async () => {
-    customerRepo.upsert.mockResolvedValue({ id: 'c-4' } as any);
-    customerRepo.findByPhoneNumber.mockResolvedValue({ id: 'c-4' } as any);
-    orderRepo.save.mockResolvedValue({ id: 'o-4' } as any);
 
     await useCase.execute({
       items: [
@@ -125,36 +89,27 @@ describe('PlaceOrderUseCase', () => {
       customerData: { phoneNumber: '11666666666' },
     });
 
-    // 2*15 + 1*25 + 4*5 = 75
     expect(orderRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({ totalAmount: 75 }),
-      expect.anything()
+      expect.anything(),
+      expect.any(Object),
     );
   });
 
-  it('should publish ORDER_PLACED event with correct item types', async () => {
-    const { domainEvents } = await import('@/lib/domain/events/domain-events');
+  it('enqueues an ORDER_PLACED outbox event inside the transaction', async () => {
     customerRepo.upsert.mockResolvedValue({ id: 'c-5' } as any);
-    customerRepo.findByPhoneNumber.mockResolvedValue({ id: 'c-5' } as any);
     orderRepo.save.mockResolvedValue({ id: 'o-5' } as any);
 
     await useCase.execute({
-      items: [
-        { inventoryId: 'ii-1', quantity: 1, price: 10 },
-        { productId: 'prod-1', quantity: 1, price: 20 },
-      ],
+      items: [{ inventoryId: 'ii-1', quantity: 1, price: 10 }],
       customerData: { phoneNumber: '11555555555' },
     });
 
-    expect(domainEvents.publish).toHaveBeenCalledWith(
+    expect(enqueueMock).toHaveBeenCalledWith(
       'order.placed',
-      expect.objectContaining({
-        orderId: 'o-5',
-        items: expect.arrayContaining([
-          expect.objectContaining({ inventoryId: 'ii-1', quantity: 1 }),
-          expect.objectContaining({ productId: 'prod-1', quantity: 1 }),
-        ]),
-      })
+      expect.objectContaining({ orderId: 'o-5' }),
+      'test-tenant-id',
+      expect.any(Object),
     );
   });
 });

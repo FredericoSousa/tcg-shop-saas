@@ -188,7 +188,7 @@ describe("PrismaInventoryRepository", () => {
 
   it("should throw error if decrementStock fails", async () => {
     (prismaMock.inventoryItem.updateMany as any).mockResolvedValue({ count: 0 });
-    await expect(repository.decrementStock("inv_1", 10)).rejects.toThrow("Item esgotado ou quantidade insuficiente no estoque.");
+    await expect(repository.decrementStock("inv_1", 10)).rejects.toThrow(/Estoque insuficiente/);
   });
 
   it("should count active items", async () => {

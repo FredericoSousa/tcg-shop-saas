@@ -9,6 +9,8 @@ import type { ICustomerRepository } from '@/lib/domain/repositories/customer.rep
 import type { ICustomerCreditLedgerRepository } from '@/lib/domain/repositories/customer-credit-ledger.repository';
 import { domainEvents, DOMAIN_EVENTS } from '@/lib/domain/events/domain-events';
 
+const enqueueMock = vi.fn().mockResolvedValue(undefined);
+
 vi.mock('@/lib/domain/events/domain-events', () => ({
   domainEvents: {
     publish: vi.fn().mockResolvedValue(undefined),
@@ -18,7 +20,18 @@ vi.mock('@/lib/domain/events/domain-events', () => ({
     BUYLIST_PROPOSAL_SUBMITTED: 'buylist.proposal_submitted',
     BUYLIST_PROPOSAL_APPROVED: 'buylist.proposal_approved',
     BUYLIST_PROPOSAL_REJECTED: 'buylist.proposal_rejected',
+    INVENTORY_UPDATED: 'inventory.updated',
   }
+}));
+
+vi.mock('@/lib/domain/events/outbox-publisher', () => ({
+  enqueueDomainEvent: (...args: unknown[]) => enqueueMock(...args),
+}));
+
+vi.mock('@/lib/prisma', () => ({
+  prisma: {
+    $transaction: vi.fn((fn) => fn({})),
+  },
 }));
 
 describe('Buylist Use Cases', () => {
@@ -114,9 +127,13 @@ describe('Buylist Use Cases', () => {
   });
 
   describe('ProcessBuylistProposalUseCase', () => {
-    it('should approve proposal and update inventory and credit', async () => {
+    beforeEach(() => {
+      enqueueMock.mockClear();
+    });
+
+    it('approves proposal, upserts stock and grants credit atomically', async () => {
       const useCase = new ProcessBuylistProposalUseCase(buylistRepo, inventoryRepo, customerRepo, creditRepo);
-      
+
       const mockProposal = {
         id: "p1",
         tenantId: "t1",
@@ -125,55 +142,76 @@ describe('Buylist Use Cases', () => {
         totalCash: 100,
         totalCredit: 130,
         items: [
-          { cardTemplateId: "tmpl-1", quantity: 5, condition: "NM", language: "PT", priceCash: 20, priceCredit: 26 }
-        ]
+          { cardTemplateId: "tmpl-1", quantity: 5, condition: "NM", language: "PT", priceCash: 20, priceCredit: 26 },
+        ],
       };
 
       buylistRepo.findProposalById.mockResolvedValue(mockProposal as any);
-      customerRepo.findById.mockResolvedValue({ id: "c1", creditBalance: 0 } as any);
-      inventoryRepo.findAllActive.mockResolvedValue([]);
 
       await useCase.execute({
         proposalId: "p1",
         action: "APPROVE",
-        paymentMethod: "STORE_CREDIT"
+        paymentMethod: "STORE_CREDIT",
       });
 
-      // Assert status updated
-      expect(buylistRepo.updateProposalStatus).toHaveBeenCalledWith("p1", "PAID", undefined);
-      
-      // Assert event published - repository updates are now side effects of this event
-      expect(domainEvents.publish).toHaveBeenCalledWith(DOMAIN_EVENTS.BUYLIST_PROPOSAL_APPROVED, expect.objectContaining({
-        proposalId: "p1",
-        paymentMethod: "STORE_CREDIT"
-      }));
+      expect(buylistRepo.updateProposalStatus).toHaveBeenCalledWith(
+        "p1",
+        "PAID",
+        undefined,
+        expect.any(Object),
+      );
+      expect(inventoryRepo.upsertStockForBuylist).toHaveBeenCalledWith(
+        expect.objectContaining({ cardTemplateId: "tmpl-1", quantity: 5 }),
+        expect.any(Object),
+      );
+      expect(customerRepo.updateCreditBalance).toHaveBeenCalledWith(
+        "c1",
+        130,
+        expect.any(Object),
+      );
+      expect(creditRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ type: "CREDIT", amount: 130 }),
+        expect.any(Object),
+      );
+      expect(enqueueMock).toHaveBeenCalledWith(
+        DOMAIN_EVENTS.BUYLIST_PROPOSAL_APPROVED,
+        expect.objectContaining({ proposalId: "p1", paymentMethod: "STORE_CREDIT" }),
+        "t1",
+        expect.any(Object),
+      );
     });
 
-    it('should cancel proposal without updates', async () => {
+    it('cancels a proposal without touching inventory or balances', async () => {
       const useCase = new ProcessBuylistProposalUseCase(buylistRepo, inventoryRepo, customerRepo, creditRepo);
-      
-      buylistRepo.findProposalById.mockResolvedValue({ id: "p1", status: "PENDING" } as any);
+
+      buylistRepo.findProposalById.mockResolvedValue({ id: "p1", tenantId: "t1", status: "PENDING" } as any);
 
       await useCase.execute({
         proposalId: "p1",
         action: "CANCEL",
-        paymentMethod: "CASH" // Required by interface even if not used for CANCEL
+        paymentMethod: "CASH",
       });
 
-      expect(buylistRepo.updateProposalStatus).toHaveBeenCalledWith("p1", "CANCELLED", undefined);
-      expect(inventoryRepo.save).not.toHaveBeenCalled();
-      expect(customerRepo.update).not.toHaveBeenCalled();
+      expect(buylistRepo.updateProposalStatus).toHaveBeenCalledWith(
+        "p1",
+        "CANCELLED",
+        undefined,
+        expect.any(Object),
+      );
+      expect(inventoryRepo.upsertStockForBuylist).not.toHaveBeenCalled();
+      expect(customerRepo.updateCreditBalance).not.toHaveBeenCalled();
+      expect(creditRepo.save).not.toHaveBeenCalled();
     });
 
-    it('should throw error if proposal not found', async () => {
+    it('throws an EntityNotFoundError when the proposal is missing', async () => {
       const useCase = new ProcessBuylistProposalUseCase(buylistRepo, inventoryRepo, customerRepo, creditRepo);
       buylistRepo.findProposalById.mockResolvedValue(null);
 
       await expect(useCase.execute({
         proposalId: "missing",
         action: "APPROVE",
-        paymentMethod: "CASH"
-      })).rejects.toThrow('Proposta não encontrada.');
+        paymentMethod: "CASH",
+      })).rejects.toThrow(/Proposta with ID missing not found/);
     });
 
     it('should throw error if proposal is not pending', async () => {

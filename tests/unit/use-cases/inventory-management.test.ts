@@ -120,7 +120,7 @@ describe('Inventory Management Use Cases', () => {
         quantity: 1,
         condition: 'NM',
         language: 'EN'
-      })).rejects.toThrow('Card not found in Scryfall');
+      })).rejects.toThrow(/CardTemplate with ID missing not found/);
     });
   });
 

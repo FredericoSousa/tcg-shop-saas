@@ -33,56 +33,63 @@ describe("GetStorefrontInventoryUseCase", () => {
     inventoryRepo = mock<IInventoryRepository>();
   });
 
-  it("filters out items with quantity 0", async () => {
-    inventoryRepo.findAllActive.mockResolvedValue([
-      item({ id: "a", quantity: 0 }),
-      item({ id: "b", quantity: 3 }),
-    ]);
+  it("forwards filters to findStorefrontItems with the right page and size", async () => {
+    inventoryRepo.findStorefrontItems.mockResolvedValue({ items: [], total: 0 });
     const useCase = new GetStorefrontInventoryUseCase(inventoryRepo);
-    const result = await useCase.execute({ tenantId: "t1", page: 1 });
-    expect(result.items.map((i) => i.id)).toEqual(["b"]);
-  });
 
-  it("filters by color when provided", async () => {
-    inventoryRepo.findAllActive.mockResolvedValue([
-      item({ id: "red", cardTemplate: { id: "1", name: "R", set: "lea", metadata: { color_identity: ["R"] } } as unknown as InventoryItem["cardTemplate"] }),
-      item({ id: "blue", cardTemplate: { id: "2", name: "B", set: "lea", metadata: { color_identity: ["U"] } } as unknown as InventoryItem["cardTemplate"] }),
-    ]);
-    const useCase = new GetStorefrontInventoryUseCase(inventoryRepo);
-    const result = await useCase.execute({ tenantId: "t1", page: 1, filters: { color: ["U"] } });
-    expect(result.items.map((i) => i.id)).toEqual(["blue"]);
-  });
+    await useCase.execute({
+      tenantId: "t1",
+      page: 3,
+      filters: { color: "U", language: "EN", sort: "price_asc", set: "NEO" },
+    });
 
-  it("treats colorless cards via the 'C' tag", async () => {
-    inventoryRepo.findAllActive.mockResolvedValue([
-      item({ id: "colorless", cardTemplate: { id: "1", name: "X", set: "lea", metadata: { color_identity: [] } } as unknown as InventoryItem["cardTemplate"] }),
-      item({ id: "red", cardTemplate: { id: "2", name: "Y", set: "lea", metadata: { color_identity: ["R"] } } as unknown as InventoryItem["cardTemplate"] }),
-    ]);
-    const useCase = new GetStorefrontInventoryUseCase(inventoryRepo);
-    const result = await useCase.execute({ tenantId: "t1", page: 1, filters: { color: ["C"] } });
-    expect(result.items.map((i) => i.id)).toEqual(["colorless"]);
-  });
-
-  it("paginates with size 20 and exposes pageCount", async () => {
-    inventoryRepo.findAllActive.mockResolvedValue(
-      Array.from({ length: 45 }, (_, i) => item({ id: `i${i}` })),
+    expect(inventoryRepo.findStorefrontItems).toHaveBeenCalledWith(
+      "t1",
+      3,
+      20,
+      expect.objectContaining({ color: "U", language: "EN", sort: "price_asc", set: "NEO" }),
     );
+  });
+
+  it("ignores invalid sort values", async () => {
+    inventoryRepo.findStorefrontItems.mockResolvedValue({ items: [], total: 0 });
     const useCase = new GetStorefrontInventoryUseCase(inventoryRepo);
-    const result = await useCase.execute({ tenantId: "t1", page: 2 });
+
+    await useCase.execute({ tenantId: "t1", page: 1, filters: { sort: "bogus" } });
+
+    expect(inventoryRepo.findStorefrontItems).toHaveBeenCalledWith(
+      "t1",
+      1,
+      20,
+      expect.objectContaining({ sort: undefined }),
+    );
+  });
+
+  it("computes pageCount from the repository total", async () => {
+    inventoryRepo.findStorefrontItems.mockResolvedValue({
+      items: [item()],
+      total: 45,
+    });
+    const useCase = new GetStorefrontInventoryUseCase(inventoryRepo);
+
+    const result = await useCase.execute({ tenantId: "t1", page: 1 });
+
     expect(result.total).toBe(45);
     expect(result.pageCount).toBe(3); // ceil(45/20)
-    expect(result.items.length).toBe(20);
   });
 
-  it("sorts by price ascending when sort=price_asc", async () => {
-    inventoryRepo.findAllActive.mockResolvedValue([
-      item({ id: "a", price: 30 }),
-      item({ id: "b", price: 10 }),
-      item({ id: "c", price: 20 }),
-    ]);
+  it("clamps page to 1 when given a non-positive value", async () => {
+    inventoryRepo.findStorefrontItems.mockResolvedValue({ items: [], total: 0 });
     const useCase = new GetStorefrontInventoryUseCase(inventoryRepo);
-    const result = await useCase.execute({ tenantId: "t1", page: 1, filters: { sort: "price_asc" } });
-    expect(result.items.map((i) => i.id)).toEqual(["b", "c", "a"]);
+
+    await useCase.execute({ tenantId: "t1", page: 0 });
+
+    expect(inventoryRepo.findStorefrontItems).toHaveBeenCalledWith(
+      "t1",
+      1,
+      20,
+      expect.anything(),
+    );
   });
 });
 

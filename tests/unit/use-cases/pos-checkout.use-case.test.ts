@@ -4,7 +4,7 @@ import { POSCheckoutUseCase } from '@/lib/application/use-cases/orders/pos-check
 import type { IOrderRepository } from '@/lib/domain/repositories/order.repository';
 import type { IProductRepository } from '@/lib/domain/repositories/product.repository';
 import type { ICustomerRepository } from '@/lib/domain/repositories/customer.repository';
-import { domainEvents, DOMAIN_EVENTS } from '@/lib/domain/events/domain-events';
+const enqueueMock = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@/lib/prisma', () => ({
   prisma: {
@@ -16,14 +16,8 @@ vi.mock('@/lib/tenant-context', () => ({
   getTenantId: vi.fn(() => 'test-tenant-id'),
 }));
 
-vi.mock('@/lib/domain/events/domain-events', () => ({
-  domainEvents: {
-    publish: vi.fn().mockResolvedValue(undefined),
-    subscribe: vi.fn(),
-  },
-  DOMAIN_EVENTS: {
-    ORDER_PLACED: 'order.placed',
-  }
+vi.mock('@/lib/domain/events/outbox-publisher', () => ({
+  enqueueDomainEvent: (...args: unknown[]) => enqueueMock(...args),
 }));
 
 describe('POSCheckoutUseCase', () => {
@@ -57,10 +51,13 @@ describe('POSCheckoutUseCase', () => {
     // Assert
     expect(result.orderId).toBe('o-pos-1');
     expect(orderRepo.save).toHaveBeenCalledWith(expect.anything(), expect.anything(), 'mock-tx');
-    expect(domainEvents.publish).toHaveBeenCalledWith(DOMAIN_EVENTS.ORDER_PLACED, expect.objectContaining({
-      orderId: 'o-pos-1',
-      tenantId: 'test-tenant-id'
-    }));
+    expect(productRepo.decrementStock).toHaveBeenCalledWith('p-1', 2, 'mock-tx');
+    expect(enqueueMock).toHaveBeenCalledWith(
+      'order.placed',
+      expect.objectContaining({ orderId: 'o-pos-1', tenantId: 'test-tenant-id' }),
+      'test-tenant-id',
+      'mock-tx',
+    );
   });
 
   it('should append to an existing pending POS order', async () => {
@@ -79,9 +76,11 @@ describe('POSCheckoutUseCase', () => {
     expect(result.orderId).toBe('o-existing');
     expect(orderRepo.appendToOrder).toHaveBeenCalledWith('o-existing', expect.anything(), 100, 'mock-tx');
     expect(orderRepo.save).not.toHaveBeenCalled();
-    expect(domainEvents.publish).toHaveBeenCalledWith(DOMAIN_EVENTS.ORDER_PLACED, expect.objectContaining({
-      orderId: 'o-existing',
-      tenantId: 'test-tenant-id'
-    }));
+    expect(enqueueMock).toHaveBeenCalledWith(
+      'order.placed',
+      expect.objectContaining({ orderId: 'o-existing', tenantId: 'test-tenant-id' }),
+      'test-tenant-id',
+      'mock-tx',
+    );
   });
 });

@@ -2,16 +2,27 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { FinalizeOrderUseCase } from "@/lib/application/use-cases/orders/finalize-order.use-case";
 import { PaymentMethodType } from "@/lib/domain/entities/order";
 
+const enqueueMock = vi.fn().mockResolvedValue(undefined);
+
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     $transaction: vi.fn((fn) => fn(vi.fn())),
   },
 }));
 
+vi.mock("@/lib/tenant-context", () => ({
+  getTenantId: vi.fn(() => "test-tenant-id"),
+}));
+
+vi.mock("@/lib/domain/events/outbox-publisher", () => ({
+  enqueueDomainEvent: (...args: unknown[]) => enqueueMock(...args),
+}));
+
 describe("FinalizeOrderUseCase", () => {
   let useCase: FinalizeOrderUseCase;
   let orderRepo: any;
   let customerRepo: any;
+  let ledgerRepo: any;
 
   beforeEach(() => {
     orderRepo = {
@@ -22,11 +33,16 @@ describe("FinalizeOrderUseCase", () => {
     customerRepo = {
       findById: vi.fn(),
       updateCreditBalance: vi.fn(),
+      tryDebitCredit: vi.fn().mockResolvedValue(true),
     };
-    useCase = new FinalizeOrderUseCase(orderRepo, customerRepo);
+    ledgerRepo = {
+      save: vi.fn(),
+    };
+    useCase = new FinalizeOrderUseCase(orderRepo, customerRepo, ledgerRepo);
+    enqueueMock.mockClear();
   });
 
-  it("should finalize an order with multiple payments", async () => {
+  it("finalizes an order with multiple cash payments", async () => {
     const orderId = "order-1";
     orderRepo.findById.mockResolvedValue({
       id: orderId,
@@ -44,9 +60,15 @@ describe("FinalizeOrderUseCase", () => {
     expect(result.success).toBe(true);
     expect(orderRepo.savePayments).toHaveBeenCalledWith(orderId, payments, expect.anything());
     expect(orderRepo.updateStatus).toHaveBeenCalledWith(orderId, "PAID", expect.anything());
+    expect(enqueueMock).toHaveBeenCalledWith(
+      "order.paid",
+      expect.objectContaining({ orderId, totalAmount: 100 }),
+      "test-tenant-id",
+      expect.any(Function),
+    );
   });
 
-  it("should finalize an order using store credit", async () => {
+  it("debits store credit atomically and writes a ledger entry", async () => {
     const orderId = "order-1";
     const customerId = "cust-1";
     orderRepo.findById.mockResolvedValue({
@@ -55,51 +77,44 @@ describe("FinalizeOrderUseCase", () => {
       status: "PENDING",
       totalAmount: 50,
     });
-    customerRepo.findById.mockResolvedValue({
-      id: customerId,
-      creditBalance: 100,
-    });
 
-    const payments = [
-      { method: "STORE_CREDIT" as PaymentMethodType, amount: 50 },
-    ];
+    const payments = [{ method: "STORE_CREDIT" as PaymentMethodType, amount: 50 }];
 
     const result = await useCase.execute({ orderId, payments });
 
     expect(result.success).toBe(true);
-    expect(customerRepo.updateCreditBalance).toHaveBeenCalledWith(customerId, -50, expect.anything());
+    expect(customerRepo.tryDebitCredit).toHaveBeenCalledWith(customerId, 50, expect.anything());
+    expect(ledgerRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({ customerId, amount: 50, type: "DEBIT", source: "ORDER_PAYMENT" }),
+      expect.anything(),
+    );
   });
 
-  it("should throw error if store credit balance is insufficient", async () => {
+  it("rejects store-credit payments when the atomic debit fails", async () => {
+    customerRepo.tryDebitCredit.mockResolvedValue(false);
     const orderId = "order-1";
-    const customerId = "cust-1";
     orderRepo.findById.mockResolvedValue({
       id: orderId,
-      customerId,
+      customerId: "cust-1",
       status: "PENDING",
       totalAmount: 50,
     });
-    customerRepo.findById.mockResolvedValue({
-      id: customerId,
-      creditBalance: 30,
-    });
 
-    const payments = [
-      { method: "STORE_CREDIT" as PaymentMethodType, amount: 50 },
-    ];
+    const payments = [{ method: "STORE_CREDIT" as PaymentMethodType, amount: 50 }];
 
-    await expect(useCase.execute({ orderId, payments }))
-      .rejects.toThrow("Saldo de créditos insuficiente.");
+    await expect(useCase.execute({ orderId, payments })).rejects.toThrow(
+      "Saldo de créditos insuficiente.",
+    );
   });
 
-  it("should throw error if order not found", async () => {
+  it("throws when the order does not exist", async () => {
     orderRepo.findById.mockResolvedValue(null);
 
     await expect(useCase.execute({ orderId: "non-existent", payments: [] }))
       .rejects.toThrow("Pedido with ID non-existent not found");
   });
 
-  it("should throw error if order is already paid", async () => {
+  it("throws when the order is no longer pending", async () => {
     orderRepo.findById.mockResolvedValue({
       id: "order-1",
       status: "PAID",
@@ -110,7 +125,7 @@ describe("FinalizeOrderUseCase", () => {
       .rejects.toThrow("Apenas pedidos pendentes podem ser finalizados.");
   });
 
-  it("should throw error if total paid is insufficient", async () => {
+  it("throws when total paid is below the order amount", async () => {
     orderRepo.findById.mockResolvedValue({
       id: "order-1",
       status: "PENDING",

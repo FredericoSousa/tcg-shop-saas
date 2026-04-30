@@ -113,7 +113,7 @@ describe("PrismaProductRepository", () => {
     (prismaMock.product.updateMany as any).mockResolvedValue({ count: 0 });
 
     await expect(repository.decrementStock("prod_1", 2))
-      .rejects.toThrow("Produto não encontrado, inativo ou com estoque insuficiente: prod_1");
+      .rejects.toThrow(/Estoque insuficiente/);
   });
 
   it("should use transaction client if provided", async () => {
