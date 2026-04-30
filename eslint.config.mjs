@@ -24,6 +24,19 @@ const eslintConfig = defineConfig([
         "error",
         { checksVoidReturn: { attributes: false } },
       ],
+      // Forçar @/ em vez de '../../../...': mantém os imports estáveis
+      // quando arquivos são movidos e elimina a fadiga de contar pontos.
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["../../../*", "../../../../*", "../../../../../*"],
+              message: "Use o alias '@/...' em vez de caminhos relativos profundos.",
+            },
+          ],
+        },
+      ],
     },
     languageOptions: {
       parserOptions: {
