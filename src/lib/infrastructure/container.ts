@@ -10,6 +10,7 @@ import { PrismaReportsRepository } from "./repositories/prisma-reports.repositor
 import { PrismaCustomerCreditLedgerRepository } from "./repositories/prisma-customer-credit-ledger.repository";
 import { PrismaBuylistRepository } from "./repositories/prisma-buylist.repository";
 import { PrismaAuditLogRepository } from "./repositories/prisma-audit-log.repository";
+import { PrismaOutboxRepository } from "./repositories/prisma-outbox.repository";
 import { CardTemplateService } from "../domain/services/card-template.service";
 import { registerEventHandlers } from "../application/events/handlers";
 import { MemoryCacheService, RedisCacheService } from "./cache/cache-service";
@@ -41,6 +42,7 @@ container.register(TOKENS.ReportsRepository, { useClass: PrismaReportsRepository
 container.register(TOKENS.CustomerCreditLedgerRepository, { useClass: PrismaCustomerCreditLedgerRepository }, { lifecycle: Lifecycle.Singleton });
 container.register(TOKENS.BuylistRepository, { useClass: PrismaBuylistRepository }, { lifecycle: Lifecycle.Singleton });
 container.register(TOKENS.AuditLogRepository, { useClass: PrismaAuditLogRepository }, { lifecycle: Lifecycle.Singleton });
+container.register(TOKENS.OutboxRepository, { useClass: PrismaOutboxRepository }, { lifecycle: Lifecycle.Singleton });
 container.register(TOKENS.CardTemplateService, { useClass: CardTemplateService }, { lifecycle: Lifecycle.Singleton });
 
 // Register Domain Event Handlers

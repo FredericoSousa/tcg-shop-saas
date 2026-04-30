@@ -1,5 +1,5 @@
 import { injectable, inject } from "tsyringe";
-import { TOKENS } from "../../../infrastructure/container";
+import { TOKENS } from "@/lib/infrastructure/container";
 import type { ICustomerCreditLedgerRepository } from "@/lib/domain/repositories/customer-credit-ledger.repository";
 import { CustomerCreditLedger } from "@/lib/domain/entities/customer-credit-ledger";
 import { IUseCase } from "../use-case.interface";

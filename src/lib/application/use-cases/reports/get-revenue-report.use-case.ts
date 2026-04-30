@@ -1,5 +1,5 @@
 import { injectable, inject } from "tsyringe";
-import { TOKENS } from "../../../infrastructure/container";
+import { TOKENS } from "@/lib/infrastructure/container";
 import { IReportsRepository } from "@/lib/domain/repositories/report.repository";
 import { RevenueReport } from "@/lib/domain/entities/report";
 import { IUseCase } from "../use-case.interface";

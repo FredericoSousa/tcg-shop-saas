@@ -3,6 +3,7 @@ import { TOKENS } from "@/lib/infrastructure/container";
 import type { IBuylistRepository } from "@/lib/domain/repositories/buylist.repository";
 import type { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
 import { BuylistProposal } from "@/lib/domain/entities/buylist";
+import type { Condition } from "@/lib/domain/entities/inventory";
 import { IUseCase } from "../use-case.interface";
 import { domainEvents, DOMAIN_EVENTS } from "@/lib/domain/events/domain-events";
 
@@ -56,8 +57,9 @@ export class SubmitBuylistProposalUseCase implements IUseCase<SubmitBuylistPropo
         id: "",
         buylistProposalId: "",
         ...item,
+        condition: item.condition as Condition,
         priceCash: item.priceCash || 0,
-        priceCredit: item.priceCredit || 0
+        priceCredit: item.priceCredit || 0,
       })),
       createdAt: new Date(),
       updatedAt: new Date(),

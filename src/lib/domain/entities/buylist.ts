@@ -1,4 +1,4 @@
-import { CardTemplate } from "./inventory";
+import { CardTemplate, Condition } from "./inventory";
 
 export type BuylistStatus = 'PENDING' | 'RECEIVED' | 'APPROVED' | 'PAID' | 'CANCELLED';
 
@@ -34,7 +34,7 @@ export interface BuylistProposalItem {
   buylistProposalId: string;
   cardTemplateId: string;
   quantity: number;
-  condition: string;
+  condition: Condition;
   language: string;
   priceCash: number;
   priceCredit: number;

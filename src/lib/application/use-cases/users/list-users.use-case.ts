@@ -1,7 +1,11 @@
 import { injectable } from "tsyringe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { resolveTenantId } from "../../../tenant-context";
+import { resolveTenantId } from "@/lib/tenant-context";
 import { IUseCase } from "../use-case.interface";
+import {
+  UnauthorizedError,
+  BusinessRuleViolationError,
+} from "@/lib/domain/errors/domain.error";
 
 export type UserRole = "ADMIN" | "USER";
 
@@ -29,13 +33,13 @@ export class ListUsersUseCase implements IUseCase<ListUsersRequest, ListUsersRes
     const limit = Math.max(1, request.limit);
     const search = request.search?.trim().toLowerCase();
     const tenantId = await resolveTenantId();
-    if (!tenantId) throw new Error("Tenant context missing");
+    if (!tenantId) throw new UnauthorizedError("Tenant context missing");
 
     const { data, error } = await supabaseAdmin.auth.admin.listUsers({
       page: 1,
       perPage: 1000,
     });
-    if (error) throw new Error(error.message);
+    if (error) throw new BusinessRuleViolationError(error.message);
 
     const tenantUsers = data.users.filter(
       (u) => u.app_metadata?.tenantId === tenantId,

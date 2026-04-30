@@ -9,6 +9,7 @@ export const TOKENS = {
   CustomerCreditLedgerRepository: Symbol("CustomerCreditLedgerRepository"),
   BuylistRepository: Symbol("BuylistRepository"),
   AuditLogRepository: Symbol("AuditLogRepository"),
+  OutboxRepository: Symbol("OutboxRepository"),
   CardTemplateService: Symbol("CardTemplateService"),
   CacheService: Symbol("CacheService"),
 };

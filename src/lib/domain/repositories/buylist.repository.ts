@@ -13,7 +13,7 @@ export interface IBuylistRepository {
   saveProposal(proposal: BuylistProposal): Promise<BuylistProposal>;
   findProposalById(id: string): Promise<BuylistProposal | null>;
   findProposalsByTenant(tenantId: string): Promise<BuylistProposal[]>;
-  updateProposalStatus(id: string, status: BuylistStatus, staffNotes?: string): Promise<void>;
+  updateProposalStatus(id: string, status: BuylistStatus, staffNotes?: string, tx?: unknown): Promise<void>;
 }
 
 // Dummy export to ensure Turbopack recognizes this as a module with exports

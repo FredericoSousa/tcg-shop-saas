@@ -7,7 +7,15 @@ import { redirect } from "next/navigation";
 import { runWithTenant, enterTenantContext } from "./tenant-context";
 import { runWithCorrelationId } from "./correlation-context";
 import type { Tenant } from "./domain/entities/tenant";
-import { DomainError, EntityNotFoundError, ValidationError, BusinessRuleViolationError } from "./domain/errors/domain.error";
+import {
+  DomainError,
+  EntityNotFoundError,
+  ValidationError,
+  BusinessRuleViolationError,
+  InsufficientStockError,
+  InsufficientFundsError,
+  ConflictError,
+} from "./domain/errors/domain.error";
 import { ApiResponse } from "./infrastructure/http/api-response";
 import { logger } from "./logger";
 import { ZodError } from "zod";
@@ -154,8 +162,17 @@ function handleDomainError(error: DomainError): Response {
   if (error instanceof ValidationError) {
     return ApiResponse.badRequest(error.message, error.code, error.details);
   }
+  if (error instanceof InsufficientFundsError) {
+    return ApiResponse.badRequest(error.message, error.code);
+  }
+  if (error instanceof InsufficientStockError) {
+    return ApiResponse.json({ success: false, message: error.message, error: { code: error.code } }, 409);
+  }
   if (error instanceof BusinessRuleViolationError) {
     return ApiResponse.json({ success: false, message: error.message, error: { code: error.code } }, 422);
+  }
+  if (error instanceof ConflictError) {
+    return ApiResponse.json({ success: false, message: error.message, error: { code: error.code } }, 409);
   }
   return ApiResponse.serverError(error.message, error.code);
 }

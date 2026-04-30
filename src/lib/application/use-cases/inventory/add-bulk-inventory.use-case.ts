@@ -1,12 +1,13 @@
 import { injectable, inject } from "tsyringe";
-import { TOKENS } from "../../../infrastructure/tokens";
+import { TOKENS } from "@/lib/infrastructure/tokens";
 import type {
   IInventoryRepository,
 } from "@/lib/domain/repositories/inventory.repository";
-import { getTenantId } from "../../../tenant-context";
+import { getTenantId } from "@/lib/tenant-context";
 import { IUseCase } from "../use-case.interface";
-import { CardTemplateService } from "../../../domain/services/card-template.service";
-import { domainEvents, DOMAIN_EVENTS } from "../../../domain/events/domain-events";
+import { CardTemplateService } from "@/lib/domain/services/card-template.service";
+import { domainEvents, DOMAIN_EVENTS } from "@/lib/domain/events/domain-events";
+import type { Condition } from "@/lib/domain/entities/inventory";
 
 export interface BulkInventoryItemRequest {
   scryfallId: string;
@@ -36,7 +37,10 @@ export class AddBulkInventoryUseCase implements IUseCase<AddBulkInventoryRequest
 
   async execute(request: AddBulkInventoryRequest): Promise<AddBulkInventoryResponse> {
     const tenantId = getTenantId();
-    if (!tenantId) throw new Error("Tenant context not found");
+    if (!tenantId) {
+      const { UnauthorizedError } = await import("@/lib/domain/errors/domain.error");
+      throw new UnauthorizedError("Tenant context not found");
+    }
 
     const results: AddBulkInventoryResponse = [];
     const uniqueScryfallIds = Array.from(new Set(request.map(i => i.scryfallId)));
@@ -98,7 +102,7 @@ export class AddBulkInventoryUseCase implements IUseCase<AddBulkInventoryRequest
           cardTemplateId: itemRequest.scryfallId,
           price: itemRequest.price,
           quantity: itemRequest.quantity,
-          condition: itemRequest.condition,
+          condition: itemRequest.condition as Condition,
           language: itemRequest.language,
           active: true,
           allowNegativeStock: false,

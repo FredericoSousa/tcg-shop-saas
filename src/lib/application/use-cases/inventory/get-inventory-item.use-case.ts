@@ -1,5 +1,5 @@
 import { injectable, inject } from "tsyringe";
-import { TOKENS } from "../../../infrastructure/container";
+import { TOKENS } from "@/lib/infrastructure/container";
 import type { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
 import { InventoryItem } from "@/lib/domain/entities/inventory";
 import { IUseCase } from "../use-case.interface";

@@ -255,13 +255,19 @@ export class PrismaBuylistRepository extends BasePrismaRepository implements IBu
     return proposals.map(this.mapProposalToDomain);
   }
 
-  async updateProposalStatus(id: string, status: DomainBuylistStatus, staffNotes?: string): Promise<void> {
-    await this.prisma.buylistProposal.update({
+  async updateProposalStatus(
+    id: string,
+    status: DomainBuylistStatus,
+    staffNotes?: string,
+    tx?: unknown,
+  ): Promise<void> {
+    const client = (tx as Prisma.TransactionClient) || this.prisma;
+    await client.buylistProposal.update({
       where: { id },
-      data: { 
+      data: {
         status: status as PrismaBuylistStatus,
-        ...(staffNotes !== undefined ? { staffNotes } : {})
-      }
+        ...(staffNotes !== undefined ? { staffNotes } : {}),
+      },
     });
   }
 }

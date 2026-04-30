@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
-import { 
-  DomainError, 
-  EntityNotFoundError, 
-  ValidationError, 
-  UnauthorizedError, 
-  InsufficientFundsError, 
-  ConflictError 
+import {
+  DomainError,
+  EntityNotFoundError,
+  ValidationError,
+  UnauthorizedError,
+  InsufficientFundsError,
+  ConflictError,
+  BusinessRuleViolationError,
+  InsufficientStockError,
 } from "@/lib/domain/errors/domain.error";
 
 export interface ApiResponseData<T = unknown> {
@@ -107,10 +109,22 @@ export class ApiResponse {
       if (error instanceof InsufficientFundsError) {
         return this.badRequest(error.message, error.code);
       }
+      if (error instanceof InsufficientStockError) {
+        return this.json(
+          { success: false, message: error.message, error: { code: error.code } },
+          409,
+        );
+      }
+      if (error instanceof BusinessRuleViolationError) {
+        return this.json(
+          { success: false, message: error.message, error: { code: error.code } },
+          422,
+        );
+      }
       if (error instanceof ConflictError) {
         return this.json({ success: false, message: error.message, error: { code: error.code } }, 409);
       }
-      
+
       return this.badRequest(error.message, error.code);
     }
 

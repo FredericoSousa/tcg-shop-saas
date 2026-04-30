@@ -1,8 +1,14 @@
 import { injectable } from "tsyringe";
 import { BasePrismaRepository } from "./base-prisma.repository";
 import type { IInventoryRepository, StorefrontFilters } from "@/lib/domain/repositories/inventory.repository";
-import type { InventoryItem as DomainInventoryItem } from "@/lib/domain/entities/inventory";
+import type {
+  InventoryItem as DomainInventoryItem,
+  CardMetadata,
+  Condition as DomainCondition,
+  Game as DomainGame,
+} from "@/lib/domain/entities/inventory";
 import { InventoryItem as PrismaInventoryItem, CardTemplate as PrismaCardTemplate, Prisma, Condition as PrismaCondition } from "@prisma/client";
+import { InsufficientStockError } from "@/lib/domain/errors/domain.error";
 
 type PrismaInventoryWithTemplate = PrismaInventoryItem & {
   cardTemplate?: PrismaCardTemplate | null;
@@ -21,15 +27,15 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
       active: item.active,
       allowNegativeStock: item.allowNegativeStock,
       extras: item.extras as string[],
-      condition: item.condition as string,
+      condition: item.condition as DomainCondition,
       cardTemplate: item.cardTemplate ? {
         id: item.cardTemplate.id,
         name: item.cardTemplate.name,
         set: item.cardTemplate.set,
         imageUrl: item.cardTemplate.imageUrl,
         backImageUrl: item.cardTemplate.backImageUrl,
-        game: item.cardTemplate.game,
-        metadata: item.cardTemplate.metadata as Record<string, unknown> | null,
+        game: item.cardTemplate.game as DomainGame,
+        metadata: item.cardTemplate.metadata as CardMetadata | null,
       } : undefined,
     };
   }
@@ -184,28 +190,75 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
     filters?: StorefrontFilters
   ): Promise<{ items: DomainInventoryItem[]; total: number }> {
     const skip = (page - 1) * limit;
-    
-    // For now, storefront items might need complex JS filtering as seen in service
-    // But we'll try to do as much as possible in Prisma.
+
+    const toArray = (v: string | string[] | undefined): string[] | undefined => {
+      if (!v) return undefined;
+      return Array.isArray(v) ? v : v.split(",").filter(Boolean);
+    };
+
+    const colors = toArray(filters?.color);
+    const types = toArray(filters?.type);
+    const subtypes = toArray(filters?.subtype);
+    const extras = toArray(filters?.extras);
+    const languages = toArray(filters?.language);
+
+    const cardTemplateAnd: Prisma.CardTemplateWhereInput[] = [];
+
+    if (filters?.set) {
+      cardTemplateAnd.push({ set: { equals: filters.set, mode: "insensitive" } });
+    }
+
+    if (filters?.search) {
+      cardTemplateAnd.push({
+        name: { contains: filters.search, mode: "insensitive" },
+      });
+    }
+
+    if (colors && colors.length > 0) {
+      const includesColorless = colors.includes("C");
+      const explicitColors = colors.filter(c => c !== "C");
+
+      const colorOr: Prisma.CardTemplateWhereInput[] = [];
+      if (includesColorless) {
+        // Colorless cards: empty `color_identity` array.
+        colorOr.push({ metadata: { path: ["color_identity"], equals: [] } });
+      }
+      for (const c of explicitColors) {
+        colorOr.push({ metadata: { path: ["color_identity"], array_contains: [c] } });
+      }
+      if (colorOr.length > 0) cardTemplateAnd.push({ OR: colorOr });
+    }
+
+    if (types && types.length > 0) {
+      cardTemplateAnd.push({
+        OR: types.map(t => ({
+          metadata: { path: ["type_line"], string_contains: t },
+        })),
+      });
+    }
+
+    if (subtypes && subtypes.length > 0) {
+      cardTemplateAnd.push({
+        OR: subtypes.map(s => ({
+          metadata: { path: ["type_line"], string_contains: s },
+        })),
+      });
+    }
+
     const where: Prisma.InventoryItemWhereInput = {
       tenantId,
       active: true,
       quantity: { gt: 0 },
-      ...(filters?.set ? { cardTemplate: { set: { equals: filters.set, mode: 'insensitive' } } } : {}),
-      ...(filters?.language ? { language: filters.language } : {}),
-      ...(filters?.search ? {
-        cardTemplate: {
-          name: { contains: filters.search, mode: "insensitive" }
-        }
-      } : {})
+      ...(languages && languages.length > 0 ? { language: { in: languages } } : {}),
+      ...(extras && extras.length > 0 ? { extras: { hasSome: extras } } : {}),
+      ...(cardTemplateAnd.length > 0 ? { cardTemplate: { AND: cardTemplateAnd } } : {}),
     };
 
     const orderBy: Prisma.InventoryItemOrderByWithRelationInput = {};
-    if (filters?.sort === 'price_asc') orderBy.price = 'asc';
-    else if (filters?.sort === 'price_desc') orderBy.price = 'desc';
-    else if (filters?.sort === 'name_asc') orderBy.cardTemplate = { name: 'asc' };
-    else if (filters?.sort === 'name_desc') orderBy.cardTemplate = { name: 'desc' };
-    else orderBy.cardTemplate = { name: 'asc' };
+    if (filters?.sort === "price_asc") orderBy.price = "asc";
+    else if (filters?.sort === "price_desc") orderBy.price = "desc";
+    else if (filters?.sort === "name_desc") orderBy.cardTemplate = { name: "desc" };
+    else orderBy.cardTemplate = { name: "asc" };
 
     const [items, total] = await Promise.all([
       this.prisma.inventoryItem.findMany({
@@ -224,6 +277,30 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
     };
   }
 
+  async searchStorefront(
+    tenantId: string,
+    query: string,
+    limit: number,
+  ): Promise<DomainInventoryItem[]> {
+    if (query.length < 2) return [];
+
+    const items = await this.prisma.inventoryItem.findMany({
+      where: {
+        tenantId,
+        active: true,
+        quantity: { gt: 0 },
+        cardTemplate: {
+          name: { contains: query, mode: "insensitive" },
+        },
+      },
+      include: { cardTemplate: true },
+      orderBy: { cardTemplate: { name: "asc" } },
+      take: limit,
+    });
+
+    return items.map(this.mapToDomain.bind(this));
+  }
+
   async findAllActive(tenantId: string): Promise<DomainInventoryItem[]> {
     const items = await this.prisma.inventoryItem.findMany({
       where: {
@@ -235,8 +312,9 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
     return items.map(this.mapToDomain.bind(this));
   }
 
-  async decrementStock(id: string, quantity: number): Promise<void> {
-    const result = await this.prisma.inventoryItem.updateMany({
+  async decrementStock(id: string, quantity: number, tx?: unknown): Promise<void> {
+    const client = (tx as Prisma.TransactionClient) || this.prisma;
+    const result = await client.inventoryItem.updateMany({
       where: {
         id,
         OR: [
@@ -251,13 +329,66 @@ export class PrismaInventoryRepository extends BasePrismaRepository implements I
     });
 
     if (result.count === 0) {
-      throw new Error("Item esgotado ou quantidade insuficiente no estoque.");
+      throw new InsufficientStockError(id);
     }
   }
 
   async countActive(tenantId: string): Promise<number> {
     return this.prisma.inventoryItem.count({
       where: { tenantId, active: true },
+    });
+  }
+
+  async upsertStockForBuylist(
+    args: {
+      tenantId: string;
+      cardTemplateId: string;
+      condition: string;
+      language: string;
+      quantity: number;
+      defaultPrice: number;
+    },
+    tx?: unknown,
+  ): Promise<void> {
+    const client = (tx as Prisma.TransactionClient) || this.prisma;
+
+    // Match an existing row with empty extras to avoid stacking onto
+    // promo/foil variants. Uses an indexed lookup on (tenantId, cardTemplateId).
+    const existing = await client.inventoryItem.findFirst({
+      where: {
+        tenantId: args.tenantId,
+        cardTemplateId: args.cardTemplateId,
+        condition: args.condition as PrismaCondition,
+        language: args.language,
+        extras: { equals: [] },
+      },
+      select: { id: true },
+    });
+
+    if (existing) {
+      await client.inventoryItem.update({
+        where: { id: existing.id },
+        data: {
+          quantity: { increment: args.quantity },
+          active: true,
+          updatedAt: new Date(),
+        },
+      });
+      return;
+    }
+
+    await client.inventoryItem.create({
+      data: {
+        tenantId: args.tenantId,
+        cardTemplateId: args.cardTemplateId,
+        condition: args.condition as PrismaCondition,
+        language: args.language,
+        quantity: args.quantity,
+        price: new Prisma.Decimal(args.defaultPrice),
+        active: true,
+        allowNegativeStock: false,
+        extras: [],
+      },
     });
   }
 }

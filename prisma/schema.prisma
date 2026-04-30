@@ -182,6 +182,7 @@ model Order {
   @@index([tenantId])
   @@index([tenantId, status, createdAt])
   @@index([tenantId, source])
+  @@index([tenantId, customerId, status])
   @@map("orders")
 }
 
@@ -270,6 +271,7 @@ model CustomerCreditLedger {
   @@index([customerId])
   @@index([tenantId])
   @@index([tenantId, createdAt])
+  @@index([customerId, createdAt])
   @@map("customer_credit_ledger")
 }
 
@@ -319,6 +321,27 @@ model BuylistProposal {
   @@map("buylist_proposals")
 }
 
+/// Append-only outbox for at-least-once delivery of cross-aggregate
+/// events. Producers INSERT into this table inside the same transaction
+/// that mutates business state, so we never publish an event for a
+/// transaction that didn't commit. A worker (cron / edge function)
+/// drains rows where `processed_at IS NULL`, dispatches handlers, then
+/// stamps `processed_at`.
+model OutboxEvent {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String?   @map("tenant_id") @db.Uuid
+  eventName   String    @map("event_name")
+  payload     Json
+  createdAt   DateTime  @default(now()) @map("created_at")
+  processedAt DateTime? @map("processed_at")
+  attempts    Int       @default(0)
+  lastError   String?   @map("last_error")
+
+  @@index([processedAt, createdAt])
+  @@index([tenantId, eventName])
+  @@map("outbox_events")
+}
+
 enum AuditAction {
   DELETE
   UPDATE
@@ -357,5 +380,6 @@ model BuylistProposalItem {
   proposal     BuylistProposal @relation(fields: [buylistProposalId], references: [id], onDelete: Cascade)
   cardTemplate CardTemplate    @relation(fields: [cardTemplateId], references: [id], onDelete: Cascade)
 
+  @@index([buylistProposalId])
   @@map("buylist_proposal_items")
 }

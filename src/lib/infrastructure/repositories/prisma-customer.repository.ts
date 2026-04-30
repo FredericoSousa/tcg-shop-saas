@@ -140,4 +140,21 @@ export class PrismaCustomerRepository extends BasePrismaRepository implements IC
       },
     });
   }
+
+  async tryDebitCredit(id: string, amount: number, tx?: unknown): Promise<boolean> {
+    if (amount <= 0) {
+      throw new Error("tryDebitCredit requires a positive amount.");
+    }
+    const prismaClient = (tx as Prisma.TransactionClient) || this.prisma;
+    const decimalAmount = new Prisma.Decimal(amount);
+
+    // updateMany lets us pair the decrement with a balance check inside
+    // a single SQL UPDATE, so concurrent debits cannot both succeed.
+    const result = await prismaClient.customer.updateMany({
+      where: { id, creditBalance: { gte: decimalAmount } },
+      data: { creditBalance: { decrement: decimalAmount } },
+    });
+
+    return result.count === 1;
+  }
 }

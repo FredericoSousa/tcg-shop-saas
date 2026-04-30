@@ -1,15 +1,16 @@
 import { injectable, inject } from "tsyringe";
-import { TOKENS } from "../../../infrastructure/container";
+import { TOKENS } from "@/lib/infrastructure/container";
 import type { IOrderRepository } from "@/lib/domain/repositories/order.repository";
 import type { IProductRepository } from "@/lib/domain/repositories/product.repository";
 import type { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
 import { Order } from "@/lib/domain/entities/order";
 import { prisma } from "@/lib/prisma";
-import { getTenantId } from "../../../tenant-context";
+import { getTenantId } from "@/lib/tenant-context";
 import { IUseCase } from "../use-case.interface";
 import { generateOrderFriendlyId } from "@/lib/utils/order-utils";
 import { ValidationError } from "@/lib/domain/errors/domain.error";
-import { domainEvents, DOMAIN_EVENTS } from "../../../domain/events/domain-events";
+import { DOMAIN_EVENTS } from "@/lib/domain/events/domain-events";
+import { enqueueDomainEvent } from "@/lib/domain/events/outbox-publisher";
 
 export interface POSCheckoutRequest {
   items: {
@@ -40,10 +41,13 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
   async execute(request: POSCheckoutRequest): Promise<POSCheckoutResponse> {
     const { items, customerData } = request;
 
-    // Use unknown for tx and cast within repositories to avoid complex type mismatches with Prisma extensions in serverless
-    const result = await (prisma as unknown as { $transaction: (fn: (tx: unknown) => Promise<{ orderId: string; friendlyId: string }>) => Promise<{ orderId: string; friendlyId: string }> }).$transaction(async (tx: unknown) => {
+    if (items.length === 0) {
+      throw new ValidationError("O carrinho está vazio.");
+    }
 
-      // 1. Resolve Customer
+    const tenantId = getTenantId()!;
+
+    const result = await prisma.$transaction(async (tx) => {
       let customerId: string;
       if (customerData.id) {
         customerId = customerData.id;
@@ -56,9 +60,8 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
         throw new ValidationError("Cliente ou Telefone é obrigatório.");
       }
 
-      // 3. Check for existing PENDING POS order
       const existingOrder = await this.orderRepo.findPendingPOSOrder(customerId, tx);
-      const totalAmount = items.reduce((acc: number, item: { price: number; quantity: number }) => acc + item.price * item.quantity, 0);
+      const totalAmount = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
       let orderId: string;
       let friendlyId: string;
@@ -74,7 +77,7 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
       } else {
         const orderEntity: Order = {
           id: "",
-          tenantId: getTenantId()!,
+          tenantId,
           customerId,
           totalAmount,
           status: "PENDING",
@@ -94,21 +97,25 @@ export class POSCheckoutUseCase implements IUseCase<POSCheckoutRequest, POSCheck
         friendlyId = newOrder.friendlyId || "";
       }
 
-      return { orderId, friendlyId };
+      // Decrement product stock atomically inside the transaction.
+      for (const item of items) {
+        await this.productRepo.decrementStock(item.productId, item.quantity, tx);
+      }
+
+      await enqueueDomainEvent(DOMAIN_EVENTS.ORDER_PLACED, {
+        orderId,
+        tenantId,
+        customerId,
+        items: items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+      }, tenantId, tx);
+
+      return { orderId, friendlyId, customerId };
     });
 
-
-    // Publish event outside transaction
-    const tenantId = getTenantId()!;
-    domainEvents.publish(DOMAIN_EVENTS.ORDER_PLACED, {
-      orderId: result.orderId,
-      tenantId,
-      customerId: request.customerData.id || result.orderId,
-      items: request.items
-    }).catch(err => {
-      console.error("Error publishing ORDER_PLACED event:", err);
-    });
-
-    return result as POSCheckoutResponse;
+    return { orderId: result.orderId, friendlyId: result.friendlyId };
   }
 }

@@ -1,8 +1,8 @@
 import { injectable, inject } from "tsyringe";
-import { TOKENS } from "../../../infrastructure/container";
+import { TOKENS } from "@/lib/infrastructure/container";
 import type { IProductRepository } from "@/lib/domain/repositories/product.repository";
 import { ProductCategory } from "@/lib/domain/entities/product";
-import { getTenantId } from "../../../tenant-context";
+import { getTenantId } from "@/lib/tenant-context";
 import { IUseCase } from "../use-case.interface";
 
 import { z } from "zod";

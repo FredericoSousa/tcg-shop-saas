@@ -1,9 +1,13 @@
 import { injectable, inject } from "tsyringe";
-import { TOKENS } from "../../../infrastructure/container";
+import { TOKENS } from "@/lib/infrastructure/container";
 import type { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
-import { getTenantId } from "../../../tenant-context";
+import { getTenantId } from "@/lib/tenant-context";
 import { IUseCase } from "../use-case.interface";
 import { domainEvents, DOMAIN_EVENTS } from "@/lib/domain/events/domain-events";
+import {
+  EntityNotFoundError,
+  InsufficientFundsError,
+} from "@/lib/domain/errors/domain.error";
 
 export interface AdjustCustomerCreditRequest {
   customerId: string;
@@ -17,40 +21,45 @@ export interface AdjustCustomerCreditResponse {
 }
 
 @injectable()
-export class AdjustCustomerCreditUseCase implements IUseCase<AdjustCustomerCreditRequest, AdjustCustomerCreditResponse> {
+export class AdjustCustomerCreditUseCase
+  implements IUseCase<AdjustCustomerCreditRequest, AdjustCustomerCreditResponse>
+{
   constructor(
-    @inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository
-  ) { }
+    @inject(TOKENS.CustomerRepository) private customerRepo: ICustomerRepository,
+  ) {}
 
   async execute(request: AdjustCustomerCreditRequest): Promise<AdjustCustomerCreditResponse> {
     const { customerId, amount, description } = request;
     const tenantId = getTenantId()!;
 
-    const customer = await this.customerRepo.findById(customerId);
-    if (!customer) {
-      throw new Error("Cliente não encontrado.");
+    if (amount < 0) {
+      const debited = await this.customerRepo.tryDebitCredit(customerId, -amount);
+      if (!debited) {
+        // The customer either does not exist or has an insufficient
+        // balance — disambiguate with one cheap lookup.
+        const customer = await this.customerRepo.findById(customerId);
+        if (!customer) throw new EntityNotFoundError("Cliente", customerId);
+        throw new InsufficientFundsError("Saldo insuficiente de créditos.");
+      }
+    } else {
+      const customer = await this.customerRepo.findById(customerId);
+      if (!customer) throw new EntityNotFoundError("Cliente", customerId);
+      await this.customerRepo.updateCreditBalance(customerId, amount);
     }
 
-    // O Use Case agora foca apenas na consistência do saldo
-    if (amount < 0 && customer.creditBalance + amount < 0) {
-      throw new Error("Saldo insuficiente de créditos.");
-    }
+    // Read-back is the only authoritative new balance after a concurrent-safe debit.
+    const fresh = await this.customerRepo.findById(customerId);
+    const newBalance = fresh?.creditBalance ?? 0;
 
-    await this.customerRepo.updateCreditBalance(customerId, amount);
-
-    // Publish event - O Ledger será registrado por um handler
     domainEvents.publish(DOMAIN_EVENTS.CUSTOMER_CREDIT_ADJUSTED, {
       customerId,
       tenantId,
       amount,
-      newBalance: customer.creditBalance + amount,
+      newBalance,
       description,
-      source: "MANUAL"
+      source: "MANUAL",
     }).catch(err => console.error("Error publishing CUSTOMER_CREDIT_ADJUSTED:", err));
 
-    return {
-      success: true,
-      newBalance: customer.creditBalance + amount
-    };
+    return { success: true, newBalance };
   }
 }

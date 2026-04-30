@@ -41,3 +41,9 @@ export class ConflictError extends DomainError {
     super(message, "CONFLICT");
   }
 }
+
+export class InsufficientStockError extends DomainError {
+  constructor(itemId: string) {
+    super(`Estoque insuficiente para o item ${itemId}.`, "INSUFFICIENT_STOCK");
+  }
+}

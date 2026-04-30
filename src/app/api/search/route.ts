@@ -1,36 +1,32 @@
 import "reflect-metadata";
 import { container } from "@/lib/infrastructure/container";
-import { GetStorefrontInventoryUseCase } from "@/lib/application/use-cases/storefront/get-storefront-inventory.use-case";
+import { TOKENS } from "@/lib/infrastructure/tokens";
+import type { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
 import { getTenant } from "@/lib/tenant-server";
 import { NextRequest, NextResponse } from "next/server";
 
+const LIVE_SEARCH_LIMIT = 5;
+
 export async function GET(request: NextRequest) {
-  const searchParams = request.nextUrl.searchParams;
-  const q = searchParams.get("q");
-  
+  const q = request.nextUrl.searchParams.get("q") ?? "";
   const tenant = await getTenant();
-  
-  if (!tenant || !q || q.length < 2) {
+
+  if (!tenant || q.length < 2) {
     return NextResponse.json({ items: [] });
   }
 
   try {
-    const getInventory = container.resolve(GetStorefrontInventoryUseCase);
-    const response = await getInventory.execute({
-      tenantId: tenant.id,
-      page: 1,
-      filters: { search: q }
-    });
+    const inventory = container.resolve<IInventoryRepository>(TOKENS.InventoryRepository);
+    const items = await inventory.searchStorefront(tenant.id, q, LIVE_SEARCH_LIMIT);
 
-    // Return only top 5 results for live search
-    return NextResponse.json({ 
-      items: response.items.slice(0, 5).map(item => ({
+    return NextResponse.json({
+      items: items.map(item => ({
         id: item.id,
         name: item.cardTemplate?.name,
         price: item.price,
         imageUrl: item.cardTemplate?.imageUrl,
-        set: item.cardTemplate?.set
-      }))
+        set: item.cardTemplate?.set,
+      })),
     });
   } catch (error) {
     console.error("Search API error:", error);

@@ -1,8 +1,12 @@
 import { injectable } from "tsyringe";
 import { supabaseAdmin } from "@/lib/supabase/admin";
-import { getTenantId } from "../../../tenant-context";
+import { getTenantId } from "@/lib/tenant-context";
 import { IUseCase } from "../use-case.interface";
 import { saveUserSchema } from "@/lib/validation/schemas";
+import {
+  ValidationError,
+  BusinessRuleViolationError,
+} from "@/lib/domain/errors/domain.error";
 
 export type UserRole = "ADMIN" | "USER";
 
@@ -31,7 +35,9 @@ export class SaveUserUseCase implements IUseCase<SaveUserRequest, SaveUserRespon
         ...(password ? { password } : {}),
         app_metadata: { tenantId, role: role ?? "USER" },
       });
-      if (error || !data.user) throw new Error(error?.message ?? "Falha ao atualizar usuário.");
+      if (error || !data.user) {
+        throw new BusinessRuleViolationError(error?.message ?? "Falha ao atualizar usuário.");
+      }
       return {
         id: data.user.id,
         email: data.user.email!,
@@ -39,7 +45,7 @@ export class SaveUserUseCase implements IUseCase<SaveUserRequest, SaveUserRespon
       };
     }
 
-    if (!password) throw new Error("Senha é obrigatória para novos usuários.");
+    if (!password) throw new ValidationError("Senha é obrigatória para novos usuários.");
 
     const { data, error } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -47,7 +53,9 @@ export class SaveUserUseCase implements IUseCase<SaveUserRequest, SaveUserRespon
       email_confirm: true,
       app_metadata: { tenantId, role: role ?? "USER" },
     });
-    if (error || !data.user) throw new Error(error?.message ?? "Falha ao criar usuário.");
+    if (error || !data.user) {
+      throw new BusinessRuleViolationError(error?.message ?? "Falha ao criar usuário.");
+    }
 
     return {
       id: data.user.id,

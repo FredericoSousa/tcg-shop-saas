@@ -1,9 +1,9 @@
 import { injectable, inject } from "tsyringe";
-import { TOKENS } from "../../../infrastructure/container";
+import { TOKENS } from "@/lib/infrastructure/container";
 import type { IInventoryRepository } from "@/lib/domain/repositories/inventory.repository";
 import { IUseCase } from "../use-case.interface";
 import { domainEvents, DOMAIN_EVENTS } from "@/lib/domain/events/domain-events";
-import { getTenantId } from "../../../tenant-context";
+import { getTenantId } from "@/lib/tenant-context";
 
 export interface BulkUpdateInventoryRequest {
   ids: string[];

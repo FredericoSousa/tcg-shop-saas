@@ -3,6 +3,7 @@ import { BasePrismaRepository } from "./base-prisma.repository";
 import { IProductRepository } from "@/lib/domain/repositories/product.repository";
 import { Product as DomainProduct, ProductCategory as DomainCategory } from "@/lib/domain/entities/product";
 import { Prisma, Product as PrismaProduct, ProductCategory as PrismaCategory } from "@prisma/client";
+import { InsufficientStockError } from "@/lib/domain/errors/domain.error";
 
 @injectable()
 export class PrismaProductRepository extends BasePrismaRepository implements IProductRepository {
@@ -130,7 +131,7 @@ export class PrismaProductRepository extends BasePrismaRepository implements IPr
     });
 
     if (result.count === 0) {
-      throw new Error(`Produto não encontrado, inativo ou com estoque insuficiente: ${id}`);
+      throw new InsufficientStockError(id);
     }
   }
 

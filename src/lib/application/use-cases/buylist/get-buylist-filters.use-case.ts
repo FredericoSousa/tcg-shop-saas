@@ -1,5 +1,5 @@
 import { injectable, inject } from "tsyringe";
-import { TOKENS } from "../../../infrastructure/container";
+import { TOKENS } from "@/lib/infrastructure/container";
 import type { IBuylistRepository } from "@/lib/domain/repositories/buylist.repository";
 import { IUseCase } from "../use-case.interface";
 import { GetStorefrontFiltersResponse } from "../storefront/get-storefront-filters.use-case";
