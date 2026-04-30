@@ -1,9 +1,13 @@
 import { getCorrelationId } from "./correlation-context";
+import { getTenantId } from "./tenant-context";
 
 /**
  * Structured logging utility for better debugging and tracking.
  * Outputs human-readable strings in development and JSON in production
  * for structured log ingestion (Datadog, CloudWatch, etc.).
+ *
+ * PII redaction is applied to common sensitive keys before any
+ * value crosses the process boundary (stdout, Sentry, …).
  */
 
 export type LogLevel = "debug" | "info" | "warn" | "error";
@@ -24,6 +28,50 @@ let errorReporter: ErrorReporter | null = null;
 
 export function setErrorReporter(reporter: ErrorReporter): void {
   errorReporter = reporter;
+}
+
+const PII_KEYS = new Set([
+  "phoneNumber",
+  "phone",
+  "email",
+  "password",
+  "creditCard",
+  "cardNumber",
+  "cvv",
+  "token",
+  "accessToken",
+  "refreshToken",
+  "authorization",
+]);
+
+const REDACTED = "[REDACTED]";
+const MAX_DEPTH = 4;
+
+function redact(value: unknown, depth = 0): unknown {
+  if (value == null || depth > MAX_DEPTH) return value;
+
+  if (Array.isArray(value)) {
+    return value.map(v => redact(v, depth + 1));
+  }
+
+  if (typeof value === "object") {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (PII_KEYS.has(k)) {
+        out[k] = typeof v === "string" && v.length > 0 ? maskValue(v) : REDACTED;
+      } else {
+        out[k] = redact(v, depth + 1);
+      }
+    }
+    return out;
+  }
+
+  return value;
+}
+
+function maskValue(value: string): string {
+  if (value.length <= 4) return REDACTED;
+  return `${value.slice(0, 2)}***${value.slice(-2)}`;
 }
 
 class Logger {
@@ -54,7 +102,13 @@ class Logger {
 
   private format(level: LogLevel, message: string, context?: LogContext): string {
     const correlationId = getCorrelationId();
-    const finalContext = { ...context, ...(correlationId ? { correlationId } : {}) };
+    const tenantFromContext = !context?.tenantId ? getTenantId() : undefined;
+    const merged = {
+      ...context,
+      ...(correlationId ? { correlationId } : {}),
+      ...(tenantFromContext ? { tenantId: tenantFromContext } : {}),
+    };
+    const finalContext = redact(merged) as LogContext;
 
     return this.isDev
       ? this.formatDev(level, message, finalContext)
@@ -84,7 +138,14 @@ class Logger {
 
     if (errorReporter && error instanceof Error) {
       try {
-        errorReporter(error, { ...context, message });
+        const tenantId = context?.tenantId ?? getTenantId() ?? undefined;
+        const correlationId = getCorrelationId() ?? undefined;
+        errorReporter(error, redact({
+          ...context,
+          message,
+          tenantId,
+          correlationId,
+        }) as LogContext);
       } catch {
         // never let the reporter crash the app
       }
@@ -108,4 +169,3 @@ export function createTimer(label: string) {
     },
   };
 }
-
