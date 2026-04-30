@@ -24,4 +24,6 @@ export interface IOrderRepository {
   ): Promise<{ items: Order[]; total: number }>;
   findPendingPOSOrder(customerId: string, tx?: unknown): Promise<Order | null>;
   appendToOrder(orderId: string, items: { productId: string; quantity: number; priceAtPurchase: number }[], totalAmountIncrement: number, tx?: unknown): Promise<void>;
+  /** GDPR/LGPD data export: every order belonging to a customer. */
+  findAllByCustomerId(customerId: string): Promise<Order[]>;
 }

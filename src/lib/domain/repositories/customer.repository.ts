@@ -21,4 +21,11 @@ export interface ICustomerRepository {
    * `updateCreditBalance` cannot prevent on its own.
    */
   tryDebitCredit(id: string, amount: number, tx?: unknown): Promise<boolean>;
+  /**
+   * GDPR/LGPD right-to-erasure: replaces every PII column with a
+   * synthetic value and marks the row deleted. Orders/ledger keep the
+   * FK so accounting reports stay consistent, but they no longer
+   * resolve to a real person.
+   */
+  anonymise(id: string, tx?: unknown): Promise<void>;
 }

@@ -1,4 +1,5 @@
 import { injectable } from "tsyringe";
+import { createHash } from "node:crypto";
 import { BasePrismaRepository } from "./base-prisma.repository";
 import { ICustomerRepository } from "@/lib/domain/repositories/customer.repository";
 import { Customer as DomainCustomer, CustomerStats } from "@/lib/domain/entities/customer";
@@ -137,6 +138,25 @@ export class PrismaCustomerRepository extends BasePrismaRepository implements IC
       where: { id },
       data: {
         creditBalance: { increment: new Prisma.Decimal(amount) },
+      },
+    });
+  }
+
+  async anonymise(id: string, tx?: unknown): Promise<void> {
+    const prismaClient = (tx as Prisma.TransactionClient) || this.prisma;
+    // The phoneNumber column is part of a unique key (phoneNumber,
+    // tenantId). Replace it with a deterministic synthetic value
+    // derived from the original id so re-running the operation
+    // produces the same result and we don't collide with new
+    // customers that re-use the original phone.
+    const synthetic = `REMOVED-${createHash("sha256").update(id).digest("hex").slice(0, 16)}`;
+    await prismaClient.customer.update({
+      where: { id },
+      data: {
+        name: "[REMOVED]",
+        email: null,
+        phoneNumber: synthetic,
+        deletedAt: new Date(),
       },
     });
   }

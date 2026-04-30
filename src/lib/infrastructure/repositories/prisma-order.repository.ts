@@ -293,4 +293,32 @@ export class PrismaOrderRepository
       })),
     });
   }
+
+  async findAllByCustomerId(customerId: string) {
+    const items = await this.prisma.order.findMany({
+      where: { customerId },
+      include: {
+        items: { include: { product: true } },
+        payments: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return items.map((o) => {
+      const order = this.mapToDomain(o);
+      return {
+        ...order,
+        items: o.items?.map((it) => ({
+          id: it.id,
+          orderId: it.orderId,
+          productId: it.productId,
+          inventoryItemId: it.inventoryItemId,
+          quantity: it.quantity,
+          priceAtPurchase: Number(it.priceAtPurchase),
+          productName: it.product?.name ?? "",
+          imageUrl: it.product?.imageUrl ?? null,
+        })) ?? [],
+      };
+    });
+  }
+
 }

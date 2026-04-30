@@ -1,10 +1,16 @@
 import { domainEvents, DOMAIN_EVENTS } from "@/lib/domain/events/domain-events";
 import { logger } from "@/lib/logger";
-import { CustomerCreditAdjustedPayload } from "@/lib/domain/events/event-payloads";
+import {
+  CustomerCreditAdjustedPayload,
+  OrderPlacedPayload,
+  OrderPaidPayload,
+  BuylistApprovedPayload,
+} from "@/lib/domain/events/event-payloads";
 import { notifyBuylistApproval } from "./buylist-handlers";
 import { recordLedgerOnCreditAdjustment } from "./customer-credit-handlers";
 import { invalidateInventoryCacheOnOrderPlaced } from "./inventory-event-handlers";
 import { handleInventoryCacheInvalidation } from "./cache-handlers";
+import { deliverWebhook } from "./webhook-handlers";
 
 /**
  * Register all domain event handlers.
@@ -31,4 +37,17 @@ export function registerEventHandlers() {
   domainEvents.subscribe(DOMAIN_EVENTS.ORDER_PLACED, invalidateInventoryCacheOnOrderPlaced);
   domainEvents.subscribe(DOMAIN_EVENTS.INVENTORY_UPDATED, handleInventoryCacheInvalidation);
   domainEvents.subscribe(DOMAIN_EVENTS.INVENTORY_DELETED, handleInventoryCacheInvalidation);
+
+  // Outbound webhooks — fan a small set of "interesting to integrators"
+  // events out to the tenant-configured URL. Lives behind the outbox
+  // so a flaky receiver can't roll back the originating transaction.
+  domainEvents.subscribe<OrderPlacedPayload>(DOMAIN_EVENTS.ORDER_PLACED, (data) =>
+    deliverWebhook({ eventName: DOMAIN_EVENTS.ORDER_PLACED, tenantId: data.tenantId, data }),
+  );
+  domainEvents.subscribe<OrderPaidPayload>(DOMAIN_EVENTS.ORDER_PAID, (data) =>
+    deliverWebhook({ eventName: DOMAIN_EVENTS.ORDER_PAID, tenantId: data.tenantId, data }),
+  );
+  domainEvents.subscribe<BuylistApprovedPayload>(DOMAIN_EVENTS.BUYLIST_PROPOSAL_APPROVED, (data) =>
+    deliverWebhook({ eventName: DOMAIN_EVENTS.BUYLIST_PROPOSAL_APPROVED, tenantId: data.tenantId, data }),
+  );
 }

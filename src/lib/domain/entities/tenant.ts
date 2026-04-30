@@ -14,4 +14,6 @@ export interface Tenant {
   twitter: string | null;
   active: boolean;
   brandColor: string | null;
+  webhookUrl: string | null;
+  webhookSecret: string | null;
 }

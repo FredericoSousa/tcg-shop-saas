@@ -255,6 +255,18 @@ export class PrismaBuylistRepository extends BasePrismaRepository implements IBu
     return proposals.map(this.mapProposalToDomain);
   }
 
+  async findProposalsByCustomerId(customerId: string): Promise<DomainBuylistProposal[]> {
+    const proposals = await this.prisma.buylistProposal.findMany({
+      where: { customerId },
+      include: {
+        items: { include: { cardTemplate: true } },
+        customer: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return proposals.map(this.mapProposalToDomain);
+  }
+
   async updateProposalStatus(
     id: string,
     status: DomainBuylistStatus,

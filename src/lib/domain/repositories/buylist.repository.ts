@@ -13,6 +13,7 @@ export interface IBuylistRepository {
   saveProposal(proposal: BuylistProposal): Promise<BuylistProposal>;
   findProposalById(id: string): Promise<BuylistProposal | null>;
   findProposalsByTenant(tenantId: string): Promise<BuylistProposal[]>;
+  findProposalsByCustomerId(customerId: string): Promise<BuylistProposal[]>;
   updateProposalStatus(id: string, status: BuylistStatus, staffNotes?: string, tx?: unknown): Promise<void>;
 }
 
