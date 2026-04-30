@@ -54,7 +54,7 @@ describe("PrismaOutboxRepository", () => {
     const out = await repository.pickPending(50);
 
     expect(prismaMock.outboxEvent.findMany).toHaveBeenCalledWith({
-      where: { processedAt: null },
+      where: { processedAt: null, deadLetteredAt: null },
       orderBy: { createdAt: "asc" },
       take: 50,
     });

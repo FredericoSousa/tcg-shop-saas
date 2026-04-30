@@ -328,17 +328,21 @@ model BuylistProposal {
 /// drains rows where `processed_at IS NULL`, dispatches handlers, then
 /// stamps `processed_at`.
 model OutboxEvent {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String?   @map("tenant_id") @db.Uuid
-  eventName   String    @map("event_name")
-  payload     Json
-  createdAt   DateTime  @default(now()) @map("created_at")
-  processedAt DateTime? @map("processed_at")
-  attempts    Int       @default(0)
-  lastError   String?   @map("last_error")
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId        String?   @map("tenant_id") @db.Uuid
+  eventName       String    @map("event_name")
+  payload         Json
+  createdAt       DateTime  @default(now()) @map("created_at")
+  processedAt     DateTime? @map("processed_at")
+  attempts        Int       @default(0)
+  lastError       String?   @map("last_error")
+  /// Set when the event has exceeded MAX_ATTEMPTS and the worker has
+  /// stopped retrying. Listed for ops via the DLQ admin endpoint.
+  deadLetteredAt  DateTime? @map("dead_lettered_at")
 
   @@index([processedAt, createdAt])
   @@index([tenantId, eventName])
+  @@index([deadLetteredAt])
   @@map("outbox_events")
 }
 

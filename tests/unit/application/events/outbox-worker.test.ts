@@ -19,6 +19,7 @@ function event(overrides: Partial<OutboxEvent> = {}): OutboxEvent {
     processedAt: null,
     attempts: 0,
     lastError: null,
+    deadLetteredAt: null,
     ...overrides,
   };
 }
@@ -42,7 +43,7 @@ describe("drainOutbox", () => {
 
     const result = await drainOutbox(10);
 
-    expect(result).toEqual({ picked: 2, processed: 2, failed: 0 });
+    expect(result).toEqual({ picked: 2, processed: 2, failed: 0, deadLettered: 0 });
     expect(publishSpy).toHaveBeenCalledTimes(2);
     expect(outbox.markProcessed).toHaveBeenCalledWith("a");
     expect(outbox.markProcessed).toHaveBeenCalledWith("b");
@@ -54,24 +55,30 @@ describe("drainOutbox", () => {
 
     const result = await drainOutbox(10);
 
-    expect(result).toEqual({ picked: 1, processed: 0, failed: 1 });
+    expect(result).toEqual({ picked: 1, processed: 0, failed: 1, deadLettered: 0 });
     expect(outbox.recordFailure).toHaveBeenCalledWith("x", "boom");
     expect(outbox.markProcessed).not.toHaveBeenCalled();
+    expect(outbox.markDeadLettered).not.toHaveBeenCalled();
   });
 
-  it("skips events that already exceeded MAX_ATTEMPTS without retrying", async () => {
-    outbox.pickPending.mockResolvedValue([event({ id: "stuck", attempts: 10 })]);
+  it("dead-letters an event when its next attempt would hit the cap", async () => {
+    outbox.pickPending.mockResolvedValue([event({ id: "stuck", attempts: 9 })]);
+    publishSpy.mockRejectedValueOnce(new Error("permanent"));
 
     const result = await drainOutbox();
 
-    expect(result.processed).toBe(0);
-    expect(result.failed).toBe(0);
-    expect(publishSpy).not.toHaveBeenCalled();
-    expect(outbox.markProcessed).not.toHaveBeenCalled();
+    expect(result).toEqual({ picked: 1, processed: 0, failed: 0, deadLettered: 1 });
+    expect(outbox.recordFailure).toHaveBeenCalledWith("stuck", "permanent");
+    expect(outbox.markDeadLettered).toHaveBeenCalledWith("stuck");
   });
 
   it("returns zeros when the queue is empty", async () => {
     outbox.pickPending.mockResolvedValue([]);
-    expect(await drainOutbox()).toEqual({ picked: 0, processed: 0, failed: 0 });
+    expect(await drainOutbox()).toEqual({
+      picked: 0,
+      processed: 0,
+      failed: 0,
+      deadLettered: 0,
+    });
   });
 });

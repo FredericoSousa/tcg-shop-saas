@@ -18,6 +18,7 @@ import {
 } from "./domain/errors/domain.error";
 import { ApiResponse } from "./infrastructure/http/api-response";
 import { logger } from "./logger";
+import { withSpan } from "./observability/tracer";
 import { ZodError } from "zod";
 import { createSupabaseServerClient } from "./supabase/server";
 import { getAppMetadata } from "./supabase/user-metadata";
@@ -193,9 +194,14 @@ export async function withAdminApi<T>(
   const correlationId = headersList.get("x-correlation-id") ?? undefined;
 
   try {
-    return await runWithCorrelationId(
-      () => runWithTenant(context.tenant.id, () => handler(context)),
-      correlationId,
+    return await withSpan(
+      "admin.handler",
+      { "tenant.id": context.tenant.id, "user.id": context.session.userId },
+      () =>
+        runWithCorrelationId(
+          () => runWithTenant(context.tenant.id, () => handler(context)),
+          correlationId,
+        ),
     );
   } catch (error) {
     if (error instanceof DomainError) {
@@ -226,9 +232,14 @@ export async function withTenantApi<T>(
   const correlationId = headersList.get("x-correlation-id") ?? undefined;
 
   try {
-    return await runWithCorrelationId(
-      () => runWithTenant(tenant.id, () => handler({ tenant })),
-      correlationId,
+    return await withSpan(
+      "tenant.handler",
+      { "tenant.id": tenant.id },
+      () =>
+        runWithCorrelationId(
+          () => runWithTenant(tenant.id, () => handler({ tenant })),
+          correlationId,
+        ),
     );
   } catch (error) {
     if (error instanceof DomainError) {
