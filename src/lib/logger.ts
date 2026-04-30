@@ -1,5 +1,4 @@
 import { getCorrelationId } from "./correlation-context";
-import { getTenantId } from "./tenant-context";
 
 /**
  * Structured logging utility for better debugging and tracking.
@@ -102,11 +101,9 @@ class Logger {
 
   private format(level: LogLevel, message: string, context?: LogContext): string {
     const correlationId = getCorrelationId();
-    const tenantFromContext = !context?.tenantId ? getTenantId() : undefined;
     const merged = {
       ...context,
       ...(correlationId ? { correlationId } : {}),
-      ...(tenantFromContext ? { tenantId: tenantFromContext } : {}),
     };
     const finalContext = redact(merged) as LogContext;
 
@@ -138,12 +135,10 @@ class Logger {
 
     if (errorReporter && error instanceof Error) {
       try {
-        const tenantId = context?.tenantId ?? getTenantId() ?? undefined;
         const correlationId = getCorrelationId() ?? undefined;
         errorReporter(error, redact({
           ...context,
           message,
-          tenantId,
           correlationId,
         }) as LogContext);
       } catch {
