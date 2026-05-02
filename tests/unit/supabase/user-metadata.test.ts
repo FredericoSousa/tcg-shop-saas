@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { getAppMetadata, getUserTenantId } from "@/lib/supabase/user-metadata";
+import { getAppMetadata, getUserTenantId, isSuperAdmin } from "@/lib/supabase/user-metadata";
 import type { User } from "@supabase/supabase-js";
 
 function user(meta: unknown): Pick<User, "app_metadata"> {
@@ -46,5 +46,22 @@ describe("getUserTenantId", () => {
   it("returns undefined when not present", () => {
     expect(getUserTenantId(user({}))).toBeUndefined();
     expect(getUserTenantId(null)).toBeUndefined();
+  });
+});
+
+describe("SUPER_ADMIN role", () => {
+  it("accepts SUPER_ADMIN as a valid role", () => {
+    expect(getAppMetadata(user({ role: "SUPER_ADMIN" }))).toEqual({
+      tenantId: undefined,
+      role: "SUPER_ADMIN",
+    });
+  });
+
+  it("isSuperAdmin returns true only for SUPER_ADMIN", () => {
+    expect(isSuperAdmin(user({ role: "SUPER_ADMIN" }))).toBe(true);
+    expect(isSuperAdmin(user({ role: "ADMIN" }))).toBe(false);
+    expect(isSuperAdmin(user({ role: "USER" }))).toBe(false);
+    expect(isSuperAdmin(user({}))).toBe(false);
+    expect(isSuperAdmin(null)).toBe(false);
   });
 });

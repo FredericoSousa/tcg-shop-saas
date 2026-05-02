@@ -5,7 +5,7 @@ import { checkRateLimit } from "./lib/rate-limiter";
 import { generateNonce } from "./lib/security/csp";
 import { requiresCsrfCheck, isOriginAllowed } from "./lib/security/csrf";
 import { createSupabaseProxyClient } from "./lib/supabase/proxy-client";
-import { getUserTenantId } from "./lib/supabase/user-metadata";
+import { getAppMetadata, getUserTenantId } from "./lib/supabase/user-metadata";
 import { extractSubdomain, resolveTenantId } from "./lib/proxy/tenant-resolver";
 import { selectRateLimitPolicy } from "./lib/proxy/rate-limit-policy";
 import { getClientIp } from "./lib/proxy/client-ip";
@@ -13,6 +13,12 @@ import { applySecurityHeaders, generateCorrelationId, jsonError } from "./lib/pr
 import { clearAuthCookies } from "./lib/proxy/clear-auth-cookies";
 
 const PROTECTED_ROUTES = ["/admin"];
+// Super-admin panel — only valid on the root domain (no tenant subdomain).
+const INTERNAL_ROUTES = ["/internal", "/api/internal"];
+
+function isInternalPath(pathname: string): boolean {
+  return INTERNAL_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"));
+}
 
 function enforceCsrf(request: NextRequest): NextResponse | null {
   if (!requiresCsrfCheck(request)) return null;
@@ -53,16 +59,37 @@ async function handleAuthSensitivePath(
   tenantId: string | null,
   forwardHeaders: Headers,
   nonce: string,
-  opts: { isProtected: boolean; isLogin: boolean },
+  opts: { isProtected: boolean; isLogin: boolean; isInternal: boolean },
 ): Promise<NextResponse> {
   const { supabase, applyCookiesTo } = createSupabaseProxyClient(request);
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (opts.isInternal) {
+    // /internal must be served from the root domain — a subdomain would
+    // mean the visitor is on a tenant URL where /internal has no meaning.
+    if (tenantId) {
+      return NextResponse.redirect(new URL("/admin", request.url));
+    }
+    if (!user) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    if (getAppMetadata(user).role !== "SUPER_ADMIN") {
+      const redirect = NextResponse.redirect(new URL("/login?error=forbidden", request.url));
+      return clearAuthCookies(request, redirect);
+    }
+  }
+
   if (opts.isProtected) {
     if (!user) {
       return NextResponse.redirect(new URL("/login", request.url));
+    }
+    const meta = getAppMetadata(user);
+    // Super admins logged in on a tenant subdomain are bounced to /internal
+    // so they don't accidentally operate inside a tenant's admin.
+    if (meta.role === "SUPER_ADMIN") {
+      return NextResponse.redirect(new URL("/internal", request.url));
     }
     const userTenantId = getUserTenantId(user);
     if (tenantId && userTenantId !== tenantId) {
@@ -74,8 +101,12 @@ async function handleAuthSensitivePath(
   }
 
   if (opts.isLogin && user) {
+    const meta = getAppMetadata(user);
+    if (meta.role === "SUPER_ADMIN" && !tenantId) {
+      return NextResponse.redirect(new URL("/internal", request.url));
+    }
     const userTenantId = getUserTenantId(user);
-    if (!tenantId || userTenantId === tenantId) {
+    if (tenantId && userTenantId === tenantId) {
       return NextResponse.redirect(new URL("/admin", request.url));
     }
   }
@@ -101,6 +132,7 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const tenantId = subdomain ? await resolveTenantId(subdomain) : null;
 
   const isProtected = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
+  const isInternal = isInternalPath(pathname);
   const isLogin = pathname === "/login";
   const isAuthRoute = isLogin || pathname.startsWith("/auth/");
 
@@ -109,10 +141,11 @@ export async function proxy(request: NextRequest): Promise<NextResponse> {
   const correlationId = request.headers.get("x-correlation-id") ?? generateCorrelationId();
   const forwardHeaders = buildForwardHeaders(request, nonce, tenantId, correlationId);
 
-  if (isProtected || isAuthRoute) {
+  if (isProtected || isInternal || isAuthRoute) {
     return handleAuthSensitivePath(request, tenantId, forwardHeaders, nonce, {
       isProtected,
       isLogin,
+      isInternal,
     });
   }
 

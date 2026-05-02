@@ -3,6 +3,7 @@ import { container } from "./infrastructure/container";
 import { GetTenantUseCase } from "./application/use-cases/tenant/get-tenant.use-case";
 import { headers } from "next/headers";
 import { cacheLife, cacheTag } from "next/cache";
+import { withRLSBypass } from "./prisma";
 import { redirect } from "next/navigation";
 import { runWithTenant, enterTenantContext } from "./tenant-context";
 import { runWithCorrelationId } from "./correlation-context";
@@ -40,6 +41,9 @@ export async function getSession(): Promise<SessionData | null> {
 
     const meta = getAppMetadata(user);
     if (!meta.tenantId || !meta.role) return null;
+    // Super admins do not belong to any tenant — they should authenticate
+    // through the /internal flow instead, not as a tenant ADMIN.
+    if (meta.role === "SUPER_ADMIN") return null;
 
     return {
       userId: user.id,
@@ -56,13 +60,19 @@ export async function getSession(): Promise<SessionData | null> {
  * Cached wrapper for resolving tenant. Uses Next 16's `'use cache'`
  * directive (Cache Components). Tagged so an admin updating their
  * tenant settings can `revalidateTag(`tenant-${id}`)` to bust this.
+ *
+ * Wrapped in `withRLSBypass` because: (1) tenant lookup is an
+ * explicitly cross-tenant operation — it's how we *establish* which
+ * tenant the request belongs to; and (2) the Prisma extension would
+ * otherwise call `resolveTenantId()` → `headers()`, which Next forbids
+ * inside `"use cache"` scopes (Dynamic data sources are not allowed).
  */
 async function getCachedTenant(id: string) {
   "use cache";
   cacheLife("hours");
   cacheTag("tenant", `tenant-${id}`);
   const getTenantUseCase = container.resolve(GetTenantUseCase);
-  return getTenantUseCase.execute({ id });
+  return withRLSBypass(() => getTenantUseCase.execute({ id }));
 }
 
 /**

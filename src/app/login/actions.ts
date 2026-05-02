@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { getUserTenantId } from "@/lib/supabase/user-metadata";
+import { getAppMetadata, getUserTenantId } from "@/lib/supabase/user-metadata";
 import { logger } from "@/lib/logger";
 import {
   checkLoginGate,
@@ -17,6 +17,13 @@ export interface LoginActionResult {
   retryAfterSeconds?: number;
 }
 
+/**
+ * Throttle bucket used when the login form is served on the root domain
+ * (super-admin path). Keeps the per-account throttle keyed by a stable
+ * value instead of a missing tenantId.
+ */
+const ROOT_LOGIN_BUCKET = "__root__";
+
 export async function loginWithPassword(formData: FormData): Promise<LoginActionResult> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
@@ -27,16 +34,13 @@ export async function loginWithPassword(formData: FormData): Promise<LoginAction
 
   const headersList = await headers();
   const tenantId = headersList.get("x-tenant-id");
+  const throttleKey = tenantId ?? ROOT_LOGIN_BUCKET;
 
-  if (!tenantId) {
-    return { success: false, message: "Loja não identificada. Acesse por um subdomínio válido." };
-  }
-
-  const gate = await checkLoginGate(tenantId, email);
+  const gate = await checkLoginGate(throttleKey, email);
   if (gate.locked) {
     logger.warn("Login blocked by throttle", {
       action: "login_with_password",
-      tenantId,
+      tenantId: tenantId ?? undefined,
       email,
       retryAfterSeconds: gate.retryAfterSeconds,
     });
@@ -52,10 +56,10 @@ export async function loginWithPassword(formData: FormData): Promise<LoginAction
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error || !data.user) {
-    const after = await recordLoginFailure(tenantId, email);
+    const after = await recordLoginFailure(throttleKey, email);
     logger.warn("Login failed", {
       action: "login_with_password",
-      tenantId,
+      tenantId: tenantId ?? undefined,
       email,
       error: error?.message,
       failuresInWindow: after.failures,
@@ -72,15 +76,29 @@ export async function loginWithPassword(formData: FormData): Promise<LoginAction
     return { success: false, message: "Email ou senha inválidos." };
   }
 
+  const meta = getAppMetadata(data.user);
+
+  // Root-domain login: only super admins may pass.
+  if (!tenantId) {
+    if (meta.role !== "SUPER_ADMIN") {
+      await supabase.auth.signOut();
+      await recordLoginFailure(throttleKey, email);
+      return { success: false, message: "Credenciais inválidas para esta área." };
+    }
+    await clearLoginFailures(throttleKey, email);
+    redirect("/internal");
+  }
+
+  // Tenant-domain login: user must belong to this tenant.
   if (getUserTenantId(data.user) !== tenantId) {
     await supabase.auth.signOut();
     // Wrong tenant counts as a failure — same as a wrong password from
     // the attacker's point of view, and prevents enumerating accounts
     // across stores.
-    await recordLoginFailure(tenantId, email);
+    await recordLoginFailure(throttleKey, email);
     return { success: false, message: "Usuário não pertence a esta loja." };
   }
 
-  await clearLoginFailures(tenantId, email);
+  await clearLoginFailures(throttleKey, email);
   redirect("/admin");
 }

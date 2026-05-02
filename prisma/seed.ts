@@ -2,7 +2,11 @@ import "dotenv/config";
 import { prisma } from "@/lib/prisma";
 import { supabaseAdmin } from "@/lib/supabase/admin";
 
-async function upsertAdmin(email: string, password: string, tenantId: string) {
+async function upsertUser(
+  email: string,
+  password: string,
+  appMetadata: Record<string, unknown>,
+) {
   const { data: existing } = await supabaseAdmin.auth.admin.listUsers({
     page: 1,
     perPage: 1000,
@@ -12,7 +16,7 @@ async function upsertAdmin(email: string, password: string, tenantId: string) {
   if (match) {
     await supabaseAdmin.auth.admin.updateUserById(match.id, {
       password,
-      app_metadata: { tenantId, role: "ADMIN" },
+      app_metadata: appMetadata,
     });
     return match;
   }
@@ -21,11 +25,17 @@ async function upsertAdmin(email: string, password: string, tenantId: string) {
     email,
     password,
     email_confirm: true,
-    app_metadata: { tenantId, role: "ADMIN" },
+    app_metadata: appMetadata,
   });
-  if (error || !data.user) throw new Error(error?.message ?? "Falha ao criar admin");
+  if (error || !data.user) throw new Error(error?.message ?? "Falha ao criar usuário");
   return data.user;
 }
+
+const upsertAdmin = (email: string, password: string, tenantId: string) =>
+  upsertUser(email, password, { tenantId, role: "ADMIN" });
+
+const upsertSuperAdmin = (email: string, password: string) =>
+  upsertUser(email, password, { role: "SUPER_ADMIN" });
 
 async function main() {
   console.log("Starting seed...");
@@ -52,6 +62,7 @@ async function main() {
 
   const admin1 = await upsertAdmin("admin@loja1.test", "Admin@123456", tenant1.id);
   const admin2 = await upsertAdmin("admin@cavernadodragao.test", "Admin@123456", tenant2.id);
+  const superAdmin = await upsertSuperAdmin("super@tcgshop.test", "Super@123456");
 
   const card1 = await prisma.cardTemplate.upsert({
     where: { id: "00000000-0000-0000-0000-000000000001" },
@@ -105,7 +116,9 @@ async function main() {
 
   console.log(`✅ Tenants criados: ${tenant1.slug}, ${tenant2.slug}`);
   console.log(`✅ Admins criados: ${admin1.email} (${tenant1.slug}), ${admin2.email} (${tenant2.slug})`);
-  console.log(`📝 Senha padrão: Admin@123456`);
+  console.log(`✅ Super-admin criado: ${superAdmin.email} (acesso ao painel /internal)`);
+  console.log(`📝 Senha padrão admins de tenant: Admin@123456`);
+  console.log(`📝 Senha padrão super-admin: Super@123456`);
   console.log(" Seed finalizado com sucesso.");
 }
 

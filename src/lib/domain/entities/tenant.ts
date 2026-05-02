@@ -16,4 +16,6 @@ export interface Tenant {
   brandColor: string | null;
   webhookUrl: string | null;
   webhookSecret: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 }

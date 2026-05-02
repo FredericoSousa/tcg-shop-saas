@@ -71,7 +71,7 @@ async function LoginContent() {
   }
 
   const tenantId = tenant?.id || "";
-  const tenantName = tenant?.name || "TCG Shop SaaS";
+  const tenantName = tenant?.name || (tenantId ? "TCG Shop SaaS" : "Administração Interna");
 
   return (
     <div className="flex flex-col justify-center items-center bg-white p-8 md:p-12 lg:p-24 animate-in fade-in duration-700 lg:animate-none">
